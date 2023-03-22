@@ -42,21 +42,21 @@ void CCUDecodingFunctions::DecodePayloadData(CCUPacketTypes::Category category, 
 {
     if(category != CCUPacketTypes::Category::Status)
     {
-        Serial.print("DecodePayloadData, Category: "); Serial.println(static_cast<byte>(category));
+        // Serial.print("DecodePayloadData, Category: "); Serial.println(static_cast<byte>(category));
     }
 
     switch (category) {
         case CCUPacketTypes::Category::Lens:
-            // DecodeLensCategory(parameter, payloadData, payloadDataLength);
+            DecodeLensCategory(parameter, payloadData, payloadDataLength);
             break;
         case CCUPacketTypes::Category::Video:
             DecodeVideoCategory(parameter, payloadData, payloadDataLength);
             break;
         case CCUPacketTypes::Category::Status:
-            // DecodeStatusCategory(parameter, payloadData, payloadDataLength);
+            DecodeStatusCategory(parameter, payloadData, payloadDataLength);
             break;
         case CCUPacketTypes::Category::Media:
-            // DecodeMediaCategory(parameter, payloadData, payloadDataLength);
+            DecodeMediaCategory(parameter, payloadData, payloadDataLength);
             break;
         case CCUPacketTypes::Category::Metadata:
             // DecodeMetadataCategory(parameter, payloadData, payloadDataLength);
@@ -66,9 +66,6 @@ void CCUDecodingFunctions::DecodePayloadData(CCUPacketTypes::Category category, 
     }
 }
 
-/*
-
-
 // implementation of member functions
 void CCUDecodingFunctions::DecodeLensCategory(byte parameter, byte* payloadData, int payloadLength)
 {
@@ -76,13 +73,15 @@ void CCUDecodingFunctions::DecodeLensCategory(byte parameter, byte* payloadData,
     {
         CCUPacketTypes::LensParameter parameterType = static_cast<CCUPacketTypes::LensParameter>(parameter);
 
+        Serial.print("DecodeLensCategory, ParameterType: "); Serial.println(static_cast<byte>(parameterType));
+
         switch (parameterType)
         {
         case CCUPacketTypes::LensParameter::ApertureFstop:
             DecodeApertureFStop(payloadData, payloadLength);
             break;
         case CCUPacketTypes::LensParameter::ApertureNormalised:
-            // DecodeApertureNormalised(payloadData, payloadLength);
+            DecodeApertureNormalised(payloadData, payloadLength);
             break;
         case CCUPacketTypes::LensParameter::ApertureOrdinal:
             // Not catered for
@@ -113,32 +112,8 @@ void CCUDecodingFunctions::DecodeLensCategory(byte parameter, byte* payloadData,
         }
     }
     else
-        throw "Invalid value for LensParameter.";
+        throw "Invalid value for Lens Parameter.";
 }
-
-*/
-
-/*
-template<typename T>
-T* CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount(byte* data, int byteCount, int expectedCount) {
-    int typeSize = sizeof(T);
-    if (typeSize > byteCount) {
-        Serial.println("Payload type size (" + String(typeSize) + ") is smaller than data size (" + String(byteCount) + ")");
-        throw "Payload type size (" + String(typeSize) + ") is smaller than data size (" + String(byteCount) + ")";
-    }
-
-    int convertedCount = byteCount / typeSize;
-    if (expectedCount != convertedCount) {
-        Serial.println("Payload expected count (" + String(expectedCount) + ") not equal to converted count (" + String(convertedCount) + ")");
-        throw "Payload expected count (" + String(expectedCount) + ") not equal to converted count (" + String(convertedCount) + ")";
-    }
-
-    T* payload = new T[convertedCount];
-    memcpy(payload, data, byteCount);
-
-    return payload;
-}
-*/
 
 template<typename T>
 std::vector<T> CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount(byte* data, int byteCount, int expectedCount) {
@@ -160,8 +135,7 @@ std::vector<T> CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount(byte* d
     return payload;
 }
 
-/*
-void DecodeApertureFStop(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeApertureFStop(byte* inData, int inDataLength)
 {
     Serial.println("[DecodeApertureFStop]");
 
@@ -169,23 +143,27 @@ void DecodeApertureFStop(byte* inData, int inDataLength)
     float myfStop = 16.0f;
     float result = myfStop * Exponent;
 
-    short* data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 2); // We're receiving 4 bytes, though expecting 2 bytes (equivalent to a Short / Int16), so this avoids an exception, though it's not clear why it's 4 bytes
+    std::vector<short> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 2); // We're receiving 4 bytes, though expecting 2 bytes (equivalent to a Short / Int16), so this avoids an exception, though it's not clear why it's 4 bytes
     short apertureNumber = data[0];
 
     short fStopIndex = -1;
     if (apertureNumber != CCUPacketTypes::kLensAperture_NoLens) {
         fStopIndex = LensConfig::GetIndexForApertureNumber(apertureNumber);
-        Serial.print("DecodeApertureFStop: fStop Index"); Serial.println(fStopIndex);
+        Serial.print("Decoded fStop Index: "); Serial.println(fStopIndex);
     }
     else
         Serial.println("DecodeApertureFStop: No Lens.");
-
-    // BMDCameraConnection::getCamera()->onIrisReceived(apertureNumber, fStopIndex);
-
-    delete[] data;
 }
 
-*/
+void CCUDecodingFunctions::DecodeApertureNormalised(byte* inData, int inDataLength)
+{
+    std::vector<short> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 1); // Receiving a fixed16 number, as a short it will be 0-2,048 representing 0.0-1.0
+    short apertureNormalisedNumber = data[0];
+
+    Serial.print("Decode Aperture Normalised: "); Serial.println(apertureNormalisedNumber);
+}
+
+
 
 void CCUDecodingFunctions::DecodeVideoCategory(byte parameter, byte* payloadData, int payloadLength)
 {
@@ -193,7 +171,7 @@ void CCUDecodingFunctions::DecodeVideoCategory(byte parameter, byte* payloadData
     {
         CCUPacketTypes::VideoParameter parameterType = static_cast<CCUPacketTypes::VideoParameter>(parameter);
 
-        Serial.print("DecodeVideoCategory, ParameterType: "); Serial.println(static_cast<byte>(parameterType));
+        // Serial.print("DecodeVideoCategory, ParameterType: "); Serial.println(static_cast<byte>(parameterType));
 
         switch (parameterType)
         {
@@ -210,29 +188,29 @@ void CCUDecodingFunctions::DecodeVideoCategory(byte parameter, byte* payloadData
                 DecodeRecordingFormat(payloadData, payloadLength);
                 break;
             case CCUPacketTypes::VideoParameter::AutoExposureMode:
-                // DecodeAutoExposureMode(payloadData);
+                DecodeAutoExposureMode(payloadData, payloadLength);
                 break;
             case CCUPacketTypes::VideoParameter::ShutterAngle:
-                // DecodeShutterAngle(payloadData, ref observableBMDCamera);
+                DecodeShutterAngle(payloadData, payloadLength);
                 break;
             case CCUPacketTypes::VideoParameter::ShutterSpeed:
-                // DecodeShutterSpeed(payloadData, ref observableBMDCamera);
+                DecodeShutterSpeed(payloadData, payloadLength);
                 break;
             case CCUPacketTypes::VideoParameter::Gain:
-                // DecodeGain(payloadData);
+                DecodeGain(payloadData, payloadLength);
                 break;
             case CCUPacketTypes::VideoParameter::ISO:
                 DecodeISO(payloadData, payloadLength);
                 break;
             case CCUPacketTypes::VideoParameter::DisplayLUT:
-                // DecodeDisplayLUT(payloadData);
+                DecodeDisplayLUT(payloadData, payloadLength);
                 break;
         default:
             break;
         }
     }
     else
-        throw "Invalid value for LensParameter.";
+        throw "Invalid value for Video Parameter.";
 }
 
 void CCUDecodingFunctions::DecodeSensorGain(byte* inData, int inDataLength)
@@ -261,7 +239,6 @@ void CCUDecodingFunctions::DecodeExposure(byte* inData, int inDataLength)
 
 void CCUDecodingFunctions::DecodeRecordingFormat(byte* inData, int inDataLength)
 {
-    // short* data = ConvertPayloadDataWithExpectedCount<short>(inData, 5);
     std::vector<short> data = ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 5);
 
     CCUPacketTypes::RecordingFormatData recordingFormatData;
@@ -291,6 +268,56 @@ void CCUDecodingFunctions::DecodeRecordingFormat(byte* inData, int inDataLength)
         Serial.println("Frame Rate will be 29.97");
 }
 
+void CCUDecodingFunctions::DecodeAutoExposureMode(byte* inData, int inDataLength)
+{
+    std::vector<sbyte> data = ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, 1);
+    CCUPacketTypes::AutoExposureMode autoExposureMode = static_cast<CCUPacketTypes::AutoExposureMode>(data[0]);
+
+    Serial.print("Decoded Auto Exposure Mode: ");
+    switch(autoExposureMode)
+    {
+        case CCUPacketTypes::AutoExposureMode::Manual:
+            Serial.println("Manual");
+            break;
+        case CCUPacketTypes::AutoExposureMode::Iris:
+            Serial.println("Iris");
+            break;
+        case CCUPacketTypes::AutoExposureMode::Shutter:
+            Serial.println("Shutter");
+            break;
+        case CCUPacketTypes::AutoExposureMode::IrisAndShutter:
+            Serial.println("IrisAndShutter");
+            break;
+        case CCUPacketTypes::AutoExposureMode::ShutterAndIris:
+            Serial.println("ShutterAndIris");
+            break;
+    }
+}
+
+void CCUDecodingFunctions::DecodeShutterAngle(byte* inData, int inDataLength)
+{
+    std::vector<int32_t> data = ConvertPayloadDataWithExpectedCount<int32_t>(inData, inDataLength, 1);
+    int32_t shutterAngleX100 = data[0];
+
+    Serial.print("Decoded Exposure (Shutter Angle): "); Serial.println(shutterAngleX100);
+}
+
+void CCUDecodingFunctions::DecodeShutterSpeed(byte* inData, int inDataLength)
+{
+    std::vector<int32_t> data = ConvertPayloadDataWithExpectedCount<int32_t>(inData, inDataLength, 1);
+    int32_t shutterSpeed = data[0]; // Result is the denominator in 1/X, e.g. shutterSpeed = 24 is a shutter speed of 1/24
+
+    Serial.print("Decoded Exposure (Shutter Speed): "); Serial.println(shutterSpeed);
+}
+
+void CCUDecodingFunctions::DecodeGain(byte* inData, int inDataLength)
+{
+    std::vector<byte> data = ConvertPayloadDataWithExpectedCount<byte>(inData, inDataLength, 1);
+    byte gain = data[0];
+
+    Serial.print("Decoded Gain): "); Serial.println(gain);
+}
+
 void CCUDecodingFunctions::DecodeISO(byte* inData, int inDataLength)
 {
     std::vector<int32_t> data = ConvertPayloadDataWithExpectedCount<int32_t>(inData, inDataLength, 1);
@@ -299,27 +326,336 @@ void CCUDecodingFunctions::DecodeISO(byte* inData, int inDataLength)
     Serial.print("Decoded ISO: "); Serial.println(iso);
 }
 
-/*
-
-void DecodeApertureNormalised(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeDisplayLUT(byte* inData, int inDataLength)
 {
-    short* data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 1); // Receiving a fixed16 number, as a short it will be 0-2,048 representing 0.0-1.0
-    short apertureNormalisedNumber = data[0];
+    std::vector<byte> data = ConvertPayloadDataWithExpectedCount<byte>(inData, inDataLength, 2);
+    CCUPacketTypes::SelectedLUT selectedLut = static_cast<CCUPacketTypes::SelectedLUT>(data[0]);
+    bool enabled = data[1] == 1;
 
-    // BMDCameraConnection::getCamera()->onNormalisedApertureReceived(apertureNormalisedNumber);
+    Serial.print("Decoded Display LUT: ");
+    switch(selectedLut)
+    {
+        case CCUPacketTypes::SelectedLUT::None:
+            Serial.print("None");
+            break;
+        case CCUPacketTypes::SelectedLUT::Custom:
+            Serial.print("Custom");
+            break;
+        case CCUPacketTypes::SelectedLUT::FilmToVideo:
+            Serial.print("FilmToVideo");
+            break;
+        case CCUPacketTypes::SelectedLUT::FilmToExtendedVideo:
+            Serial.print("FilmToExtendedVideo");
+            break;
+    }
 
-    delete[] data;
+    if(enabled)
+        Serial.println(", Enabled");
+    else
+        Serial.println(", Not Enabled");
 }
 
 void CCUDecodingFunctions::DecodeStatusCategory(byte parameter, byte* payloadData, int payloadDataLength)
 {
-    // MS TO BE CONVERTED.
+    if(CCUUtility::byteValueExistsInArray(CCUPacketTypes::StatusParameterValues, sizeof(CCUPacketTypes::StatusParameterValues) / sizeof(CCUPacketTypes::StatusParameterValues[0]), parameter))
+    {
+        CCUPacketTypes::StatusParameter parameterType = static_cast<CCUPacketTypes::StatusParameter>(parameter);
+
+        switch (parameterType)
+        {
+            case CCUPacketTypes::StatusParameter::Battery:
+                // Not catered for
+                // Attempting to cater for it
+                DecodeBattery(payloadData, payloadDataLength);
+                break;
+            case CCUPacketTypes::StatusParameter::CameraSpec:
+                // Not catered for
+                break;
+            case CCUPacketTypes::StatusParameter::DisplayParameters:
+                // Not catered for
+                break;
+            case CCUPacketTypes::StatusParameter::DisplayThresholds:
+                // Not catered for
+                break;
+            case CCUPacketTypes::StatusParameter::DisplayTimecode:
+                // Not catered for
+                break;
+            case CCUPacketTypes::StatusParameter::MediaStatus:
+                DecodeMediaStatus(payloadData, payloadDataLength);
+                break;
+            case CCUPacketTypes::StatusParameter::RemainingRecordTime:
+                DecodeRemainingRecordTime(payloadData, payloadDataLength);
+                break;
+            case CCUPacketTypes::StatusParameter::SwitcherStatus:
+                // Not catered for
+                break;
+        default:
+            break;
+        }
+    }
+    else
+        throw "Invalid value for Status Parameter.";
 }
+
+void CCUDecodingFunctions::DecodeBattery(byte* inData, int inDataLength)
+{
+    std::vector<short> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 3);
+
+    CCUPacketTypes::BatteryStatusData batteryStatusData;
+    batteryStatusData.batteryLevelX1000 = data[0];
+
+    // Not sure what data[1] is - value is typically 100
+
+    ushort flags = (ushort)data[2];
+
+    batteryStatusData.batteryPresent = static_cast<bool>((static_cast<int>(flags) & static_cast<int>(CCUPacketTypes::BatteryStatus::BatteryPresent)) > 0);
+    batteryStatusData.ACPresent = static_cast<bool>((static_cast<int>(flags) & static_cast<int>(CCUPacketTypes::BatteryStatus::ACPresent)) > 0);
+    batteryStatusData.batteryIsCharging = static_cast<bool>((static_cast<int>(flags) & static_cast<int>(CCUPacketTypes::BatteryStatus::BatteryIsCharging)) > 0);
+    batteryStatusData.chargeRemainingPercentageIsEstimated = static_cast<bool>((static_cast<int>(flags) & static_cast<int>(CCUPacketTypes::BatteryStatus::ChargeRemainingPercentageIsEstimated)) > 0);
+    batteryStatusData.preferVoltageDisplay = static_cast<bool>((static_cast<int>(flags) & static_cast<int>(CCUPacketTypes::BatteryStatus::PreferVoltageDisplay)) > 0);
+
+    /* Runs almost once a second, so only display if needed.
+    Serial.print("Decoded Battery Level is "); Serial.print(batteryStatusData.batteryLevelX1000);
+    Serial.print(", Battery Present is "); Serial.print(batteryStatusData.batteryPresent);
+    Serial.print(", AC Present is "); Serial.print(batteryStatusData.ACPresent);
+    Serial.print(", Battery is Charging is "); Serial.print(batteryStatusData.batteryIsCharging);
+    Serial.print(", Charge Remaining Percentage is Estimated is "); Serial.print(batteryStatusData.chargeRemainingPercentageIsEstimated);
+    Serial.print(", Prefer Voltage Display is "); Serial.println(batteryStatusData.preferVoltageDisplay);
+    */
+}
+
+void CCUDecodingFunctions::DecodeMediaStatus(byte* inData, int inDataLength)
+{
+    std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, inDataLength); // We convert all the bytes to sbyte
+    int slotCount = data.size();
+
+    for(int index = 0; index < slotCount; index++)
+    {
+        Serial.print("Slot #"); Serial.print(index);
+
+        CCUPacketTypes::MediaStatus slotMediaStatus = static_cast<CCUPacketTypes::MediaStatus>(data[index]);
+
+        switch(slotMediaStatus)
+        {
+            case CCUPacketTypes::MediaStatus::None:
+                Serial.println(": None");
+                break;
+            case CCUPacketTypes::MediaStatus::Ready:
+                Serial.println(": Ready");
+                break;
+            case CCUPacketTypes::MediaStatus::MountError:
+                Serial.println(": Mount Error");
+                break;
+            case CCUPacketTypes::MediaStatus::RecordError:
+                Serial.println(": Record Error");
+                break;
+        }
+    }
+}
+
+// For DecodeRemainingRecordTime function
+
+CCUDecodingFunctions::SecondsWithOverflow CCUDecodingFunctions::simplifyTime(int16_t time) {
+    int16_t seconds = time; // positive value -> unit: second
+    bool over = false;
+
+    if (time < 0) { // negative value -> unit: minute
+        uint16_t minutes = 0;
+        if (time == INT16_MIN) { // more time remaining than fits in CCU message
+            minutes = UINT16_MAX;
+            over = true;
+        } else {
+            minutes = -time;
+        }
+        seconds = minutes * 60;
+    }
+
+    SecondsWithOverflow returnValue;
+    returnValue.seconds = static_cast<uint16_t>(seconds);
+    returnValue.over = over;
+
+    return returnValue;
+}
+
+String CCUDecodingFunctions::makeTimeLabel(SecondsWithOverflow time) {
+    if (time.seconds == 0) { return "Transport Full"; }
+
+    String label = "";
+    uint16_t hours = time.seconds / 60 / 60;
+    if (hours > 0) {
+        std::stringstream ss;
+        ss << std::setw(2) << std::setfill('0') << hours; // Leading zeros, format to 00
+        label += ss.str().c_str();
+        label += ":";
+    }
+
+    uint16_t minutes = time.seconds / 60 % 60;
+
+    std::stringstream ssmin;
+    ssmin << std::setw(2) << std::setfill('0') << minutes; // Leading zeros, format to 00
+    label += ssmin.str().c_str();
+    label += ":";
+
+    uint16_t seconds = time.seconds % 60;
+
+    std::stringstream sssec;
+    sssec << std::setw(2) << std::setfill('0') << seconds; // Leading zeros, format to 00
+    label += sssec.str().c_str();
+
+    if (time.over) { label += "+"; }
+
+    return label;
+}
+
+void CCUDecodingFunctions::DecodeRemainingRecordTime(byte* inData, int inDataLength)
+{
+    std::vector<ccu_fixed_t> payload = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<ccu_fixed_t>(inData, inDataLength, inDataLength / 2);
+
+    int slotCount = payload.size();
+    std::vector<String> labels(slotCount, "");
+    std::vector<int16_t> minutes(slotCount, 0);
+    for (int slotIndex = 0; slotIndex < slotCount; ++slotIndex) {
+        SecondsWithOverflow remainingTime = simplifyTime(payload[slotIndex]);
+        minutes[slotIndex] = remainingTime.seconds / 60;
+        labels[slotIndex] = makeTimeLabel(remainingTime);
+
+        Serial.print("Decoded Remaining Record Time Slot #"); Serial.print(slotIndex); Serial.print(" is "); Serial.print(minutes[slotIndex]); Serial.print(" minutes, formatted as "); Serial.println(labels[slotIndex]);
+    }
+}
+
 
 void CCUDecodingFunctions::DecodeMediaCategory(byte parameter, byte* payloadData, int payloadDataLength)
 {
-    // MS TO BE CONVERTED.
+    if(CCUUtility::byteValueExistsInArray(CCUPacketTypes::MediaParameterValues, sizeof(CCUPacketTypes::MediaParameterValues) / sizeof(CCUPacketTypes::MediaParameterValues[0]), parameter))
+    {
+        CCUPacketTypes::MediaParameter parameterType = static_cast<CCUPacketTypes::MediaParameter>(parameter);
+
+        switch (parameterType)
+        {
+            case CCUPacketTypes::MediaParameter::Codec:
+                DecodeCodec(payloadData, payloadDataLength);
+                break;
+            case CCUPacketTypes::MediaParameter::TransportMode:
+                break;
+        default:
+            break;
+        }
+    }
+    else
+        throw "Invalid value for Media Category Parameter.";
 }
+
+void CCUDecodingFunctions::DecodeCodec(byte* inData, int inDataLength)
+{
+    std::vector<byte> data = ConvertPayloadDataWithExpectedCount<byte>(inData, inDataLength, 2);
+
+    CodecInfo codecInfo;
+    codecInfo.basicCodec = static_cast<CCUPacketTypes::BasicCodec>(data[0]);
+    codecInfo.codecVariant = data[1];
+
+    Serial.print("Decoded Codec Info Basic Codec is ");
+    switch(codecInfo.basicCodec)
+    {
+        case CCUPacketTypes::BasicCodec::RAW:
+            Serial.println("RAW");
+            break;
+        case CCUPacketTypes::BasicCodec::DNxHD:
+            Serial.print("DNxHD, ");
+
+            switch(codecInfo.codecVariant)
+            {
+                case 0:
+                    Serial.println("Lossless Raw");
+                    break;
+                case 1:
+                    Serial.println("Raw 3:1");
+                    break;
+                case 2:
+                    Serial.println("Raw 4:1");
+                    break;
+            }
+
+            break;
+        case CCUPacketTypes::BasicCodec::ProRes:
+            Serial.print("ProRes ");
+
+            switch(codecInfo.codecVariant)
+            {
+                case 0:
+                    Serial.println("HQ");
+                    break;
+                case 1:
+                    Serial.println("422");
+                    break;
+                case 2:
+                    Serial.println("LT");
+                    break;
+                case 3:
+                    Serial.println("Proxy");
+                    break;
+                case 4:
+                    Serial.println("444");
+                    break;
+                case 5:
+                    Serial.println("444XQ");
+                    break;
+            }
+
+            break;
+        case CCUPacketTypes::BasicCodec::BRAW:
+            Serial.print("BRAW ");
+
+            switch(codecInfo.codecVariant)
+            {
+                case 0:
+                    Serial.println("Q0");
+                    break;
+                case 1:
+                    Serial.println("Q5");
+                    break;
+                case 2:
+                    Serial.println("3:1");
+                    break;
+                case 3:
+                    Serial.println("5:1");
+                    break;
+                case 4:
+                    Serial.println("8:1");
+                    break;
+                case 5:
+                    Serial.println("12:1");
+                    break;
+                case 6:
+                    Serial.println("18:1"); // Guessing as the Ursa 12K has 18:1.
+                    break;
+                case 7:
+                    Serial.println("Q1");
+                    break;
+                case 8:
+                    Serial.println("Q3");
+                    break;
+            }
+
+            break;
+    }
+}
+
+void CCUDecodingFunctions::DecodeTransportMode(byte* inData, int inDataLength)
+{
+    Serial.print("DecodeTransportMode Data Length: "); Serial.println(inDataLength);
+    std::vector<sbyte> data = ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, 5);
+
+    CCUPacketTypes::MediaTransportMode mode = static_cast<CCUPacketTypes::MediaTransportMode>(data[0]);
+    // CCUPacketTypes::ActiveStorageMedium storageMediumDisk1 = static_cast<CCUPacketTypes::ActiveStorageMedium>(data[3]);
+    // CCUPacketTypes::ActiveStorageMedium storageMediumDisk2 = static_cast<CCUPacketTypes::ActiveStorageMedium>(data[4]);
+
+    // FINISH THIS OFF!
+
+}
+
+/*
+
+
 
 void CCUDecodingFunctions::DecodeMetadataCategory(byte parameter, byte* payloadData, int payloadDataLength)
 {
