@@ -1,0 +1,42 @@
+﻿#include <CCU\CCUPacketTypes.h>
+
+ccu_fixed_t CCUPacketTypes::CCUFixedFromFloat(double f) {
+    return static_cast<ccu_fixed_t>(f * 2048.0);
+}
+
+double CCUPacketTypes::CCUFloatFromFixed(ccu_fixed_t f) {
+    return static_cast<double>(f) / 2048.0;
+}
+
+double CCUPacketTypes::CCUFloatFromFixed(uint16_t f) {
+    return static_cast<double>(f) / 2048.0;
+}
+
+int32_t CCUPacketTypes::CCUPercentFromFixed(ccu_fixed_t f) {
+    return (static_cast<int32_t>(f) * 100) / 2048;
+}
+
+// MS CHECK THAT THESE ARE ACTUALLY BEING USED IN THE VALIDATION FUNCTION, MAY NEED TO MOVE THIS SETTING OF VALUES
+const byte CCUPacketTypes::LensParameterValues[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+const byte CCUPacketTypes::VideoParameterValues[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+const byte CCUPacketTypes::AudioParameterValues[7] = {0, 1, 2, 3, 4, 5, 6};
+const byte CCUPacketTypes::OutputParameterValues[4] = {0, 1, 2, 3};
+const byte CCUPacketTypes::DisplayParameterValues[6] = {0, 1, 2, 3, 4, 5};
+const byte CCUPacketTypes::TallyParameterValues[3] = {0, 1, 2};
+const byte CCUPacketTypes::ReferenceParameterValues[2] = {0, 1};
+const byte CCUPacketTypes::ConfigurationParameterValues[4] = {0, 1, 2, 3};
+const byte CCUPacketTypes::ColorCorrectionParameterValues[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+const byte CCUPacketTypes::StatusParameterValues[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+const byte CCUPacketTypes::MediaParameterValues[2] = {0, 1};
+const byte CCUPacketTypes::ExDevControlParameterValues[1] = {0};
+const byte CCUPacketTypes::MetadataParameterValues[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+
+int PacketFormatIndex::Destination = 0;
+int PacketFormatIndex::CommandLength = 1;
+int PacketFormatIndex::CommandId = 2;
+int PacketFormatIndex::Source = 3;
+int PacketFormatIndex::Category = 4;
+int PacketFormatIndex::Parameter = 5;
+int PacketFormatIndex::DataType = 6;
+int PacketFormatIndex::OperationType = 7;
+int PacketFormatIndex::PayloadStart = 8;
