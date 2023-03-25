@@ -13,10 +13,10 @@ public:
         CCUPacketTypes::ActiveStorageMedium medium = CCUPacketTypes::ActiveStorageMedium::CFastCard;
     };
 
-    byte transportMode; // = CCUPacketTypes::MediaTransportMode::Preview;
+    CCUPacketTypes::MediaTransportMode mode; // = CCUPacketTypes::MediaTransportMode::Preview;
     // byte storageMediumDisk1; // = CCUPacketTypes::ActiveStorageMedium::CFastCard;
     // byte  storageMediumDisk2; // = CCUPacketTypes::ActiveStorageMedium::CFastCard;
-    int8_t speed = 0;
+    sbyte speed = 0;
 
     bool loop = false;
     bool playAll = false;
@@ -24,10 +24,14 @@ public:
 
     std::vector<Slot> slots;
 
+    // TransportInfo(std::vector<byte> data);
+
     // bool disk1Active = false;
     // bool disk2Active = false;
 
     byte* serialize();
+
+    byte getActiveSlotCount();
 };
 
 #endif // TRANSPORTINFO_H

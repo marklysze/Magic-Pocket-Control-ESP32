@@ -31,7 +31,7 @@ void BMDCameraConnection::initialise()
 
     appName = CODEAPPNAME;
 
-    bleDevice.init(appName);
+    bleDevice.init("MarkHello");
     bleDevice.setPower(ESP_PWR_LVL_P9);
     bleDevice.setEncryptionLevel(ESP_BLE_SEC_ENCRYPT);
     bleDevice.setSecurityCallbacks(new SerialSecurityHandler());

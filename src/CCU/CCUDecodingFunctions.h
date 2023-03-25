@@ -11,6 +11,8 @@
 #include "Config\LensConfig.h"
 #include "Config\VideoConfig.h"
 #include "Camera\CodecInfo.h"
+#include "Camera\CameraModels.h"
+#include "Camera\TransportInfo.h"
 // #include "Camera\BMDCameraConnection.h"
 
 //class BMDCameraConnection; // forward declaration as both header files include each other.
@@ -24,10 +26,18 @@ public:
 
     template<typename T>
     static std::vector<T> ConvertPayloadDataWithExpectedCount(byte* data, int byteCount, int expectedCount);
+    // template <typename T>
+    // static std::vector<T> ConvertPayloadData(const std::vector<byte>& data);
+    static std::string ConvertPayloadDataToString(byte* data, int byteCount);
+
 
     static void DecodeLensCategory(byte parameter, byte* payloadData, int payloadLength);
+    static float ConvertCCUApertureToFstop(int16_t ccuAperture);
+    static float CCUFloatFromFixed(ccu_fixed_t f);
     static void DecodeApertureFStop(byte* inData, int inDataLength);
     static void DecodeApertureNormalised(byte* inData, int inDataLength);
+    static void DecodeAutoFocus(byte* inData, int inDataLength);
+    static void DecodeZoom(byte* inData, int inDataLength);
 
     static void DecodeVideoCategory(byte parameter, byte* payloadData, int payloadDataLength);
     static void DecodeSensorGain(byte* inData, int inDataLength);
@@ -43,16 +53,19 @@ public:
 
     static void DecodeStatusCategory(byte parameter, byte* payloadData, int payloadDataLength);
     static void DecodeBattery(byte* inData, int inDataLength);
+    static void DecodeCameraSpec(byte* inData, int inDataLength);
     static void DecodeMediaStatus(byte* inData, int inDataLength);
     static void DecodeRemainingRecordTime(byte* inData, int inDataLength);
 
     static void DecodeMediaCategory(byte parameter, byte* payloadData, int payloadDataLength);
     static void DecodeCodec(byte* inData, int inDataLength);
     static void DecodeTransportMode(byte* inData, int inDataLength);
-/*    
-    static void DecodeMetadataCategory(byte parameter, byte* payloadData, int payloadDataLength);
 
-*/
+    static void DecodeMetadataCategory(byte parameter, byte* payloadData, int payloadDataLength);
+    static void DecodeLensFocalLength(byte* inData, int inDataLength);
+    static void DecodeLensDistance(byte* inData, int inDataLength);
+    static void DecodeLensType(byte* inData, int inDataLength);
+
     // For DecodeRemainingRecordTime function
     struct SecondsWithOverflow {
         uint16_t seconds;

@@ -59,7 +59,7 @@ void CCUDecodingFunctions::DecodePayloadData(CCUPacketTypes::Category category, 
             DecodeMediaCategory(parameter, payloadData, payloadDataLength);
             break;
         case CCUPacketTypes::Category::Metadata:
-            // DecodeMetadataCategory(parameter, payloadData, payloadDataLength);
+            DecodeMetadataCategory(parameter, payloadData, payloadDataLength);
             break;
         default:
             break;
@@ -73,7 +73,7 @@ void CCUDecodingFunctions::DecodeLensCategory(byte parameter, byte* payloadData,
     {
         CCUPacketTypes::LensParameter parameterType = static_cast<CCUPacketTypes::LensParameter>(parameter);
 
-        Serial.print("DecodeLensCategory, ParameterType: "); Serial.println(static_cast<byte>(parameterType));
+        // Serial.print("DecodeLensCategory, ParameterType: "); Serial.println(static_cast<byte>(parameterType));
 
         switch (parameterType)
         {
@@ -85,27 +85,33 @@ void CCUDecodingFunctions::DecodeLensCategory(byte parameter, byte* payloadData,
             break;
         case CCUPacketTypes::LensParameter::ApertureOrdinal:
             // Not catered for
+            Serial.print("DecodeLensCategory, ParameterType ApertureOrdinal not catered for: "); Serial.println(static_cast<byte>(parameterType));
             break;
         case CCUPacketTypes::LensParameter::AutoAperture:
             // Not catered for
+            Serial.print("DecodeLensCategory, ParameterType AutoAperture not catered for: "); Serial.println(static_cast<byte>(parameterType));
             break;
         case CCUPacketTypes::LensParameter::AutoFocus:
-            // Not catered for
+            DecodeAutoFocus(payloadData, payloadLength);
             break;
         case CCUPacketTypes::LensParameter::ContinuousZoom:
             // Not catered for
+            Serial.print("DecodeLensCategory, ParameterType ContinuousZoom not catered for: "); Serial.println(static_cast<byte>(parameterType));
             break;
         case CCUPacketTypes::LensParameter::Focus:
             // Not catered for
+            Serial.print("DecodeLensCategory, ParameterType Focus not catered for: "); Serial.println(static_cast<byte>(parameterType));
             break;
         case CCUPacketTypes::LensParameter::ImageStabilisation:
             // Not catered for
+            Serial.print("DecodeLensCategory, ParameterType ImageStabilisation not catered for: "); Serial.println(static_cast<byte>(parameterType));
             break;
         case CCUPacketTypes::LensParameter::Zoom:
-            // Not catered for
+            DecodeZoom(payloadData, payloadLength);
             break;
         case CCUPacketTypes::LensParameter::ZoomNormalised:
             // Not catered for
+            Serial.print("DecodeLensCategory, ParameterType ZoomNormalised not catered for: "); Serial.println(static_cast<byte>(parameterType));
             break;
         default:
             break;
@@ -135,24 +141,50 @@ std::vector<T> CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount(byte* d
     return payload;
 }
 
+std::string CCUDecodingFunctions::ConvertPayloadDataToString(byte* data, int byteCount)
+{
+    return std::string(reinterpret_cast<const char*>(data), byteCount);
+}
+
+// For DecodeApertureFStop
+float CCUDecodingFunctions::ConvertCCUApertureToFstop(int16_t ccuAperture)
+{
+    float fstop = 0.0;
+    if (ccuAperture != CCUPacketTypes::kLensAperture_NoLens) {
+        fstop = pow(2, CCUFloatFromFixed(ccuAperture) / 2);
+    }
+    return fstop;
+}
+
+// For DecodeApertureFStop
+float CCUDecodingFunctions::CCUFloatFromFixed(ccu_fixed_t f) {
+    return static_cast<float>(f) / 2048.0;
+}
+
 void CCUDecodingFunctions::DecodeApertureFStop(byte* inData, int inDataLength)
 {
-    Serial.println("[DecodeApertureFStop]");
-
-    float Exponent = (1 << 11);
-    float myfStop = 16.0f;
-    float result = myfStop * Exponent;
-
-    std::vector<short> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 2); // We're receiving 4 bytes, though expecting 2 bytes (equivalent to a Short / Int16), so this avoids an exception, though it's not clear why it's 4 bytes
-    short apertureNumber = data[0];
-
-    short fStopIndex = -1;
-    if (apertureNumber != CCUPacketTypes::kLensAperture_NoLens) {
-        fStopIndex = LensConfig::GetIndexForApertureNumber(apertureNumber);
-        Serial.print("Decoded fStop Index: "); Serial.println(fStopIndex);
+    std::vector<ccu_fixed_t> data;
+    LensConfig::ApertureUnits apertureUnits = LensConfig::ApertureUnits::Fstops;
+    
+    if(inDataLength == 4)
+    {
+        data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<ccu_fixed_t>(inData, inDataLength, 2); // First two bytes are the aperture value and the last two are the aperture units (FStop = 0, TStop = 1)
+        apertureUnits = static_cast<LensConfig::ApertureUnits>(data[1]);
     }
     else
-        Serial.println("DecodeApertureFStop: No Lens.");
+    {
+        // We may only get the fstops not the F stops vs T stops component.
+        data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<ccu_fixed_t>(inData, inDataLength, 1); // Two bytes are the aperture value
+    }
+
+    ccu_fixed_t apertureNumber = data[0];
+
+    if(apertureNumber != CCUPacketTypes::kLensAperture_NoLens)
+    {
+        Serial.print("Decoded fStopIndex Aperture is "); Serial.println(LensConfig::GetFStopString(ConvertCCUApertureToFstop(apertureNumber), apertureUnits).c_str());
+    }
+    else
+        Serial.println("Decoded fStopIndex: No Lens Information");
 }
 
 void CCUDecodingFunctions::DecodeApertureNormalised(byte* inData, int inDataLength)
@@ -160,9 +192,35 @@ void CCUDecodingFunctions::DecodeApertureNormalised(byte* inData, int inDataLeng
     std::vector<short> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 1); // Receiving a fixed16 number, as a short it will be 0-2,048 representing 0.0-1.0
     short apertureNormalisedNumber = data[0];
 
-    Serial.print("Decode Aperture Normalised: "); Serial.println(apertureNormalisedNumber);
+    if(apertureNormalisedNumber != CCUPacketTypes::kLensAperture_NoLens)
+    {
+        float apertureValue = static_cast<float>(apertureNormalisedNumber) / 2048.0f; // Convert to float and perform division
+        std::string apertureString = "Decode Aperture Normalised: " + std::to_string(static_cast<int>(apertureValue * 100.0f)) + "%"; // Multiply by 100 to get percentage and convert to string
+
+        Serial.println(apertureString.c_str());
+    }
+    else
+        Serial.println("Decoded Aperture Normalized: No Lens Information");
 }
 
+void CCUDecodingFunctions::DecodeAutoFocus(byte* inData, int inDataLength)
+{
+    bool instantaneousAutoFocusPressed = true;
+}
+
+void CCUDecodingFunctions::DecodeZoom(byte* inData, int inDataLength)
+{
+    // ccu_fixed_t
+    std::vector<ccu_fixed_t> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 1);
+    ccu_fixed_t focalLengthMM = data[0];
+
+    if(focalLengthMM != 0)
+    {
+        Serial.print("Decode Zoom Focal Length: "); Serial.println(focalLengthMM);
+    }
+    else
+        Serial.println("Decode Zoom: No Lens Information");
+}
 
 
 void CCUDecodingFunctions::DecodeVideoCategory(byte parameter, byte* payloadData, int payloadLength)
@@ -299,7 +357,7 @@ void CCUDecodingFunctions::DecodeShutterAngle(byte* inData, int inDataLength)
     std::vector<int32_t> data = ConvertPayloadDataWithExpectedCount<int32_t>(inData, inDataLength, 1);
     int32_t shutterAngleX100 = data[0];
 
-    Serial.print("Decoded Exposure (Shutter Angle): "); Serial.println(shutterAngleX100);
+    Serial.print("Decoded Exposure (Shutter Angle x 100): "); Serial.println(shutterAngleX100);
 }
 
 void CCUDecodingFunctions::DecodeShutterSpeed(byte* inData, int inDataLength)
@@ -370,15 +428,19 @@ void CCUDecodingFunctions::DecodeStatusCategory(byte parameter, byte* payloadDat
                 break;
             case CCUPacketTypes::StatusParameter::CameraSpec:
                 // Not catered for
+                DecodeCameraSpec(payloadData, payloadDataLength);
                 break;
             case CCUPacketTypes::StatusParameter::DisplayParameters:
                 // Not catered for
+                // Serial.print("DecodeStatusCategory, ParameterType DisplayParameters not catered for: "); Serial.println(static_cast<byte>(parameterType));
                 break;
             case CCUPacketTypes::StatusParameter::DisplayThresholds:
                 // Not catered for
+                // Serial.print("DecodeStatusCategory, ParameterType DisplayThresholds not catered for: "); Serial.println(static_cast<byte>(parameterType));
                 break;
             case CCUPacketTypes::StatusParameter::DisplayTimecode:
                 // Not catered for
+                Serial.print("DecodeStatusCategory, ParameterType DisplayTimecode not catered for: "); Serial.println(static_cast<byte>(parameterType));
                 break;
             case CCUPacketTypes::StatusParameter::MediaStatus:
                 DecodeMediaStatus(payloadData, payloadDataLength);
@@ -388,6 +450,7 @@ void CCUDecodingFunctions::DecodeStatusCategory(byte parameter, byte* payloadDat
                 break;
             case CCUPacketTypes::StatusParameter::SwitcherStatus:
                 // Not catered for
+                // Serial.print("DecodeStatusCategory, ParameterType SwitcherStatus not catered for: "); Serial.println(static_cast<byte>(parameterType));
                 break;
         default:
             break;
@@ -424,6 +487,32 @@ void CCUDecodingFunctions::DecodeBattery(byte* inData, int inDataLength)
     */
 }
 
+void CCUDecodingFunctions::DecodeCameraSpec(byte* inData, int inDataLength)
+{
+    std::vector<byte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<byte>(inData, inDataLength, 4);
+
+    // Serial.print("DecodeCameraSpec #1: ");Serial.println(data[0]);
+    // Serial.print("DecodeCameraSpec #2: ");Serial.println(data[1]); // This is the camera model, 14 = Pocket 6K.
+    // Serial.print("DecodeCameraSpec #3: ");Serial.println(data[2]);
+    // Serial.print("DecodeCameraSpec #4: ");Serial.println(data[3]);
+
+    if(data[1] < CameraModels::NumberOfCameraModels)
+    {
+        CameraModel cameraModel = CameraModels::fromValue(data[1]);
+
+        std::string cameraName = CameraModels::modelToName.at(cameraModel);
+
+        Serial.print("Camera Name: "); Serial.println(cameraName.c_str());
+
+        if(CameraModels::isPocket(cameraModel))
+            Serial.println("Classified as a Pocket Camera");
+    }
+    else
+    {
+        Serial.print("Unknown Camera with a value of: "); Serial.println(data[1]);
+    }
+}
+
 void CCUDecodingFunctions::DecodeMediaStatus(byte* inData, int inDataLength)
 {
     std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, inDataLength); // We convert all the bytes to sbyte
@@ -454,7 +543,6 @@ void CCUDecodingFunctions::DecodeMediaStatus(byte* inData, int inDataLength)
 }
 
 // For DecodeRemainingRecordTime function
-
 CCUDecodingFunctions::SecondsWithOverflow CCUDecodingFunctions::simplifyTime(int16_t time) {
     int16_t seconds = time; // positive value -> unit: second
     bool over = false;
@@ -477,6 +565,7 @@ CCUDecodingFunctions::SecondsWithOverflow CCUDecodingFunctions::simplifyTime(int
     return returnValue;
 }
 
+// For DecodeRemainingRecordTime function
 String CCUDecodingFunctions::makeTimeLabel(SecondsWithOverflow time) {
     if (time.seconds == 0) { return "Transport Full"; }
 
@@ -536,6 +625,7 @@ void CCUDecodingFunctions::DecodeMediaCategory(byte parameter, byte* payloadData
                 DecodeCodec(payloadData, payloadDataLength);
                 break;
             case CCUPacketTypes::MediaParameter::TransportMode:
+                DecodeTransportMode(payloadData, payloadDataLength);
                 break;
         default:
             break;
@@ -642,24 +732,93 @@ void CCUDecodingFunctions::DecodeCodec(byte* inData, int inDataLength)
 
 void CCUDecodingFunctions::DecodeTransportMode(byte* inData, int inDataLength)
 {
-    Serial.print("DecodeTransportMode Data Length: "); Serial.println(inDataLength);
-    std::vector<sbyte> data = ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, 5);
+    std::vector<sbyte> data = ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, inDataLength);
 
-    CCUPacketTypes::MediaTransportMode mode = static_cast<CCUPacketTypes::MediaTransportMode>(data[0]);
-    // CCUPacketTypes::ActiveStorageMedium storageMediumDisk1 = static_cast<CCUPacketTypes::ActiveStorageMedium>(data[3]);
-    // CCUPacketTypes::ActiveStorageMedium storageMediumDisk2 = static_cast<CCUPacketTypes::ActiveStorageMedium>(data[4]);
+    TransportInfo transportInfo;
 
-    // FINISH THIS OFF!
+    transportInfo.mode = static_cast<CCUPacketTypes::MediaTransportMode>(data[0]);
+    transportInfo.speed = static_cast<sbyte>(data[1]);
 
+    byte flags = static_cast<byte>(data[2]);
+
+    transportInfo.loop = static_cast<bool>((static_cast<int>(flags) & static_cast<int>(CCUPacketTypes::MediaTransportFlag::Loop)) > 0);
+    transportInfo.playAll = static_cast<bool>((static_cast<int>(flags) & static_cast<int>(CCUPacketTypes::MediaTransportFlag::PlayAll)) > 0);
+    transportInfo.timelapseRecording = static_cast<bool>((static_cast<int>(flags) & static_cast<int>(CCUPacketTypes::MediaTransportFlag::TimelapseRecording)) > 0);
+
+    Serial.print("DecodeTransportMode, Loop is "); Serial.print(transportInfo.loop); Serial.print(", playAll is "); Serial.print(transportInfo.playAll); Serial.print("TimelapseRecording is "); Serial.println(transportInfo.timelapseRecording);
+
+    // The remaining data is for storage slots
+    int slotCount = data.size() - 3;
+    std::vector<TransportInfo::Slot> slots = std::vector<TransportInfo::Slot>(slotCount, TransportInfo::Slot());
+    
+    for (int i = 0; i < slots.size(); i++)
+    {
+        slots[i].active = flags & CCUPacketTypes::slotActiveMasks[i];
+        slots[i].medium = static_cast<CCUPacketTypes::ActiveStorageMedium>(data[i + 3]);
+        Serial.print("DecodeTransportMode Slot #"); Serial.print(i); Serial.print(", Active is "); Serial.print(slots[i].active); Serial.print(", Storage Medium: "); Serial.println(data[i + 3]);
+    }
 }
 
-/*
-
-
-
-void CCUDecodingFunctions::DecodeMetadataCategory(byte parameter, byte* payloadData, int payloadDataLength)
+void CCUDecodingFunctions::DecodeMetadataCategory(byte parameter, byte* payloadData, int payloadLength)
 {
-    // MS TO BE CONVERTED.
+    if(CCUUtility::byteValueExistsInArray(CCUPacketTypes::MetadataParameterValues, sizeof(CCUPacketTypes::MetadataParameterValues) / sizeof(CCUPacketTypes::MetadataParameterValues[0]), parameter))
+    {
+        CCUPacketTypes::MetadataParameter parameterType = static_cast<CCUPacketTypes::MetadataParameter>(parameter);
+
+        switch (parameterType)
+        {
+            case CCUPacketTypes::MetadataParameter::Reel:
+                // CONTINUE HERE...
+                break;
+            case CCUPacketTypes::MetadataParameter::SceneTags:
+                break;
+            case CCUPacketTypes::MetadataParameter::Scene:
+                break;
+            case CCUPacketTypes::MetadataParameter::Take:
+                break;
+            case CCUPacketTypes::MetadataParameter::GoodTake:
+                break;
+            case CCUPacketTypes::MetadataParameter::SlateForType:
+                break;
+            case CCUPacketTypes::MetadataParameter::SlateForName:
+                break;
+            case CCUPacketTypes::MetadataParameter::LensFocalLength:
+                DecodeLensFocalLength(payloadData, payloadLength);
+                break;
+            case CCUPacketTypes::MetadataParameter::LensDistance:
+                DecodeLensDistance(payloadData, payloadLength);
+                break;
+            case CCUPacketTypes::MetadataParameter::LensType:
+                DecodeLensType(payloadData, payloadLength);
+                break;
+            case CCUPacketTypes::MetadataParameter::LensIris:
+                break;
+        default:
+            break;
+        }
+    }
+    else
+        throw "Invalid value for Metadata Parameter.";
 }
 
-*/
+void CCUDecodingFunctions::DecodeLensFocalLength(byte* inData, int inDataLength)
+{
+    std::string lensFocalLength = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
+    Serial.print("DecodeLensFocalLength Lens Focal Length: "); Serial.println(lensFocalLength.c_str());
+    // DecodeLensFocalLength Lens Focal Length: 65mm
+
+}
+void CCUDecodingFunctions::DecodeLensDistance(byte* inData, int inDataLength)
+{
+    std::string lensDistance = ConvertPayloadDataToString(inData, inDataLength);
+    Serial.print("DecodeLensFocalDistance Lens Distance: "); Serial.println(lensDistance.c_str());
+    // DecodeLensFocalDistance Lens Distance: Inf
+    // DecodeLensFocalDistance Lens Distance: 26100mm to 41310mm
+}
+void CCUDecodingFunctions::DecodeLensType(byte* inData, int inDataLength)
+{
+    std::string lensType = ConvertPayloadDataToString(inData, inDataLength);
+    Serial.print("DecodeLensType Lens Type: "); Serial.println(lensType.c_str());
+    // DecodeLensType Lens Type: Canon EF-S 55-250mm f/4-5.6 IS
+    // "DecodeLensType Lens Type:" <-- this shows when there's no info between camera and lens.
+}

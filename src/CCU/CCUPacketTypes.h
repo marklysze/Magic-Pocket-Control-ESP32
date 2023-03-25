@@ -464,14 +464,18 @@ class CCUPacketTypes
             PlayAll = 0x02,
             Disk1Active = 0x20,
             Disk2Active = 0x40,
+            Disk3Active = 0x10,
             TimelapseRecording = 0x80
         };
+
+        static const std::array<int, 4> slotActiveMasks;
 
         enum class ActiveStorageMedium : byte
         {
             CFastCard = 0,
             SDCard = 1,
-            SSD = 2
+            SSD = 2,
+            USB = 3
         };
 
         enum class MetadataSceneTag : sbyte

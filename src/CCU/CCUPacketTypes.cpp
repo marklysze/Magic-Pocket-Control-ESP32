@@ -16,6 +16,14 @@ int32_t CCUPacketTypes::CCUPercentFromFixed(ccu_fixed_t f) {
     return (static_cast<int32_t>(f) * 100) / 2048;
 }
 
+const std::array<int, 4> CCUPacketTypes::slotActiveMasks =
+{
+    static_cast<int>(MediaTransportFlag::Disk1Active),
+    static_cast<int>(MediaTransportFlag::Disk2Active),
+    static_cast<int>(MediaTransportFlag::Disk3Active),
+    0
+};
+
 // MS CHECK THAT THESE ARE ACTUALLY BEING USED IN THE VALIDATION FUNCTION, MAY NEED TO MOVE THIS SETTING OF VALUES
 const byte CCUPacketTypes::LensParameterValues[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 const byte CCUPacketTypes::VideoParameterValues[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
