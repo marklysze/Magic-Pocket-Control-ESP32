@@ -4,6 +4,7 @@
 //#pragma once
 #include <sstream>
 #include <iomanip>
+#include <regex>
 #include "CCUPacketTypes.h"
 #include "CCUValidationFunctions.h"
 #include "CCUUtility.h"
@@ -62,9 +63,21 @@ public:
     static void DecodeTransportMode(byte* inData, int inDataLength);
 
     static void DecodeMetadataCategory(byte parameter, byte* payloadData, int payloadDataLength);
+    static void DecodeReel(byte* inData, int inDataLength);
+    static void DecodeScene(byte* inData, int inDataLength);
+    static void DecodeSceneTags(byte* inData, int inDataLength);
+    static void DecodeTake(byte* inData, int inDataLength);
+    static void DecodeGoodTake(byte* inData, int inDataLength);
+    static void DecodeCameraId(byte* inData, int inDataLength);
+    static void DecodeCameraOperator(byte* inData, int inDataLength);
+    static void DecodeDirector(byte* inData, int inDataLength);
+    static void DecodeProjectName(byte* inData, int inDataLength);
+    static void DecodeSlateForType(byte* inData, int inDataLength);
+    static void DecodeSlateForName(byte* inData, int inDataLength);
     static void DecodeLensFocalLength(byte* inData, int inDataLength);
     static void DecodeLensDistance(byte* inData, int inDataLength);
     static void DecodeLensType(byte* inData, int inDataLength);
+    static void DecodeLensIris(byte* inData, int inDataLength);
 
     // For DecodeRemainingRecordTime function
     struct SecondsWithOverflow {

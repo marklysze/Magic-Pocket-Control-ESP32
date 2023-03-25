@@ -11,6 +11,12 @@ public:
     void onIrisReceived(short apertureNumber, short infStopIndex);
     void onNormalisedApertureReceived(short normalisedAperture);
     void testReceived(String message);
+
+    void setModelName(std::string inModelName);
+    std::string getModelName();
+
+private:
+    std::string modelName;
 };
 
 #endif

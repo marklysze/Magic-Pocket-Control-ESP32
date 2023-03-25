@@ -127,6 +127,10 @@ BMDCamera *BMDCameraConnection::connect()
             Serial.println("Connected to Incoming Camera Control Characteristic");
         }
 
+        // Create Camera
+        std::shared_ptr<BMDCamera> camera = std::make_shared<BMDCamera>();
+        BMDControlSystem::getInstance()->setCamera(camera.get());
+
         status = ConnectionStatus::Connected;
     }
     else
@@ -142,8 +146,9 @@ void BMDCameraConnection::disconnect()
     if(bleClient->isConnected())
         bleClient->disconnect();
 
-    delete camera;
-    camera = nullptr;
+    BMDControlSystem::getInstance()->deleteCamera();
+    // delete camera;
+    // camera = nullptr;
 
     Serial.println("Disconnect called.");
 

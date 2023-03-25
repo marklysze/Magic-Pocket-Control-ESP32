@@ -12,9 +12,12 @@
 #include <CCU\CCUValidationFunctions.h>
 #include <Camera\BMDCameraConnection.h>
 #include <Camera\BMDCamera.h>
+#include "BMDControlSystem.h"
 
 BMDCameraConnection CameraConnection;
-BMDCamera *Camera;
+std::shared_ptr<BMDControlSystem> BMDControlSystem::instance = nullptr; // Required for Singleton pattern and the constructor for BMDControlSystem
+// std::shared_ptr<BMDControlSystem> BMDSystem = BMDControlSystem::getInstance();
+// BMDCamera *Camera;
 
 /*
 
@@ -376,6 +379,21 @@ void loop() {
 
   delay(1000); /* Delay a second between loops */
 
+  if(BMDControlSystem::getInstance()->hasCamera())
+  {
+    // Serial.println(String("Have a camera: ") + BMDControlSystem::getInstance()->getCamera()->getModelName());
+    Serial.println("Have a camera object."); //Serial.println(BMDControlSystem::getInstance()->getCamera()->getModelName().c_str());
+    // BMDCamera *camera = BMDControlSystem::getInstance()->getCamera();
+    // Serial.println("Got pointer to camera object and now getting  name. ");
+    // std::string test = camera->getModelName();
+    // camera->setModelName("Mark's Camera.");
+    // Serial.println("Set model name now getting model name back. ");
+    std::string myString = BMDControlSystem::getInstance()->getCamera()->getModelName();
+    Serial.println("Got model name.");
+    // camera->testReceived("Really?");
+  }
+  else
+    Serial.println("No camera object.");
   // Loop through byte arrays to check values
   /*
   Serial.println("Check START");

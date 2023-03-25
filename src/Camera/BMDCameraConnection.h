@@ -7,6 +7,7 @@
 #include "BLE\BMDBLEClientCallback.h"
 #include "BMDCamera.h"
 #include "CCU\CCUUtility.h"
+#include "BMDControlSystem.h"
 
 // Forward declaration
 #include "CCU\CCUDecodingFunctions.h"
@@ -50,7 +51,7 @@ class BMDCameraConnection
         BLERemoteCharacteristic* bleChar_IncomingCameraControl;
         BLERemoteCharacteristic* bleChar_OutgoingCameraControl;
 
-        BMDCamera *camera;
+        // BMDCamera *camera;
 
         // BLE Notification functions
         static void IncomingCameraControlNotify(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify);

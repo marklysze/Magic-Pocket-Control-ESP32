@@ -768,19 +768,37 @@ void CCUDecodingFunctions::DecodeMetadataCategory(byte parameter, byte* payloadD
         switch (parameterType)
         {
             case CCUPacketTypes::MetadataParameter::Reel:
-                // CONTINUE HERE...
+                DecodeReel(payloadData, payloadLength);
                 break;
             case CCUPacketTypes::MetadataParameter::SceneTags:
+                DecodeSceneTags(payloadData, payloadLength);
                 break;
             case CCUPacketTypes::MetadataParameter::Scene:
+                DecodeScene(payloadData, payloadLength);
                 break;
             case CCUPacketTypes::MetadataParameter::Take:
+                DecodeTake(payloadData, payloadLength);
                 break;
             case CCUPacketTypes::MetadataParameter::GoodTake:
+                DecodeGoodTake(payloadData, payloadLength);
+                break;
+            case CCUPacketTypes::MetadataParameter::CameraId:
+                DecodeCameraId(payloadData, payloadLength);
+                break;
+            case CCUPacketTypes::MetadataParameter::CameraOperator:
+                DecodeCameraOperator(payloadData, payloadLength);
+                break;
+            case CCUPacketTypes::MetadataParameter::Director:
+                DecodeDirector(payloadData, payloadLength);
+                break;
+            case CCUPacketTypes::MetadataParameter::ProjectName:
+                DecodeProjectName(payloadData, payloadLength);
                 break;
             case CCUPacketTypes::MetadataParameter::SlateForType:
+                DecodeSlateForType(payloadData, payloadLength);
                 break;
             case CCUPacketTypes::MetadataParameter::SlateForName:
+                DecodeSlateForName(payloadData, payloadLength);
                 break;
             case CCUPacketTypes::MetadataParameter::LensFocalLength:
                 DecodeLensFocalLength(payloadData, payloadLength);
@@ -792,13 +810,109 @@ void CCUDecodingFunctions::DecodeMetadataCategory(byte parameter, byte* payloadD
                 DecodeLensType(payloadData, payloadLength);
                 break;
             case CCUPacketTypes::MetadataParameter::LensIris:
+                DecodeLensIris(payloadData, payloadLength);
                 break;
         default:
+            Serial.print("DecodeMetadataCategory, ParameterType not known: "); Serial.println(static_cast<byte>(parameterType));
             break;
         }
     }
     else
         throw "Invalid value for Metadata Parameter.";
+}
+
+void CCUDecodingFunctions::DecodeReel(byte* inData, int inDataLength)
+{
+    std::vector<short> data = ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 1);
+    short reelNumber = data[0];
+
+    Serial.print("DecodeReel, Reel Number: "); Serial.println(reelNumber);
+}
+
+void CCUDecodingFunctions::DecodeScene(byte* inData, int inDataLength)
+{
+    std::string sceneString = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
+    Serial.print("DecodeScene Scene: "); Serial.println(sceneString.c_str());
+}
+
+void CCUDecodingFunctions::DecodeSceneTags(byte* inData, int inDataLength)
+{
+    std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, 3);
+    CCUPacketTypes::MetadataSceneTag sceneTag = static_cast<CCUPacketTypes::MetadataSceneTag>(data[0]);
+    CCUPacketTypes::MetadataLocationTypeTag locationType = static_cast<CCUPacketTypes::MetadataLocationTypeTag>(data[1]);
+    CCUPacketTypes::MetadataDayNightTag dayOrNight = static_cast<CCUPacketTypes::MetadataDayNightTag>(data[2]);
+
+    Serial.print("DecodeSceneTags Scene Tag is "); Serial.print((sbyte)sceneTag); Serial.print(", Location Type is "); Serial.print((byte)locationType); Serial.print(", DayOrNight is ");Serial.println((byte)dayOrNight);
+}
+
+void CCUDecodingFunctions::DecodeTake(byte* inData, int inDataLength)
+{
+    std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, 2);
+    sbyte takeNumber = data[0];
+    CCUPacketTypes::MetadataTakeTag takeTag = static_cast<CCUPacketTypes::MetadataTakeTag>(data[1]);
+
+    Serial.print("DecodeTake Take Number is "); Serial.print((sbyte)takeNumber); Serial.print(", Take Tag is "); Serial.println((sbyte)takeTag);
+}
+
+void CCUDecodingFunctions::DecodeGoodTake(byte* inData, int inDataLength)
+{
+    std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, 1);
+    sbyte goodTake = data[0];
+
+    Serial.print("DecodeGoodTake Good Take is "); Serial.println((sbyte)goodTake);
+}
+
+void CCUDecodingFunctions::DecodeCameraId(byte* inData, int inDataLength)
+{
+    std::string cameraId = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
+
+    Serial.print("DecodeCameraId CameraId is "); Serial.println(cameraId.c_str());
+}
+
+void CCUDecodingFunctions::DecodeCameraOperator(byte* inData, int inDataLength)
+{
+    std::string cameraOperator = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
+
+    Serial.print("DecodeCameraOperator Camera Operator is "); Serial.println(cameraOperator.c_str());
+}
+
+void CCUDecodingFunctions::DecodeDirector(byte* inData, int inDataLength)
+{
+    std::string director = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
+
+    Serial.print("DecodeDirector Director is "); Serial.println(director.c_str());
+}
+
+void CCUDecodingFunctions::DecodeProjectName(byte* inData, int inDataLength)
+{
+    std::string projectName = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
+
+    Serial.print("DecodeProjectName Project Name is "); Serial.println(projectName.c_str());
+}
+
+
+void CCUDecodingFunctions::DecodeSlateForType(byte* inData, int inDataLength)
+{
+    std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, 1);
+    CCUPacketTypes::MetadataSlateForType slateForType = static_cast<CCUPacketTypes::MetadataSlateForType>(data[0]);
+
+    Serial.print("DecodeSlateForType Slate For Type is "); Serial.println((sbyte)slateForType);
+}
+
+void CCUDecodingFunctions::DecodeSlateForName(byte* inData, int inDataLength)
+{
+    std::string name = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
+
+    // NOTE: Camera software versions between 7.5 and 7.7.x send the full path of
+    // the clip file name. When this is detected, strip the system folders, first
+    // folder (volume), and final file extension.
+    std::regex re("^/mnt/s[0-9]+/");
+    std::smatch match;
+    if (std::regex_search(name, match, re)) {
+        name = name.substr(match.position() + match.length());
+    }
+
+    Serial.print("DecodeSlateForName Name is "); Serial.println(name.c_str());
 }
 
 void CCUDecodingFunctions::DecodeLensFocalLength(byte* inData, int inDataLength)
@@ -808,6 +922,7 @@ void CCUDecodingFunctions::DecodeLensFocalLength(byte* inData, int inDataLength)
     // DecodeLensFocalLength Lens Focal Length: 65mm
 
 }
+
 void CCUDecodingFunctions::DecodeLensDistance(byte* inData, int inDataLength)
 {
     std::string lensDistance = ConvertPayloadDataToString(inData, inDataLength);
@@ -815,10 +930,19 @@ void CCUDecodingFunctions::DecodeLensDistance(byte* inData, int inDataLength)
     // DecodeLensFocalDistance Lens Distance: Inf
     // DecodeLensFocalDistance Lens Distance: 26100mm to 41310mm
 }
+
 void CCUDecodingFunctions::DecodeLensType(byte* inData, int inDataLength)
 {
     std::string lensType = ConvertPayloadDataToString(inData, inDataLength);
     Serial.print("DecodeLensType Lens Type: "); Serial.println(lensType.c_str());
+    // DecodeLensType Lens Type: Canon EF-S 55-250mm f/4-5.6 IS
+    // "DecodeLensType Lens Type:" <-- this shows when there's no info between camera and lens.
+}
+
+void CCUDecodingFunctions::DecodeLensIris(byte* inData, int inDataLength)
+{
+    std::string lensIris = ConvertPayloadDataToString(inData, inDataLength);
+    Serial.print("DecodeLensType Lens Iris: "); Serial.println(lensIris.c_str());
     // DecodeLensType Lens Type: Canon EF-S 55-250mm f/4-5.6 IS
     // "DecodeLensType Lens Type:" <-- this shows when there's no info between camera and lens.
 }
