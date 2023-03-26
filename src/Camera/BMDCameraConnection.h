@@ -29,11 +29,9 @@ class BMDCameraConnection
 
         void initialise();
         bool scan();
-        BMDCamera *connect();
+        bool connect();
         void disconnect();
         ConnectionStatus status;
-
-        // static BMDCamera* getCamera(); // Public access for the Camera;
 
     private:
         std::string appName;
@@ -50,8 +48,6 @@ class BMDCameraConnection
         // Characteristics
         BLERemoteCharacteristic* bleChar_IncomingCameraControl;
         BLERemoteCharacteristic* bleChar_OutgoingCameraControl;
-
-        // BMDCamera *camera;
 
         // BLE Notification functions
         static void IncomingCameraControlNotify(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify);

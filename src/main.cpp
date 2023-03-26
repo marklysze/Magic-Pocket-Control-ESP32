@@ -326,7 +326,7 @@ void loop() {
   
   */
 
- if(disconnectedIterations == 10)
+ if(disconnectedIterations == 5)
  {
     disconnectedIterations = 0;
     Serial.println("Disconnected for too long, trying to reconnect");
@@ -377,32 +377,63 @@ void loop() {
     disconnectedIterations++;
   }
 
-  delay(1000); /* Delay a second between loops */
+  delay(2000); /* Delay a second between loops */
 
   if(BMDControlSystem::getInstance()->hasCamera())
   {
-    // Serial.println(String("Have a camera: ") + BMDControlSystem::getInstance()->getCamera()->getModelName());
-    Serial.println("Have a camera object."); //Serial.println(BMDControlSystem::getInstance()->getCamera()->getModelName().c_str());
-    // BMDCamera *camera = BMDControlSystem::getInstance()->getCamera();
-    // Serial.println("Got pointer to camera object and now getting  name. ");
-    // std::string test = camera->getModelName();
-    // camera->setModelName("Mark's Camera.");
-    // Serial.println("Set model name now getting model name back. ");
-    std::string myString = BMDControlSystem::getInstance()->getCamera()->getModelName();
-    Serial.println("Got model name.");
-    // camera->testReceived("Really?");
+    // std::shared_ptr<BMDCamera> camera = BMDControlSystem::getInstance()->getCamera();
+    auto camera = BMDControlSystem::getInstance()->getCamera();
+
+    tft.drawString("ISO: ", 20, 40);
+    if(camera->hasSensorGainISO())
+      tft.drawString(String(camera->getSensorGainISO()), 100, 40);
+
+    tft.drawString("ISO Value: ", 20, 60);
+    if(camera->hasSensorGainISOValue())
+      tft.drawString(String(camera->getSensorGainISOValue()).c_str(), 100, 60);
+
+    tft.drawString("White Balance: ", 20, 80);
+    if(camera->hasWhiteBalance())
+      tft.drawString(String(camera->getWhiteBalance()), 100, 80);
+
+    tft.drawString("Tint: ", 20, 100);
+    if(camera->hasTint())
+      tft.drawString(String(camera->getTint()), 100, 100);
+
+    tft.drawString("Shutter Speed: ", 20, 120);
+    if(camera->hasShutterSpeed())
+      tft.drawString(String(camera->getShutterSpeed()), 100, 120);
+
+    tft.drawString("LUT Enabled? ", 20, 140);
+    if(camera->hasSelectedLUTEnabled() && camera->getSelectedLUTEnabled())
+      tft.drawString("Yes", 100, 140);
+
+
+    /* Meta Attributes
+
+    tft.drawString("Model Name: ", 20, 40);
+    if(camera->hasModelName())
+      tft.drawString(camera->getModelName().c_str(), 100, 40);
+
+    tft.drawString("Lens Type: ", 20, 60);
+    if(camera->hasLensType())
+      tft.drawString(camera->getLensType().c_str(), 100, 60);
+
+    tft.drawString("Lens Focal: ", 20, 80);
+    if(camera->hasLensFocalLength())
+      tft.drawString(camera->getLensFocalLength().c_str(), 100, 80);
+
+    tft.drawString("Lens Aperture: ", 20, 100);
+    if(camera->hasLensIris())
+      tft.drawString(camera->getLensIris().c_str(), 100, 100);
+
+    tft.drawString("Camera Id: ", 20, 120);
+    if(camera->hasCameraId())
+      tft.drawString(camera->getCameraId().c_str(), 100, 120);
+
+    tft.drawString("Project Name: ", 20, 140);
+    if(camera->hasProjectName())
+      tft.drawString(camera->getProjectName().c_str(), 100, 140);
+    */
   }
-  else
-    Serial.println("No camera object.");
-  // Loop through byte arrays to check values
-  /*
-  Serial.println("Check START");
-  for(int i = 0; i < 16; i++)
-  {
-    int len = sizeof(CCUPacketTypes::MetadataParameterValues) / sizeof(CCUPacketTypes::MetadataParameterValues[0]);
-    Serial.println(len);
-    Serial.println(CCUPacketTypes::MetadataParameterValues[i]);
-  }
-  Serial.println("Check END");
-  */
 }

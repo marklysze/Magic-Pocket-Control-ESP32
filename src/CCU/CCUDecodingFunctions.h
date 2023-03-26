@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iomanip>
 #include <regex>
+#include "BMDControlSystem.h"
 #include "CCUPacketTypes.h"
 #include "CCUValidationFunctions.h"
 #include "CCUUtility.h"
@@ -41,7 +42,7 @@ public:
     static void DecodeZoom(byte* inData, int inDataLength);
 
     static void DecodeVideoCategory(byte parameter, byte* payloadData, int payloadDataLength);
-    static void DecodeSensorGain(byte* inData, int inDataLength);
+    static void DecodeSensorGainISO(byte* inData, int inDataLength);
     static void DecodeManualWB(byte* inData, int inDataLength);
     static void DecodeExposure(byte* inData, int inDataLength);
     static void DecodeRecordingFormat(byte* inData, int inDataLength);

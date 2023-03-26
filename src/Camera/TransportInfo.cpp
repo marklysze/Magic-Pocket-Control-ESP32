@@ -25,7 +25,7 @@ byte TransportInfo::getActiveSlotCount()
 {
     byte count = 0;
 
-    for(const Slot& slot : slots)
+    for(const TransportInfoSlot& slot : slots)
     {
         if(slot.active)
             count++;

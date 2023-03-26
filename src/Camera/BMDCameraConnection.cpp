@@ -60,7 +60,7 @@ bool BMDCameraConnection::scan()
     return true;
 }
 
-BMDCamera *BMDCameraConnection::connect()
+bool BMDCameraConnection::connect()
 {
     status = ConnectionStatus::Disconnected;
 
@@ -75,7 +75,7 @@ BMDCamera *BMDCameraConnection::connect()
         if(bleClient == nullptr)
         {
             Serial.println("Failed to create Client");
-            return nullptr;
+            return false;
         }
 
         // Handle Connect/Disconnect call backs and pass this object in so we can update status
@@ -95,7 +95,7 @@ BMDCamera *BMDCameraConnection::connect()
         {
             Serial.println("Unable to connect to camera.");
             status = ConnectionStatus::Disconnected;
-            return nullptr;
+            return false;
         }
 
         // Obtain a reference to the service we are after in the remote BLE server
@@ -105,7 +105,7 @@ BMDCamera *BMDCameraConnection::connect()
             // Serial.print("Failed to find our service UUID: ");
             // Serial.println(BmdCameraService.toString().c_str());
             bleClient->disconnect();
-            return nullptr;
+            return false;
         }
         else
             Serial.println("Connected to Blackmagic Camera Service");
@@ -117,7 +117,7 @@ BMDCamera *BMDCameraConnection::connect()
         // Serial.print("Failed to find our characteristic UUID: ");
         // Serial.println(OutgoingCameraControl.toString().c_str());
             bleClient->disconnect();
-            return nullptr;
+            return false;
         }
         else
         {
@@ -128,15 +128,16 @@ BMDCamera *BMDCameraConnection::connect()
         }
 
         // Create Camera
-        std::shared_ptr<BMDCamera> camera = std::make_shared<BMDCamera>();
-        BMDControlSystem::getInstance()->setCamera(camera.get());
+        // std::shared_ptr<BMDCamera> camera = std::make_shared<BMDCamera>();
+        BMDControlSystem::getInstance()->activateCamera();
 
         status = ConnectionStatus::Connected;
+        return true;
     }
     else
         Serial.print("No cameras found in scan.");
 
-    return nullptr; // Unsuccessful.
+    return false; // Unsuccessful.
 }
 
 void BMDCameraConnection::disconnect()
@@ -146,20 +147,11 @@ void BMDCameraConnection::disconnect()
     if(bleClient->isConnected())
         bleClient->disconnect();
 
-    BMDControlSystem::getInstance()->deleteCamera();
-    // delete camera;
-    // camera = nullptr;
+    BMDControlSystem::getInstance()->deactivateCamera();
 
     Serial.println("Disconnect called.");
 
 }
-
-/*
-BMDCamera* BMDCameraConnection::getCamera()
-{
-    return camera;
-}
-*/
 
 // Incoming Control Notifications
 void BMDCameraConnection::IncomingCameraControlNotify(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify)

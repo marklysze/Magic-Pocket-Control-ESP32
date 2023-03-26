@@ -8,7 +8,7 @@
 class TransportInfo
 {
 public:
-    struct Slot {
+    struct TransportInfoSlot {
         bool active = false;
         CCUPacketTypes::ActiveStorageMedium medium = CCUPacketTypes::ActiveStorageMedium::CFastCard;
     };
@@ -22,7 +22,7 @@ public:
     bool playAll = false;
     bool timelapseRecording = false;
 
-    std::vector<Slot> slots;
+    std::vector<TransportInfoSlot> slots;
 
     // TransportInfo(std::vector<byte> data);
 

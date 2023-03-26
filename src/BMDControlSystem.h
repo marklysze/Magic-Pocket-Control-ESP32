@@ -9,49 +9,62 @@ class BMDControlSystem {
 public:
     static std::shared_ptr<BMDControlSystem> getInstance() {
         if (!instance) {
+            // Serial.print("[BMDControlSystem getInstance not detected an instance, creating a new one]");
+            
             // ChatGPT wizardry for getting around accessing the private constructor in here.
             instance = std::shared_ptr<BMDControlSystem>(
                 createInstance().release(),
                 [](BMDControlSystem* ptr) { delete ptr; }
             );
         }
+        
         return instance;
     }
 
-    void setCamera(BMDCamera* newCamera)
+    void activateCamera()
     {
-        camera.reset(newCamera);
+        if(camera)
+            camera.reset();
 
-        Serial.println("BMDCamera Set");
+        camera = std::make_shared<BMDCamera>();
+        camera->setAsConnected();
+        // activeCamera = true;
+
+        // Serial.println("BMDCamera created");
     }
 
-    void deleteCamera()
+    void deactivateCamera()
     {
-        camera.reset();
-
-        Serial.println("BMDCamera Deleted");
+        if (camera) {
+            camera->setAsDisconnected();
+            // activeCamera = false;
+            camera.reset();
+            // Serial.println("BMDCamera set as disconnected");
+        }
+        // else
+            // Serial.println("[deactivateCamera, no camera instance]");
     }
 
-    BMDCamera* getCamera() const {
-        return camera.get();
+    std::shared_ptr<BMDCamera> getCamera() {
+        return camera;
     }
 
     bool hasCamera() const
     {
         return static_cast<bool>(camera);
+        // return activeCamera;
     }
 
 private:
-    // Helper function to create a new BMDControlSystem instance
     static std::unique_ptr<BMDControlSystem> createInstance() {
         return std::unique_ptr<BMDControlSystem>(new BMDControlSystem);
     }
 
-    // Mark the constructor as private
     BMDControlSystem() {}
 
     static std::shared_ptr<BMDControlSystem> instance;
 
+    // bool activeCamera = false;
     std::shared_ptr<BMDCamera> camera;
 };
 
