@@ -385,6 +385,42 @@ void loop() {
     auto camera = BMDControlSystem::getInstance()->getCamera();
 
     tft.drawString("ISO: ", 20, 40);
+    if(camera->hasSensorGainISOValue())
+      tft.drawString(String(camera->getSensorGainISOValue()), 100, 40);
+
+    tft.drawString("Codec: ", 20, 60);
+    if(camera->hasCodec())
+      tft.drawString(String(camera->getCodec().to_string().c_str()), 100, 60);
+
+    tft.drawString("White Bal.: ", 20, 80);
+    if(camera->hasWhiteBalance())
+      tft.drawString(String(camera->getWhiteBalance()), 100, 80);
+
+    tft.drawString("Tint: ", 20, 100);
+    if(camera->hasTint())
+      tft.drawString(String(camera->getTint()), 100, 100);
+
+    std::vector<BMDCamera::MediaSlot> mediaSlots = camera->getMediaSlots();
+    for(int i = 0; i < mediaSlots.size(); i++)
+    {
+      tft.drawString("Slot", 20, 120 + (i * 20));
+      tft.drawString(String(i + 1), 50, 120 + (i * 20));
+
+      if(mediaSlots[i].active)
+        tft.drawString("*", 60, 120 + (i * 20));
+      
+      tft.drawString(camera->getSlotActiveStorageMediumString(i).c_str(), 75, 120 + (i * 20));
+
+      tft.drawString(camera->getSlotMediumStatusString(i).c_str(), 120, 120 + (i * 20));
+
+      tft.drawString(mediaSlots[i].remainingRecordTimeString.c_str(), 160, 120 + (i * 20));
+    }
+
+    // if(mediaSlots.size() == 0)
+      // tft.drawString("No Media Slots", 20, 120);
+
+    /*
+    tft.drawString("ISO: ", 20, 40);
     if(camera->hasSensorGainISO())
       tft.drawString(String(camera->getSensorGainISO()), 100, 40);
 
@@ -408,6 +444,7 @@ void loop() {
     if(camera->hasSelectedLUTEnabled() && camera->getSelectedLUTEnabled())
       tft.drawString("Yes", 100, 140);
 
+    */
 
     /* Meta Attributes
 

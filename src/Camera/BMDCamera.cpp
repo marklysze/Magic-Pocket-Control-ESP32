@@ -16,6 +16,143 @@ void BMDCamera::setAsDisconnected()
     connected = false;
 }
 
+//
+// LENS Attributes
+//
+
+void BMDCamera::onHasLens(bool inHasLens)
+{
+    if(hasLens)
+        *hasLens = inHasLens;
+    else
+        hasLens = std::make_shared<bool>(inHasLens);
+}
+bool BMDCamera::hasHasLens()
+{
+    return static_cast<bool>(hasLens);
+}
+bool BMDCamera::getHasLens()
+{
+    if(hasLens)
+        return *hasLens;
+    else
+        throw std::runtime_error("Has Lens not assigned to.");
+}
+
+void BMDCamera::onApertureUnitsReceived(LensConfig::ApertureUnits inApertureUnits)
+{
+    if(apertureUnits)
+        *apertureUnits = inApertureUnits;
+    else
+        apertureUnits = std::make_shared<LensConfig::ApertureUnits>(inApertureUnits);
+}
+bool BMDCamera::hasApertureUnits()
+{
+    return static_cast<bool>(apertureUnits);
+}
+LensConfig::ApertureUnits BMDCamera::getApertureUnits()
+{
+    if(apertureUnits)
+        return *apertureUnits;
+    else
+        throw std::runtime_error("Aperture Units not assigned to.");
+}
+std::string BMDCamera::getApertureUnitsString()
+{
+    if(apertureUnits)
+        return CCUPacketTypesString::GetEnumString(*apertureUnits);
+    else
+        throw std::runtime_error("Aperture Units not assigned to.");
+}
+
+void BMDCamera::onApertureFStopStringReceived(std::string inApertureFStopString)
+{
+    if(aperturefStopString)
+        aperturefStopString->assign(inApertureFStopString);
+    else
+        aperturefStopString = std::make_shared<std::string>(inApertureFStopString);
+}
+bool BMDCamera::hasApertureFStopString()
+{
+    return static_cast<bool>(aperturefStopString);
+}
+std::string BMDCamera::getApertureFStopString()
+{
+    if(aperturefStopString)
+        return *aperturefStopString;
+    else
+        throw std::runtime_error("Aperture F-Stop String not assigned to.");
+}
+
+void BMDCamera::onApertureNormalisedReceived(int inApertureNormalised)
+{
+    if(apertureNormalised)
+        *apertureNormalised = inApertureNormalised;
+    else
+        apertureNormalised = std::make_shared<int>(inApertureNormalised);
+}
+bool BMDCamera::hasApertureNormalised()
+{
+    return static_cast<bool>(apertureNormalised);
+}
+int BMDCamera::getApertureNormalised()
+{
+    if(apertureNormalised)
+        return *apertureNormalised;
+    else
+        throw std::runtime_error("Aperture Normalised not assigned to.");
+}
+
+void BMDCamera::onFocalLengthMMReceived(ccu_fixed_t inFocalLengthMM)
+{
+    if(focalLengthMM)
+        *focalLengthMM = inFocalLengthMM;
+    else
+        focalLengthMM = std::make_shared<ccu_fixed_t>(inFocalLengthMM);
+}
+bool BMDCamera::hasFocalLengthMM()
+{
+    return static_cast<bool>(focalLengthMM);
+}
+ccu_fixed_t BMDCamera::getFocalLengthMM()
+{
+    if(focalLengthMM)
+        return *focalLengthMM;
+    else
+        throw std::runtime_error("Focal Length MM not assigned to.");
+}
+
+// When auto focus button is pressed
+void BMDCamera::onAutoFocusPressed()
+{
+    Serial.println("Auto Focus button pressed.");
+}
+
+const std::vector<BMDCamera::MediaSlot> BMDCamera::getMediaSlots()
+{
+    return mediaSlots;
+}
+
+std::string BMDCamera::getSlotActiveStorageMediumString(int slotIndex)
+{
+    if(mediaSlots.size() > slotIndex)
+    {
+        return CCUPacketTypesString::GetEnumString(mediaSlots[slotIndex].medium);
+    }
+    else
+        throw std::runtime_error("Invalid Media Slot index.");
+}
+
+std::string BMDCamera::getSlotMediumStatusString(int slotIndex)
+{
+    if(mediaSlots.size() > slotIndex)
+    {
+        return CCUPacketTypesString::GetEnumString(mediaSlots[slotIndex].status);
+    }
+    else
+        throw std::runtime_error("Invalid Media Slot index.");
+}
+
 
 //
 // VIDEO Attributes
@@ -274,6 +411,26 @@ bool BMDCamera::getSelectedLUTEnabled() {
 // STATUS Attributes
 //
 
+void BMDCamera::onBatteryReceived(CCUPacketTypes::BatteryStatusData inBattery)
+{
+    if (batteryStatus)
+        *batteryStatus = inBattery;
+    else
+        batteryStatus = std::make_shared<CCUPacketTypes::BatteryStatusData>(inBattery);
+}
+bool BMDCamera::hasBattery()
+{
+    return static_cast<bool>(batteryStatus);
+}
+CCUPacketTypes::BatteryStatusData BMDCamera::getBattery()
+{
+    if (batteryStatus)
+        return *batteryStatus;
+    else
+        throw std::runtime_error("Battery status not assigned to.");
+}
+
+
 void BMDCamera::onModelNameReceived(std::string inModelName)
 {
     if(modelName)
@@ -311,6 +468,131 @@ bool BMDCamera::getIsPocket()
     else
         throw std::runtime_error("Is Pocket not assigned to.");
 }
+
+void BMDCamera::onMediaStatusReceived(std::vector<CCUPacketTypes::MediaStatus> inMediaStatuses)
+{
+    // Update Slots
+    for(int i = 0; i < inMediaStatuses.size(); i++)
+    {
+        // Add a new slot if we don't have one created yet
+        if(mediaSlots.size() < (i + 1))
+        {
+            MediaSlot newSlot;
+            newSlot.status = inMediaStatuses[i];
+            mediaSlots.push_back(newSlot);
+        }
+        else
+        {
+            // Update existing slots
+            mediaSlots[i].status = inMediaStatuses[i];
+        }
+    }
+}
+
+void BMDCamera::onRemainingRecordTimeMinsReceived(std::vector<ccu_fixed_t> inRecordTimeMins)
+{
+    // Update Slots
+    for(int i = 0; i < inRecordTimeMins.size(); i++)
+    {
+        // Add a new slot if we don't have one created yet
+        if(mediaSlots.size() < (i + 1))
+        {
+            MediaSlot newSlot;
+            newSlot.remainingRecordTimeMinutes = inRecordTimeMins[i];
+            mediaSlots.push_back(newSlot);
+        }
+        else
+        {
+            // Update existing slots
+            mediaSlots[i].remainingRecordTimeMinutes = inRecordTimeMins[i];
+        }
+    }
+}
+
+void BMDCamera::onRemainingRecordTimeStringReceived(std::vector<std::string> inRecordTimeStrings)
+{
+    // Update Slots
+    for(int i = 0; i < inRecordTimeStrings.size(); i++)
+    {
+        // Add a new slot if we don't have one created yet
+        if(mediaSlots.size() < (i + 1))
+        {
+            MediaSlot newSlot;
+            newSlot.remainingRecordTimeString = inRecordTimeStrings[i];
+            mediaSlots.push_back(newSlot);
+        }
+        else
+        {
+            // Update existing slots
+            mediaSlots[i].remainingRecordTimeString = inRecordTimeStrings[i];
+        }
+    }
+}
+
+
+
+// 
+// MEDIA Attributes
+//
+void BMDCamera::onCodecReceived(CodecInfo inCodec)
+{
+    if(codec)
+        *codec = inCodec;
+    else
+        codec = std::make_shared<CodecInfo>(inCodec);
+}
+bool BMDCamera::hasCodec()
+{
+    return static_cast<bool>(codec);
+}
+CodecInfo BMDCamera::getCodec()
+{
+    if(codec)
+        return *codec;
+    else
+        throw std::runtime_error("Codec not assigned to.");
+}
+
+void BMDCamera::onTransportModeReceived(TransportInfo inTransportMode)
+{
+    if(transportMode)
+        *transportMode = inTransportMode;
+    else
+        transportMode = std::make_shared<TransportInfo>(inTransportMode);
+    
+    // Update Slots
+    for(int i = 0; i < transportMode->slots.size(); i++)
+    {
+        // Add a new slot if we don't have one created yet
+        if(mediaSlots.size() < (i + 1))
+        {
+            MediaSlot newSlot;
+            newSlot.active = transportMode->slots[i].active;
+            newSlot.medium = transportMode->slots[i].medium;
+            mediaSlots.push_back(newSlot);
+        }
+        else
+        {
+            // Update existing slots
+            mediaSlots[i].active = transportMode->slots[i].active;
+            mediaSlots[i].medium = transportMode->slots[i].medium;
+        }
+    }
+}
+bool BMDCamera::hasTransportMode()
+{
+    return static_cast<bool>(transportMode);
+}
+TransportInfo BMDCamera::getTransportMode()
+{
+    if(transportMode)
+        return *transportMode;
+    else
+        throw std::runtime_error("Transport mode not assigned to.");
+}
+
+
+
 
 //
 // METADATA Attributes

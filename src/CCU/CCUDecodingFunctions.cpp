@@ -181,10 +181,19 @@ void CCUDecodingFunctions::DecodeApertureFStop(byte* inData, int inDataLength)
 
     if(apertureNumber != CCUPacketTypes::kLensAperture_NoLens)
     {
-        Serial.print("Decoded fStopIndex Aperture is "); Serial.println(LensConfig::GetFStopString(ConvertCCUApertureToFstop(apertureNumber), apertureUnits).c_str());
+        // Serial.print("Decoded fStopIndex Aperture is "); Serial.println(LensConfig::GetFStopString(ConvertCCUApertureToFstop(apertureNumber), apertureUnits).c_str());
+
+        BMDControlSystem::getInstance()->getCamera()->onHasLens(true); // A lens is attached
+
+        BMDControlSystem::getInstance()->getCamera()->onApertureUnitsReceived(apertureUnits);
+        BMDControlSystem::getInstance()->getCamera()->onApertureFStopStringReceived(LensConfig::GetFStopString(ConvertCCUApertureToFstop(apertureNumber), apertureUnits));
     }
     else
-        Serial.println("Decoded fStopIndex: No Lens Information");
+    {
+        // Serial.println("Decoded fStopIndex: No Lens Information");
+
+        BMDControlSystem::getInstance()->getCamera()->onHasLens(false); // No Lens
+    }
 }
 
 void CCUDecodingFunctions::DecodeApertureNormalised(byte* inData, int inDataLength)
@@ -195,17 +204,28 @@ void CCUDecodingFunctions::DecodeApertureNormalised(byte* inData, int inDataLeng
     if(apertureNormalisedNumber != CCUPacketTypes::kLensAperture_NoLens)
     {
         float apertureValue = static_cast<float>(apertureNormalisedNumber) / 2048.0f; // Convert to float and perform division
-        std::string apertureString = "Decode Aperture Normalised: " + std::to_string(static_cast<int>(apertureValue * 100.0f)) + "%"; // Multiply by 100 to get percentage and convert to string
+        // std::string apertureString = "Decode Aperture Normalised: " + std::to_string(static_cast<int>(apertureValue * 100.0f)) + "%"; // Multiply by 100 to get percentage and convert to string
 
-        Serial.println(apertureString.c_str());
+        // Serial.println(apertureString.c_str());
+
+        BMDControlSystem::getInstance()->getCamera()->onHasLens(true); // A lens is attached
+
+        BMDControlSystem::getInstance()->getCamera()->onApertureNormalisedReceived(static_cast<int>(apertureValue * 100.0f));
     }
     else
-        Serial.println("Decoded Aperture Normalized: No Lens Information");
+    {
+        // Serial.println("Decoded Aperture Normalized: No Lens Information");
+
+        BMDControlSystem::getInstance()->getCamera()->onHasLens(false); // No Lens
+    }
 }
 
 void CCUDecodingFunctions::DecodeAutoFocus(byte* inData, int inDataLength)
 {
+    // Serial.print("DecodeAutoFocus: "); Serial.println(inDataLength);
     bool instantaneousAutoFocusPressed = true;
+
+    BMDControlSystem::getInstance()->getCamera()->onAutoFocusPressed();
 }
 
 void CCUDecodingFunctions::DecodeZoom(byte* inData, int inDataLength)
@@ -216,10 +236,16 @@ void CCUDecodingFunctions::DecodeZoom(byte* inData, int inDataLength)
 
     if(focalLengthMM != 0)
     {
-        Serial.print("Decode Zoom Focal Length: "); Serial.println(focalLengthMM);
+        // Serial.print("Decode Zoom Focal Length: "); Serial.println(focalLengthMM);
+
+        BMDControlSystem::getInstance()->getCamera()->onHasLens(true); // A lens is attached
+
+        BMDControlSystem::getInstance()->getCamera()->onFocalLengthMMReceived(focalLengthMM);
     }
     else
-        Serial.println("Decode Zoom: No Lens Information");
+    {
+        // Serial.println("Decode Zoom: No Lens Information");
+    }
 }
 
 
@@ -515,6 +541,8 @@ void CCUDecodingFunctions::DecodeBattery(byte* inData, int inDataLength)
     Serial.print(", Charge Remaining Percentage is Estimated is "); Serial.print(batteryStatusData.chargeRemainingPercentageIsEstimated);
     Serial.print(", Prefer Voltage Display is "); Serial.println(batteryStatusData.preferVoltageDisplay);
     */
+
+   BMDControlSystem::getInstance()->getCamera()->onBatteryReceived(batteryStatusData);
 }
 
 void CCUDecodingFunctions::DecodeCameraSpec(byte* inData, int inDataLength)
@@ -556,12 +584,17 @@ void CCUDecodingFunctions::DecodeMediaStatus(byte* inData, int inDataLength)
     std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, inDataLength); // We convert all the bytes to sbyte
     int slotCount = data.size();
 
+    std::vector<CCUPacketTypes::MediaStatus> mediaStatuses;
+
     for(int index = 0; index < slotCount; index++)
     {
-        Serial.print("Slot #"); Serial.print(index);
+        // Serial.print("Slot #"); Serial.print(index);
 
         CCUPacketTypes::MediaStatus slotMediaStatus = static_cast<CCUPacketTypes::MediaStatus>(data[index]);
 
+        mediaStatuses.push_back(slotMediaStatus);
+
+        /*
         switch(slotMediaStatus)
         {
             case CCUPacketTypes::MediaStatus::None:
@@ -577,7 +610,10 @@ void CCUDecodingFunctions::DecodeMediaStatus(byte* inData, int inDataLength)
                 Serial.println(": Record Error");
                 break;
         }
+        */
     }
+
+    BMDControlSystem::getInstance()->getCamera()->onMediaStatusReceived(mediaStatuses);
 }
 
 // For DecodeRemainingRecordTime function
@@ -604,10 +640,10 @@ CCUDecodingFunctions::SecondsWithOverflow CCUDecodingFunctions::simplifyTime(int
 }
 
 // For DecodeRemainingRecordTime function
-String CCUDecodingFunctions::makeTimeLabel(SecondsWithOverflow time) {
+std::string CCUDecodingFunctions::makeTimeLabel(SecondsWithOverflow time) {
     if (time.seconds == 0) { return "Transport Full"; }
 
-    String label = "";
+    std::string label = "";
     uint16_t hours = time.seconds / 60 / 60;
     if (hours > 0) {
         std::stringstream ss;
@@ -639,15 +675,18 @@ void CCUDecodingFunctions::DecodeRemainingRecordTime(byte* inData, int inDataLen
     std::vector<ccu_fixed_t> payload = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<ccu_fixed_t>(inData, inDataLength, inDataLength / 2);
 
     int slotCount = payload.size();
-    std::vector<String> labels(slotCount, "");
+    std::vector<std::string> labels(slotCount, "");
     std::vector<ccu_fixed_t> minutes(slotCount, 0);
     for (int slotIndex = 0; slotIndex < slotCount; ++slotIndex) {
         SecondsWithOverflow remainingTime = simplifyTime(payload[slotIndex]);
         minutes[slotIndex] = remainingTime.seconds / 60;
         labels[slotIndex] = makeTimeLabel(remainingTime);
 
-        Serial.print("Decoded Remaining Record Time Slot #"); Serial.print(slotIndex); Serial.print(" is "); Serial.print(minutes[slotIndex]); Serial.print(" minutes, formatted as "); Serial.println(labels[slotIndex]);
+        // Serial.print("Decoded Remaining Record Time Slot #"); Serial.print(slotIndex); Serial.print(" is "); Serial.print(minutes[slotIndex]); Serial.print(" minutes, formatted as "); Serial.println(labels[slotIndex]);
     }
+
+    BMDControlSystem::getInstance()->getCamera()->onRemainingRecordTimeMinsReceived(minutes);
+    BMDControlSystem::getInstance()->getCamera()->onRemainingRecordTimeStringReceived(labels);
 }
 
 
@@ -680,6 +719,8 @@ void CCUDecodingFunctions::DecodeCodec(byte* inData, int inDataLength)
     CodecInfo codecInfo;
     codecInfo.basicCodec = static_cast<CCUPacketTypes::BasicCodec>(data[0]);
     codecInfo.codecVariant = data[1];
+
+    /*
 
     Serial.print("Decoded Codec Info Basic Codec is ");
     switch(codecInfo.basicCodec)
@@ -766,6 +807,10 @@ void CCUDecodingFunctions::DecodeCodec(byte* inData, int inDataLength)
 
             break;
     }
+
+    */
+
+    BMDControlSystem::getInstance()->getCamera()->onCodecReceived(codecInfo);
 }
 
 void CCUDecodingFunctions::DecodeTransportMode(byte* inData, int inDataLength)
@@ -783,18 +828,21 @@ void CCUDecodingFunctions::DecodeTransportMode(byte* inData, int inDataLength)
     transportInfo.playAll = static_cast<bool>((static_cast<int>(flags) & static_cast<int>(CCUPacketTypes::MediaTransportFlag::PlayAll)) > 0);
     transportInfo.timelapseRecording = static_cast<bool>((static_cast<int>(flags) & static_cast<int>(CCUPacketTypes::MediaTransportFlag::TimelapseRecording)) > 0);
 
-    Serial.print("DecodeTransportMode, Loop is "); Serial.print(transportInfo.loop); Serial.print(", playAll is "); Serial.print(transportInfo.playAll); Serial.print("TimelapseRecording is "); Serial.println(transportInfo.timelapseRecording);
+    // Serial.print("DecodeTransportMode, Loop is "); Serial.print(transportInfo.loop); Serial.print(", playAll is "); Serial.print(transportInfo.playAll); Serial.print(", TimelapseRecording is "); Serial.println(transportInfo.timelapseRecording);
 
     // The remaining data is for storage slots
     int slotCount = data.size() - 3;
-    std::vector<TransportInfo::TransportInfoSlot> slots = std::vector<TransportInfo::TransportInfoSlot>(slotCount, TransportInfo::TransportInfoSlot());
+    transportInfo.slots = std::vector<TransportInfo::TransportInfoSlot>(slotCount, TransportInfo::TransportInfoSlot());
     
-    for (int i = 0; i < slots.size(); i++)
+    for (int i = 0; i < transportInfo.slots.size(); i++)
     {
-        slots[i].active = flags & CCUPacketTypes::slotActiveMasks[i];
-        slots[i].medium = static_cast<CCUPacketTypes::ActiveStorageMedium>(data[i + 3]);
-        Serial.print("DecodeTransportMode Slot #"); Serial.print(i); Serial.print(", Active is "); Serial.print(slots[i].active); Serial.print(", Storage Medium: "); Serial.println(data[i + 3]);
+        transportInfo.slots[i].active = flags & CCUPacketTypes::slotActiveMasks[i];
+        transportInfo.slots[i].medium = static_cast<CCUPacketTypes::ActiveStorageMedium>(data[i + 3]);
+
+        // Serial.print("DecodeTransportMode Slot #"); Serial.print(i); Serial.print(", Active is "); Serial.print(slots[i].active); Serial.print(", Storage Medium: "); Serial.println(data[i + 3]);
     }
+
+    BMDControlSystem::getInstance()->getCamera()->onTransportModeReceived(transportInfo);
 }
 
 void CCUDecodingFunctions::DecodeMetadataCategory(byte parameter, byte* payloadData, int payloadLength)

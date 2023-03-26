@@ -87,7 +87,7 @@ public:
     };
 
     static SecondsWithOverflow simplifyTime(int16_t time);
-    static String makeTimeLabel(SecondsWithOverflow time);
+    static std::string makeTimeLabel(SecondsWithOverflow time);
 
 };
 

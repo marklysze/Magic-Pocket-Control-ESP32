@@ -6,6 +6,10 @@
 #include <memory>
 #include "Camera\ConstantsTypes.h"
 #include "CCU\CCUPacketTypes.h"
+#include "CCU\CCUPacketTypesString.h"
+#include "Config\LensConfig.h"
+#include "Camera\CodecInfo.h"
+#include "Camera\TransportInfo.h"
 
 class BMDCamera
 {
@@ -18,6 +22,45 @@ public:
 
     void setAsConnected();
     void setAsDisconnected();
+
+    // Structures for vectors/arrays
+    struct MediaSlot {
+        bool active = false;
+        CCUPacketTypes::ActiveStorageMedium medium = CCUPacketTypes::ActiveStorageMedium::CFastCard;
+        CCUPacketTypes::MediaStatus status;
+        ccu_fixed_t remainingRecordTimeMinutes;
+        std::string remainingRecordTimeString;
+    };
+
+    // Lens Attributes
+
+    void onHasLens(bool inHasLens);
+    bool hasHasLens();
+    bool getHasLens();
+
+    void onApertureUnitsReceived(LensConfig::ApertureUnits inApertureUnits);
+    bool hasApertureUnits();
+    LensConfig::ApertureUnits getApertureUnits();
+    std::string getApertureUnitsString();
+
+    void onApertureFStopStringReceived(std::string inApertureFStopString);
+    bool hasApertureFStopString();
+    std::string getApertureFStopString();
+
+    void onApertureNormalisedReceived(int inApertureNormalised);
+    bool hasApertureNormalised();
+    int getApertureNormalised();
+
+    void onFocalLengthMMReceived(ccu_fixed_t inFocalLengthMM);
+    bool hasFocalLengthMM();
+    ccu_fixed_t getFocalLengthMM();
+
+    void onAutoFocusPressed(); // When auto focus button is pressed
+
+    const std::vector<BMDCamera::MediaSlot> getMediaSlots();
+    std::string getSlotActiveStorageMediumString(int slotIndex);
+    std::string getSlotMediumStatusString(int slotIndex);
+
 
     // Video Attributes
 
@@ -37,7 +80,7 @@ public:
     bool hasShutterSpeedMS();
     int32_t getShutterSpeedMS();
 
-    void onRecordingFormatReceived(CCUPacketTypes::RecordingFormatData inModelName);
+    void onRecordingFormatReceived(CCUPacketTypes::RecordingFormatData inRecordingFormat);
     bool hasRecordingFormat();
     CCUPacketTypes::RecordingFormatData getRecordingFormat();
 
@@ -71,6 +114,10 @@ public:
 
 
     // Status Attributes
+    void onBatteryReceived(CCUPacketTypes::BatteryStatusData inBattery);
+    bool hasBattery();
+    CCUPacketTypes::BatteryStatusData getBattery();
+
     void onModelNameReceived(std::string inModelName);
     bool hasModelName();
     std::string getModelName();
@@ -78,6 +125,20 @@ public:
     void onIsPocketReceived(bool inIsPocket);
     bool hasIsPocket();
     bool getIsPocket();
+
+    void onMediaStatusReceived(std::vector<CCUPacketTypes::MediaStatus> inMediaStatuses);
+    void onRemainingRecordTimeMinsReceived(std::vector<ccu_fixed_t> inRecordTimeMins);
+    void onRemainingRecordTimeStringReceived(std::vector<std::string> inRecordTimeStrings);
+
+    // Media Attributes
+    void onCodecReceived(CodecInfo inCodec);
+    bool hasCodec();
+    CodecInfo getCodec();
+
+    void onTransportModeReceived(TransportInfo inTransportMode);
+    bool hasTransportMode();
+    TransportInfo getTransportMode();
+
 
 
     // Metadata Attributes
@@ -153,20 +214,21 @@ public:
     bool hasLensIris();
     std::string getLensIris();
 
-
-    // Structures for vectors/arrays
-    struct MediaSlot {
-        bool active = false;
-        CCUPacketTypes::ActiveStorageMedium medium = CCUPacketTypes::ActiveStorageMedium::CFastCard;
-        CCUPacketTypes::MediaStatus status;
-        ccu_fixed_t remainingRecordTimeMinutes;
-        std::string remainingRecordTimeString;
-    };
-
 private:
     bool connected = false;
 
+    // Custom Attributes
+    std::vector<MediaSlot> mediaSlots;
+
     // Attributes are shared pointers so we can tell if they have been set or not (e.g. the pointer is null means it hasn't been set yet.)
+
+    // Lens Attributes
+    std::shared_ptr<bool> hasLens;
+    std::shared_ptr<LensConfig::ApertureUnits> apertureUnits;
+    std::shared_ptr<std::string> aperturefStopString;
+    std::shared_ptr<int> apertureNormalised;
+    std::shared_ptr<ccu_fixed_t> focalLengthMM;
+
 
     // Video Attributes
     std::shared_ptr<int> sensorGainISO; // Gain as ISO
@@ -184,11 +246,14 @@ private:
 
 
     // Status Attributes
-    CCUPacketTypes::BatteryStatusData batteryStatus;
+    std::shared_ptr<CCUPacketTypes::BatteryStatusData> batteryStatus;
     std::shared_ptr<std::string> modelName;
     std::shared_ptr<bool> isPocketCamera;
-    std::vector<MediaSlot> mediaSlots;
 
+    
+    // Media Attributes
+    std::shared_ptr<CodecInfo> codec;
+    std::shared_ptr<TransportInfo> transportMode;
 
     // Metadata Attributes
     std::shared_ptr<short> reelNumber;
