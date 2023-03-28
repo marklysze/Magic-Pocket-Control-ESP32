@@ -50,6 +50,19 @@ uint32_t generateRandomColor() {
     return color;
 }
 
+TaskHandle_t myTaskHandle;
+
+void myTask(void *parameter)
+{
+  for(;;)
+  {
+    Serial.print("myTask running on core: ");
+    Serial.println(xPortGetCoreID());
+
+    delay(500);
+  }
+}
+
 void setup() {
 
   Serial.begin(115200);
@@ -75,9 +88,17 @@ void setup() {
 
   // Start capturing touchscreen touches
   touch.begin();
-}
 
- // int disconnectedIterations = 0;
+  // Create task for multi-tasking
+  xTaskCreatePinnedToCore(
+    myTask,
+    "MyTask",
+    1000,
+    NULL,
+    0,
+    &myTaskHandle,
+    0);
+}
 
 void loop() {
 
@@ -139,7 +160,7 @@ void loop() {
     // disconnectedIterations++;
   }
 
-  delay(25); /* Delay a second between loops */
+  // delay(25); /* Delay a second between loops */
 
   if(BMDControlSystem::getInstance()->hasCamera())
   {
@@ -249,6 +270,9 @@ void loop() {
    
     if(touch.data.eventID == CST816S::TOUCHEVENT::UP)
     {
+      int oriented_x = IWIDTH - touch.data.y;
+      int oriented_y = touch.data.x;
+
       switch(touch.data.gestureID)
       {
         case CST816S::GESTURE::SWIPE_DOWN:
