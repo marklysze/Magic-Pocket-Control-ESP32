@@ -28,8 +28,9 @@
 // Touch with Gesture for the touch controller on the T-Display-S3
 CST816S touch(PIN_IIC_SDA, PIN_IIC_SCL, PIN_TOUCH_RES, PIN_TOUCH_INT);
 
-BMDCameraConnection CameraConnection;
+BMDCameraConnection cameraConnection;
 std::shared_ptr<BMDControlSystem> BMDControlSystem::instance = nullptr; // Required for Singleton pattern and the constructor for BMDControlSystem
+BMDCameraConnection* BMDCameraConnection::instancePtr = &cameraConnection; // Required for the scan function to run non-blocking and call the object back with the result
 
 TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 TFT_eSprite window = TFT_eSprite(&tft);
@@ -50,18 +51,48 @@ uint32_t generateRandomColor() {
     return color;
 }
 
+/*
 TaskHandle_t myTaskHandle;
 
 void myTask(void *parameter)
 {
   for(;;)
   {
-    Serial.print("myTask running on core: ");
-    Serial.println(xPortGetCoreID());
+    // Serial.print("myTask running on core: ");
+    // Serial.println(xPortGetCoreID());
 
-    delay(500);
+    // delay(500);
+  if (touch.available()) {
+    // Serial.print(touch.gesture());
+    // Serial.print("\t");
+    // Serial.print(touch.event());
+    // Serial.print("\t");
+    Serial.print(touch.data.x);
+    Serial.print("\t");
+    Serial.println(touch.data.y);
+       
+    if(false && touch.data.eventID == CST816S::TOUCHEVENT::UP)
+    {
+      int oriented_x = IWIDTH - touch.data.y;
+      int oriented_y = touch.data.x;
+
+      switch(touch.data.gestureID)
+      {
+        case CST816S::GESTURE::SWIPE_DOWN:
+        case CST816S::GESTURE::SWIPE_UP:
+        case CST816S::GESTURE::SWIPE_LEFT:
+        case CST816S::GESTURE::SWIPE_RIGHT:
+          tft.fillSmoothCircle(IWIDTH - touch.data.y, touch.data.x, 10, generateRandomColor(), TFT_TRANSPARENT);
+          break;
+        case CST816S::GESTURE::NONE:
+          tft.fillSmoothCircle(IWIDTH - touch.data.y, touch.data.x, 10, TFT_YELLOW, TFT_TRANSPARENT);
+          break;
+      }
+    }
+  }
   }
 }
+*/
 
 void setup() {
 
@@ -79,9 +110,9 @@ void setup() {
   window.drawString("Blackmagic Camera Control", 20, 20);
 
   // Prepare for Bluetooth connections and start scanning for cameras
-  CameraConnection.initialise();
-  CameraConnection.scan();
-  CameraConnection.connect();
+  cameraConnection.initialise();
+  // cameraConnection.scan();
+  // cameraConnection.connect();
 
   window.drawSmoothCircle(IWIDTH - 25, 25, 22, TFT_WHITE, TFT_TRANSPARENT);
   window.pushSprite(0, 0);
@@ -90,6 +121,7 @@ void setup() {
   touch.begin();
 
   // Create task for multi-tasking
+  /*
   xTaskCreatePinnedToCore(
     myTask,
     "MyTask",
@@ -98,6 +130,7 @@ void setup() {
     0,
     &myTaskHandle,
     0);
+    */
 }
 
 void loop() {
@@ -107,16 +140,27 @@ void loop() {
 
   unsigned long currentTime = millis();
 
-  if (CameraConnection.status == BMDCameraConnection::ConnectionStatus::Disconnected
-    && currentTime - lastConnectedTime >= reconnectInterval) {
+  if (cameraConnection.status == BMDCameraConnection::ConnectionStatus::Disconnected && currentTime - lastConnectedTime >= reconnectInterval) {
 
     // disconnectedIterations = 0;
     Serial.println("Disconnected for too long, trying to reconnect");
-    CameraConnection.scan();
-    CameraConnection.connect();
+    cameraConnection.scan();
+  }
+  else if(cameraConnection.status == BMDCameraConnection::ScanningFound)
+  {
+    Serial.println("Status Scanning Found. Connecting.");
+    cameraConnection.status = BMDCameraConnection::Connecting;
+    cameraConnection.connect();
+    Serial.println("Connecting Finished.");
+  }
+  else if(cameraConnection.status == BMDCameraConnection::ScanningNoneFound)
+  {
+    Serial.println("Status Scanning NONE Found. Marking as Disconnected.");
+    cameraConnection.status = BMDCameraConnection::Disconnected;
+    lastConnectedTime = currentTime;
   }
 
-  if(CameraConnection.status == BMDCameraConnection::ConnectionStatus::Connected)
+  if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::Connected)
   {
     // tft.fillScreen(TFT_GREEN);
 
@@ -131,7 +175,7 @@ void loop() {
     // disconnectedIterations = 0;
     lastConnectedTime = currentTime;
   }
-  else if(CameraConnection.status == BMDCameraConnection::ConnectionStatus::Connecting)
+  else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::Connecting)
   {
     // tft.fillScreen(TFT_BLUE);
 
@@ -287,4 +331,7 @@ void loop() {
       }
     }
   }
+
+  delay(25);
+  // Serial.println("<X>");
 }
