@@ -21,7 +21,8 @@ class BMDCameraConnection
         {
             Disconnected,
             Connected,
-            Connecting
+            Connecting,
+            Scanning
         };
 
         BMDCameraConnection();

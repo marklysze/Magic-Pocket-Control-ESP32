@@ -48,6 +48,8 @@ void BMDCameraConnection::initialise()
 
 bool BMDCameraConnection::scan()
 {
+    status = ConnectionStatus::Scanning;
+
     bleScan = bleDevice.getScan();
     bleScan->setAdvertisedDeviceCallbacks(new ScanAdvertisedDeviceCallbacks());
     bleScan->setInterval(1349);
@@ -57,12 +59,15 @@ bool BMDCameraConnection::scan()
     Serial.println("Scan starting (5 seconds).");
     bleScan->start(5);
 
+    status = ConnectionStatus::Disconnected;
+
     return true;
 }
 
 bool BMDCameraConnection::connect()
 {
-    status = ConnectionStatus::Disconnected;
+    if(!ConnectionStatus::Scanning)
+        status = ConnectionStatus::Disconnected;
 
     if(!ScanAdvertisedDeviceCallbacks::cameraAddresses.empty())
     {
