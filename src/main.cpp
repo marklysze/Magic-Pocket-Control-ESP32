@@ -25,6 +25,9 @@
 #include "Images\ImagePocket4k.h"
 // PNG png;
 
+// Include the watchdog library so we can hold stop it timing out while pass key entry.
+#include "esp_task_wdt.h"
+
 // Remove later
 // #include <random>
 // #include <cstdint>
@@ -42,6 +45,7 @@ TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 TFT_eSprite window = TFT_eSprite(&tft);
 TFT_eSprite spriteBluetooth = TFT_eSprite(&tft);
 TFT_eSprite spritePocket4k = TFT_eSprite(&tft);
+TFT_eSprite spritePassKey = TFT_eSprite(&tft);
 
 #define IWIDTH 320
 #define IHEIGHT 170
@@ -237,6 +241,13 @@ void Screen_NoConnection()
   }
 }
 
+void Screen_PassKey()
+{
+  // Don't do anything here, it will be handled by the security handler
+  // Wait for the screen security handler to do its work to get the pass key.
+  vTaskDelay(1);
+}
+
 // Screen for when there's no connection
 void Screen_Home()
 {
@@ -268,10 +279,14 @@ void Screen_Home()
   window.pushSprite(0, 0);
 }
 
+
 void setup() {
 
   Serial.begin(115200);
   Serial.println("Booting...");
+
+  // Allow a timeout of 20 seconds for time for the pass key entry.
+  esp_task_wdt_init(20, true);
 
   // Initialise the screen
   tft.init();
@@ -291,8 +306,11 @@ void setup() {
   spritePocket4k.setSwapBytes(true);
   spritePocket4k.pushImage(0,0,110,61,blackmagic_pocket_4k_110x61);
 
+  spritePassKey.createSprite(IWIDTH, IHEIGHT);
+
   // Prepare for Bluetooth connections and start scanning for cameras
-  cameraConnection.initialise();
+  // cameraConnection.initialise(); // Serial Pass Key entry
+  cameraConnection.initialise(&window, &spritePassKey, &touch, IWIDTH, IHEIGHT); // Screen Pass Key entry
 
   window.drawSmoothCircle(IWIDTH - 25, 25, 22, TFT_WHITE, TFT_TRANSPARENT);
   window.pushSprite(0, 0);
@@ -344,6 +362,10 @@ void loop() {
 
     // disconnectedIterations = 0;
     lastConnectedTime = currentTime;
+  }
+  else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::NeedPassKey)
+  {
+    Screen_PassKey();
   }
   // else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::Connecting)
   // {

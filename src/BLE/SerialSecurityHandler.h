@@ -8,7 +8,7 @@
 class BMDCameraConnection;
 
 // This class handles the BLE security callbacks, primarily for getting the PassKey from the serial console (keyboard entry)
-// The aim is that there would be a handler for serial (this) and one for a physically connected keypad (TBD)
+// The aim is that there would be a handler for a screen, serial (this), and one for a physically connected keypad (TBD)
 // Once a Bluetooth connection has been established between the device and camera another PassKey should not be required until either has forgotten each other.
 class SerialSecurityHandler : public BLESecurityCallbacks
 {

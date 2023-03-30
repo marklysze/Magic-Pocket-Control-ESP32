@@ -3,11 +3,13 @@
 
 #include "BLEDevice.h"
 #include "BLE\SerialSecurityHandler.h"
-//#include "BLE\ScanAdvertisedDeviceCallbacks.h"
+#include "BLE\ScreenSecurityHandler.h"
 #include "BLE\BMDBLEClientCallback.h"
 #include "BMDCamera.h"
 #include "CCU\CCUUtility.h"
 #include "BMDControlSystem.h"
+#include <TFT_eSPI.h>
+#include "ESP32\CST816S\CST816S.h"
 
 // Forward declaration
 #include "CCU\CCUDecodingFunctions.h"
@@ -34,7 +36,8 @@ class BMDCameraConnection
         BMDCameraConnection();
         ~BMDCameraConnection();
 
-        void initialise();
+        void initialise(); // Serial security pass key
+        void initialise(TFT_eSprite* windowPtr, TFT_eSprite* spritePassKeyPtr, CST816S* touchPtr, int screenWidth, int screenHeight); // Screen security pass key
         bool scan();
         // bool connect();
         void connect(BLEAddress cameraAddress);

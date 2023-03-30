@@ -822,13 +822,26 @@ void CCUDecodingFunctions::DecodeTransportMode(byte* inData, int inDataLength)
     transportInfo.mode = static_cast<CCUPacketTypes::MediaTransportMode>(data[0]);
     transportInfo.speed = static_cast<sbyte>(data[1]);
 
+    switch(transportInfo.mode)
+    {
+        case CCUPacketTypes::MediaTransportMode::Play:
+            Serial.println("Playing.");
+            break;
+        case CCUPacketTypes::MediaTransportMode::Preview:
+            Serial.println("Preview.");
+            break;
+        case CCUPacketTypes::MediaTransportMode::Record:
+            Serial.println("Recording.");
+            break;
+    }
+
     byte flags = static_cast<byte>(data[2]);
 
     transportInfo.loop = static_cast<bool>((static_cast<int>(flags) & static_cast<int>(CCUPacketTypes::MediaTransportFlag::Loop)) > 0);
     transportInfo.playAll = static_cast<bool>((static_cast<int>(flags) & static_cast<int>(CCUPacketTypes::MediaTransportFlag::PlayAll)) > 0);
     transportInfo.timelapseRecording = static_cast<bool>((static_cast<int>(flags) & static_cast<int>(CCUPacketTypes::MediaTransportFlag::TimelapseRecording)) > 0);
 
-    // Serial.print("DecodeTransportMode, Loop is "); Serial.print(transportInfo.loop); Serial.print(", playAll is "); Serial.print(transportInfo.playAll); Serial.print(", TimelapseRecording is "); Serial.println(transportInfo.timelapseRecording);
+    Serial.print("DecodeTransportMode, Loop is "); Serial.print(transportInfo.loop); Serial.print(", playAll is "); Serial.print(transportInfo.playAll); Serial.print(", TimelapseRecording is "); Serial.println(transportInfo.timelapseRecording);
 
     // The remaining data is for storage slots
     int slotCount = data.size() - 3;
@@ -839,7 +852,7 @@ void CCUDecodingFunctions::DecodeTransportMode(byte* inData, int inDataLength)
         transportInfo.slots[i].active = flags & CCUPacketTypes::slotActiveMasks[i];
         transportInfo.slots[i].medium = static_cast<CCUPacketTypes::ActiveStorageMedium>(data[i + 3]);
 
-        // Serial.print("DecodeTransportMode Slot #"); Serial.print(i); Serial.print(", Active is "); Serial.print(slots[i].active); Serial.print(", Storage Medium: "); Serial.println(data[i + 3]);
+        Serial.print("DecodeTransportMode Slot #"); Serial.print(i); Serial.print(", Active is "); Serial.print(transportInfo.slots[i].active); Serial.print(", Storage Medium: "); Serial.println(data[i + 3]);
     }
 
     BMDControlSystem::getInstance()->getCamera()->onTransportModeReceived(transportInfo);
