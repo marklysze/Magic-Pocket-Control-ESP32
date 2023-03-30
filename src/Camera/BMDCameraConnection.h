@@ -13,6 +13,8 @@
 #include "CCU\CCUDecodingFunctions.h"
 //class CCUDecodingFunctions;
 
+// class SerialSecurityHandler;
+
 class BMDCameraConnection
 {
     public:
@@ -24,7 +26,9 @@ class BMDCameraConnection
             Connecting,
             Scanning,
             ScanningFound,
-            ScanningNoneFound
+            ScanningNoneFound,
+            NeedPassKey,
+            FailedPassKey
         };
 
         BMDCameraConnection();
@@ -33,7 +37,7 @@ class BMDCameraConnection
         void initialise();
         bool scan();
         // bool connect();
-        void connect();
+        void connect(BLEAddress cameraAddress);
         void disconnect();
         ConnectionStatus status;
         std::vector<BLEAddress> cameraAddresses;
@@ -55,6 +59,7 @@ class BMDCameraConnection
         // Characteristics
         BLERemoteCharacteristic* bleChar_IncomingCameraControl;
         BLERemoteCharacteristic* bleChar_OutgoingCameraControl;
+        BLERemoteCharacteristic* bleChar_DeviceName;
 
         // BLE Notification functions
         static void IncomingCameraControlNotify(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify);

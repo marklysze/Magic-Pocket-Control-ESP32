@@ -33,7 +33,11 @@ void BMDCameraConnection::initialise()
     bleDevice.init("BMD Camera");
     bleDevice.setPower(ESP_PWR_LVL_P9);
     bleDevice.setEncryptionLevel(ESP_BLE_SEC_ENCRYPT);
-    bleDevice.setSecurityCallbacks(new SerialSecurityHandler());
+
+    SerialSecurityHandler* securityHandler = new SerialSecurityHandler(this);
+    bleDevice.setSecurityCallbacks(securityHandler);
+
+    // bleDevice.setSecurityCallbacks(new SerialSecurityHandler());
 
     bleSecurity = new BLESecurity();
     bleSecurity->setAuthenticationMode(ESP_LE_AUTH_REQ_SC_BOND);
@@ -93,7 +97,7 @@ void BMDCameraConnection::connectCallback(BLEScanResults scanResults) {
 
 
 
-void BMDCameraConnection::connect()
+void BMDCameraConnection::connect(BLEAddress cameraAddress)
 {
     if(!cameraAddresses.empty())
     {
@@ -121,7 +125,7 @@ void BMDCameraConnection::connect()
 
         // Connect to the first BLE Server (Camera)
         status = ConnectionStatus::Connecting;
-        bool connectedToCamera = bleClient->connect(cameraAddresses.front()); // if you pass BLEAdvertisedDevice instead of address, it will be recognized type of peer device address (public or private)
+        bool connectedToCamera = bleClient->connect(cameraAddress); // if you pass BLEAdvertisedDevice instead of address, it will be recognized type of peer device address (public or private)
 
         if(connectedToCamera)
         {
@@ -147,6 +151,14 @@ void BMDCameraConnection::connect()
         else
             Serial.println("Connected to Blackmagic Camera Service");
 
+        // Subscribe to Device Name to send our device name
+        bleChar_DeviceName = bleRemoteService->getCharacteristic(Constants::UUID_BMD_BCS_DEVICE_NAME);
+        if (bleChar_DeviceName != nullptr)
+        {
+            // Write the name we want shown on the camera
+            bleChar_DeviceName->writeValue(appName, true);
+        }
+
         // Subscribe to Incoming Camera Control messages (messages from the camera)
         bleChar_IncomingCameraControl = bleRemoteService->getCharacteristic(Constants::UUID_BMD_BCS_INCOMING_CAMERA_CONTROL);
         if (bleChar_IncomingCameraControl == nullptr)
@@ -165,6 +177,30 @@ void BMDCameraConnection::connect()
             Serial.println("Connected to Incoming Camera Control Characteristic");
         }
 
+        // Subscribe to Outgoing Camera Control messages (messages to the camera)
+        bleChar_OutgoingCameraControl = bleRemoteService->getCharacteristic(Constants::UUID_BMD_BCS_OUTGOING_CAMERA_CONTROL);
+        if (bleChar_OutgoingCameraControl == nullptr)
+        {
+            Serial.print("Failed to find our characteristic UUID: ");
+            Serial.println(Constants::UUID_BMD_BCS_OUTGOING_CAMERA_CONTROL.c_str());
+
+            bleClient->disconnect();
+            status = ConnectionStatus::Disconnected;
+            return;
+        }
+        else
+        {
+            Serial.println("Got Outgoing Camera Control Characteristic");
+
+            /* This demonstrates sending a record command using this outgoing characteristic.
+            Serial.println("Trying to hit record.");
+            delay(1000);
+            uint8_t data[12] = {255, 5, 0, 0, 10, 1, 1, 0, 0, 0, 0, 0};
+            data[8] = 2;
+            bleChar_OutgoingCameraControl->writeValue(data, 12, true);
+            */
+        }
+
         // Create Camera
         BMDControlSystem::getInstance()->activateCamera();
 
@@ -180,6 +216,9 @@ void BMDCameraConnection::connect()
 
 void BMDCameraConnection::disconnect()
 {
+    // Clear known cameras
+    cameraAddresses.clear();
+
     status = ConnectionStatus::Disconnected;
 
     if(bleClient->isConnected())
@@ -187,8 +226,7 @@ void BMDCameraConnection::disconnect()
 
     BMDControlSystem::getInstance()->deactivateCamera();
 
-    Serial.println("Disconnect called.");
-
+    // Serial.println("Disconnect called.");
 }
 
 // Incoming Control Notifications

@@ -11,17 +11,23 @@
 #include "ESP32\PinConfig.h"
 
 // Main BMD Libraries
-#include <Camera\ConstantsTypes.h>
-#include <CCU\CCUUtility.h>
-#include <CCU\CCUPacketTypes.h>
-#include <CCU\CCUValidationFunctions.h>
-#include <Camera\BMDCameraConnection.h>
-#include <Camera\BMDCamera.h>
+#include "Camera\ConstantsTypes.h"
+#include "CCU\CCUUtility.h"
+#include "CCU\CCUPacketTypes.h"
+#include "CCU\CCUValidationFunctions.h"
+#include "Camera\BMDCameraConnection.h"
+#include "Camera\BMDCamera.h"
 #include "BMDControlSystem.h"
 
+// Images
+// #include "PNGdec.h"
+#include "Images\ImageBluetooth.h"
+#include "Images\ImagePocket4k.h"
+// PNG png;
+
 // Remove later
-#include <random>
-#include <cstdint>
+// #include <random>
+// #include <cstdint>
 
 
 // https://github.com/fbiego/CST816S
@@ -34,10 +40,13 @@ BMDCameraConnection* BMDCameraConnection::instancePtr = &cameraConnection; // Re
 
 TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 TFT_eSprite window = TFT_eSprite(&tft);
+TFT_eSprite spriteBluetooth = TFT_eSprite(&tft);
+TFT_eSprite spritePocket4k = TFT_eSprite(&tft);
 
 #define IWIDTH 320
 #define IHEIGHT 170
 
+/*
 uint32_t generateRandomColor() {
     // Generate random values for red, green, and blue
     uint8_t red = random(256);
@@ -50,49 +59,214 @@ uint32_t generateRandomColor() {
     // Return the 32-bit color value
     return color;
 }
+*/
 
 /*
-TaskHandle_t myTaskHandle;
+// PNGdec globals Position variables must be global (PNGdec does not handle position coordinates)
+#define MAX_IMAGE_WIDTH 320
+int16_t _PNGdec_xpos = 0;
+int16_t _PNGdec_ypos = 0;
 
-void myTask(void *parameter)
+//=========================================v==========================================
+//  pngDraw: Callback function to draw pixels to the display
+//====================================================================================
+// This function will be called during decoding of the png file to render each image
+// line to the TFT. PNGdec generates the image line and a 1bpp mask.
+void pushMaskedImage(int32_t x, int32_t y, int32_t w, uint16_t *img, uint8_t *mask)
 {
-  for(;;)
-  {
-    // Serial.print("myTask running on core: ");
-    // Serial.println(xPortGetCoreID());
+  uint8_t  *mptr = mask;
+  uint8_t  *eptr = mask + ((w + 7) >> 3);
+  uint16_t *iptr = img;
 
-    // delay(500);
-  if (touch.available()) {
-    // Serial.print(touch.gesture());
-    // Serial.print("\t");
-    // Serial.print(touch.event());
-    // Serial.print("\t");
-    Serial.print(touch.data.x);
-    Serial.print("\t");
-    Serial.println(touch.data.y);
-       
-    if(false && touch.data.eventID == CST816S::TOUCHEVENT::UP)
-    {
-      int oriented_x = IWIDTH - touch.data.y;
-      int oriented_y = touch.data.x;
+  uint32_t xp = 0;
+  uint32_t setCount = 0;
+  uint32_t clearCount = 0;
+  uint8_t  mbyte = 0;
+  uint8_t  bits  = 0;
 
-      switch(touch.data.gestureID)
-      {
-        case CST816S::GESTURE::SWIPE_DOWN:
-        case CST816S::GESTURE::SWIPE_UP:
-        case CST816S::GESTURE::SWIPE_LEFT:
-        case CST816S::GESTURE::SWIPE_RIGHT:
-          tft.fillSmoothCircle(IWIDTH - touch.data.y, touch.data.x, 10, generateRandomColor(), TFT_TRANSPARENT);
-          break;
-        case CST816S::GESTURE::NONE:
-          tft.fillSmoothCircle(IWIDTH - touch.data.y, touch.data.x, 10, TFT_YELLOW, TFT_TRANSPARENT);
-          break;
-      }
+  // Scan through each bit of the mask
+  while (mptr < eptr) {
+    if (bits == 0) {
+        mbyte = *mptr++;
+        bits  = 8;
+    }
+    // Likely image lines starts with transparent pixels
+    while ((mbyte & 0x80) == 0) {
+        // Deal with case where remaining bits in byte are clear
+        if (mbyte == 0x00) {
+        clearCount += bits;
+        if (mptr >= eptr) break;
+        mbyte = *mptr++;
+        bits  = 8;
+        continue;
+        }
+        mbyte += mbyte;
+        clearCount ++;
+        if (--bits) continue;;
+        if (mptr >= eptr) break;
+        mbyte = *mptr++;
+        bits  = 8;
+    }
+
+    //Get run length for set bits
+    while (mbyte & 0x80) {
+        // Deal with case where all bits are set
+        if (mbyte == 0xFF) {
+        setCount += bits;
+        if (mptr >= eptr)  break;
+        mbyte = *mptr++;
+        continue;
+        }
+        mbyte += mbyte;
+        setCount ++;
+        if (--bits) continue;
+        if (mptr >= eptr) break;
+        mbyte = *mptr++;
+        bits  = 8;
+    }
+
+    // Dump the pixels
+    if (setCount) {
+        xp += clearCount;
+        tft.pushImage(x + xp, y, setCount, 1, iptr + xp);
+        xp += setCount;
+        clearCount = 0;
+        setCount = 0;
     }
   }
+}
+
+//=========================================v==========================================
+//  pngDraw: Callback function to draw pixels to the display
+//====================================================================================
+// This function will be called during decoding of the png file to render each image
+// line to the TFT. PNGdec generates the image line and a 1bpp mask.
+void pngDraw(PNGDRAW *pDraw) {
+  uint16_t lineBuffer[MAX_IMAGE_WIDTH];          // Line buffer for rendering
+  uint8_t  maskBuffer[1 + MAX_IMAGE_WIDTH / 8];  // Mask buffer
+
+  png.getLineAsRGB565(pDraw, lineBuffer, PNG_RGB565_BIG_ENDIAN, 0xffffffff);
+
+  if (png.getAlphaMask(pDraw, maskBuffer, 255)) {
+      pushMaskedImage(_PNGdec_xpos, _PNGdec_ypos + pDraw->y, pDraw->iWidth, lineBuffer, maskBuffer);
   }
 }
 */
+
+// Screen for when there's no connection, it's scanning, and it's trying to connect.
+void Screen_NoConnection()
+{
+  // The camera to connect to.
+  int connectToCameraIndex = -1;
+
+  window.fillSprite(TFT_BLACK);
+
+  // Status
+  window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
+
+  // window.fillSmoothCircle(IWIDTH - 25, 25, 18, TFT_RED, TFT_TRANSPARENT);
+
+  // Bluetooth Image
+  spriteBluetooth.pushToSprite(&window, 26, 6);
+  
+  window.setTextSize(2);
+  window.textbgcolor = TFT_BLACK;
+  switch(cameraConnection.status)
+  {
+    case BMDCameraConnection::Scanning:
+      window.fillRect(0, 0, 13, 170, TFT_BLUE);
+      window.drawString("Scanning...", 70, 20);
+      break;
+    case BMDCameraConnection::ScanningFound:
+      window.fillRect(0, 0, 13, 170, TFT_BLUE);
+      if(cameraConnection.cameraAddresses.size() == 1)
+      {
+        window.drawString("Found, connecting...", 70, 20);
+        connectToCameraIndex = 0;
+      }
+      else
+        window.drawString("Found cameras", 70, 20);
+      break;
+    case BMDCameraConnection::ScanningNoneFound:
+      window.fillRect(0, 0, 13, 170, TFT_RED);
+      window.drawString("No camera found", 70, 20);
+      break;
+    case BMDCameraConnection::Connecting:
+      window.fillRect(0, 0, 13, 170, TFT_YELLOW);
+      window.drawString("Connecting...", 70, 20);
+      break;
+    case BMDCameraConnection::NeedPassKey:
+      window.fillRect(0, 0, 13, 170, TFT_PURPLE);
+      window.drawString("Need Pass Key", 70, 20);
+      break;
+    case BMDCameraConnection::FailedPassKey:
+      window.fillRect(0, 0, 13, 170, TFT_ORANGE);
+      window.drawString("Wrong Pass Key", 70, 20);
+      break;
+    case BMDCameraConnection::Disconnected:
+      window.fillRect(0, 0, 13, 170, TFT_RED);
+      window.drawString("Disconnected (wait)", 70, 20);
+      break;
+    default:
+      break;
+  }
+
+  // Show up to two cameras
+  int cameras = cameraConnection.cameraAddresses.size();
+  for(int count = 0; count < cameras && count < 2; count++)
+  {
+    // Cameras
+    window.fillRoundRect(25 + (count * 125) + (count * 10), 60, 125, 100, 5, TFT_DARKGREY);
+
+    // Highlight the camera to connect to
+    if(connectToCameraIndex != -1 && connectToCameraIndex == count)
+      window.drawSmoothRoundRect(25 + (count * 125) + (count * 10), 60, 5, 2, 125, 100, TFT_GREEN, TFT_DARKGREY);
+      
+    spritePocket4k.pushToSprite(&window, 33 + (count * 125) + (count * 10), 69);
+    window.setTextSize(1);
+    window.textbgcolor = TFT_DARKGREY;
+    window.drawString(cameraConnection.cameraAddresses[count].toString().c_str(), 33 + (count * 125) + (count * 10), 144);
+  }
+
+  window.pushSprite(0, 0);
+  
+  if(connectToCameraIndex != -1)
+  {
+    cameraConnection.connect(cameraConnection.cameraAddresses[connectToCameraIndex]);
+    connectToCameraIndex = -1;
+  }
+}
+
+// Screen for when there's no connection
+void Screen_Home()
+{
+  window.fillSprite(TFT_BLACK);
+
+  // Left side
+  window.fillRect(0, 0, 13, 170, TFT_GREEN);
+  window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
+
+  /*
+
+  // Bluetooth Image
+  spriteBluetooth.pushToSprite(&window, 26, 6);
+  
+  window.setTextSize(2);
+  window.textbgcolor = TFT_BLACK;
+  window.drawString("No connection", 70, 20);
+
+  // Cameras
+  // window.drawSmoothRoundRect(25, 60, 5, 2, 125, 100, TFT_DARKGREY, TFT_TRANSPARENT);
+  window.fillRoundRect(25, 60, 125, 100, 5, TFT_DARKGREY);
+  spritePocket4k.pushToSprite(&window, 33, 69);
+  window.setTextSize(1);
+  window.textbgcolor = TFT_DARKGREY;
+  window.drawString("34:85:18:72:1B:F1", 33, 144);
+  
+  */
+
+  window.pushSprite(0, 0);
+}
 
 void setup() {
 
@@ -109,28 +283,22 @@ void setup() {
   window.createSprite(IWIDTH, IHEIGHT);
   window.drawString("Blackmagic Camera Control", 20, 20);
 
+  spriteBluetooth.createSprite(30, 46);
+  spriteBluetooth.setSwapBytes(true);
+  spriteBluetooth.pushImage(0,0,30,46,Wikipedia_Bluetooth_30x46);
+
+  spritePocket4k.createSprite(110, 61);
+  spritePocket4k.setSwapBytes(true);
+  spritePocket4k.pushImage(0,0,110,61,blackmagic_pocket_4k_110x61);
+
   // Prepare for Bluetooth connections and start scanning for cameras
   cameraConnection.initialise();
-  // cameraConnection.scan();
-  // cameraConnection.connect();
 
   window.drawSmoothCircle(IWIDTH - 25, 25, 22, TFT_WHITE, TFT_TRANSPARENT);
   window.pushSprite(0, 0);
 
   // Start capturing touchscreen touches
   touch.begin();
-
-  // Create task for multi-tasking
-  /*
-  xTaskCreatePinnedToCore(
-    myTask,
-    "MyTask",
-    1000,
-    NULL,
-    0,
-    &myTaskHandle,
-    0);
-    */
 }
 
 void loop() {
@@ -148,10 +316,10 @@ void loop() {
   }
   else if(cameraConnection.status == BMDCameraConnection::ScanningFound)
   {
-    Serial.println("Status Scanning Found. Connecting.");
-    cameraConnection.status = BMDCameraConnection::Connecting;
-    cameraConnection.connect();
-    Serial.println("Connecting Finished.");
+    // Serial.println("Status Scanning Found. Connecting.");
+    // cameraConnection.status = BMDCameraConnection::Connecting;
+    // cameraConnection.connect();
+    // Serial.println("Connecting Finished.");
   }
   else if(cameraConnection.status == BMDCameraConnection::ScanningNoneFound)
   {
@@ -168,45 +336,41 @@ void loop() {
     // window.pushSprite(0, 0);
 
     // tft.drawSmoothCircle(50, 50, 50, TFT_GREEN, TFT_TRANSPARENT);
-    tft.fillSmoothCircle(IWIDTH - 25, 25, 18, TFT_GREEN, TFT_TRANSPARENT);
+    // tft.fillSmoothCircle(IWIDTH - 25, 25, 18, TFT_GREEN, TFT_TRANSPARENT);
+
+    Screen_Home();
 
     // Serial.print("+");
 
     // disconnectedIterations = 0;
     lastConnectedTime = currentTime;
   }
-  else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::Connecting)
-  {
+  // else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::Connecting)
+  // {
     // tft.fillScreen(TFT_BLUE);
 
     // window.drawString("Connecting...", 20, 30);
     // window.pushSprite(0, 0);
 
     // tft.drawSmoothCircle(50, 50, 50, TFT_BLUE, TFT_TRANSPARENT);
-    tft.fillSmoothCircle(IWIDTH - 25, 25, 18, TFT_BLUE, TFT_TRANSPARENT);
+    // tft.fillSmoothCircle(IWIDTH - 25, 25, 18, TFT_BLUE, TFT_TRANSPARENT);
+
+    // Screen_NoConnection();
 
     // Serial.print("o");
 
     // disconnectedIterations = 0;
-  }
+  // }
   else // Disconnected
   {
-    // tft.fillScreen(TFT_RED);
+    // tft.fillSmoothCircle(IWIDTH - 25, 25, 18, TFT_RED, TFT_TRANSPARENT);
 
-    // window.drawString("Disconnected", 20, 30);
-    // window.pushSprite(0, 0);
-
-    // tft.drawSmoothCircle(100, 100, 10, TFT_RED, TFT_TRANSPARENT);
-    tft.fillSmoothCircle(IWIDTH - 25, 25, 18, TFT_RED, TFT_TRANSPARENT);
-
-    // Serial.print("-");
-
-    // disconnectedIterations++;
+    Screen_NoConnection();
   }
 
   // delay(25); /* Delay a second between loops */
 
-  if(BMDControlSystem::getInstance()->hasCamera())
+  if(false && BMDControlSystem::getInstance()->hasCamera())
   {
     // std::shared_ptr<BMDCamera> camera = BMDControlSystem::getInstance()->getCamera();
     auto camera = BMDControlSystem::getInstance()->getCamera();
@@ -323,10 +487,10 @@ void loop() {
         case CST816S::GESTURE::SWIPE_UP:
         case CST816S::GESTURE::SWIPE_LEFT:
         case CST816S::GESTURE::SWIPE_RIGHT:
-          tft.fillSmoothCircle(IWIDTH - touch.data.y, touch.data.x, 10, generateRandomColor(), TFT_TRANSPARENT);
+          // tft.fillSmoothCircle(IWIDTH - touch.data.y, touch.data.x, 10, generateRandomColor(), TFT_TRANSPARENT);
           break;
         case CST816S::GESTURE::NONE:
-          tft.fillSmoothCircle(IWIDTH - touch.data.y, touch.data.x, 10, TFT_GREEN, TFT_TRANSPARENT);
+          // tft.fillSmoothCircle(IWIDTH - touch.data.y, touch.data.x, 10, TFT_GREEN, TFT_TRANSPARENT);
           break;
       }
     }

@@ -1,9 +1,18 @@
 #include "SerialSecurityHandler.h"
 
+// Take in the 
+SerialSecurityHandler::SerialSecurityHandler(BMDCameraConnection* bmdCameraConnectionPtr)
+{
+  _bmdCameraConnectionPtr = bmdCameraConnectionPtr;
+}
+
 // code snippet from jeppo7745 https://www.instructables.com/id/Magic-Button-4k-the-20USD-BMPCC4k-Remote/
 // Found through BlueMagic32, thank you guys!
 uint32_t SerialSecurityHandler::onPassKeyRequest()
 {
+    // Update the connection status to requesting PassKey
+    _bmdCameraConnectionPtr->status = BMDCameraConnection::NeedPassKey;
+
     Serial.println("---> PLEASE ENTER 6 DIGIT PIN (end with ENTER) : ");
     int pinCode = 0;
     char ch;
@@ -19,7 +28,7 @@ uint32_t SerialSecurityHandler::onPassKeyRequest()
             pinCode = pinCode * 10 + (ch - '0');
             Serial.print(ch);
         }
-    } while ((ch != '\n'));
+    } while ((ch != '\n') && !(pinCode >= 100000 && pinCode < 999999)); // Go through if 6 numbers
     return pinCode;
 }
 
@@ -43,6 +52,11 @@ bool SerialSecurityHandler::onSecurityRequest()
 
 void SerialSecurityHandler::onAuthenticationComplete(esp_ble_auth_cmpl_t auth_cmpl)
 {
-    // Serial.println("onAuthenticationComplete");
-    int index = 1;
+    Serial.println("onAuthenticationComplete");
+
+    // Update the connection status based on the outcome of the authentication
+    if(auth_cmpl.success)
+        _bmdCameraConnectionPtr->status = BMDCameraConnection::Connected;
+    else
+        _bmdCameraConnectionPtr->status = BMDCameraConnection::FailedPassKey;
 }
