@@ -24,7 +24,7 @@ class CodecInfo
                     switch(codecVariant)
                     {
                         case 0:
-                            returnString = "DNxHD, Lossless Raw";
+                            returnString = "DNxHD, LL Raw";
                             break;
                         case 1:
                             returnString = "DNxHD, Raw 3:1";
@@ -49,7 +49,7 @@ class CodecInfo
                             returnString = "ProRes LT";
                             break;
                         case 3:
-                            returnString = "ProRes Proxy";
+                            returnString = "ProRes PXY";
                             break;
                         case 4:
                             returnString = "ProRes 444";

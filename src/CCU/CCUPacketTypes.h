@@ -539,6 +539,89 @@ class CCUPacketTypes
             bool offSpeedEnabled;
             bool interlacedEnabled;
             bool windowedModeEnabled;
+
+            std::string frameRate_string()
+            {
+                if(mRateEnabled && frameRate == 24 && !offSpeedEnabled)
+                    return "23.98";
+                else if(mRateEnabled && frameRate == 30 && !offSpeedEnabled)
+                    return "29.97";
+                else if(mRateEnabled && frameRate == 60 && !offSpeedEnabled)
+                    return "59.94";
+                else if(offSpeedEnabled)
+                    return std::to_string(offSpeedFrameRate);
+                else
+                    return std::to_string(frameRate);
+
+            }
+
+            std::string frameDimensionsShort_string()
+            {
+                // Pocket 4K
+                if(width == 1920 && height == 1080)
+                    return "HD";
+                else if(width == 2688 && height == 1512)
+                    return "2.6K 16:9";
+                else if(width == 2880 && height == 2160)
+                    return "2.8K Ana";
+                else if(width == 3840 && height == 2160)
+                    return "4K UHD";
+                else if(width == 4096 && height == 1720)
+                    return "4K 2.4:1";
+                else if(width == 4096 && height == 2160)
+                    return "4K DCI";
+
+                // Pocket 6K / Pro / G2 additional
+                else if(width == 2868 && height == 1512)
+                    return "2.8K 17:9";
+                else if(width == 3728 && height == 3104)
+                    return "3.7K 6:5A";
+                else if(width == 5744 && height == 3024)
+                    return "5.7K 17:9";
+                else if(width == 6144 && height == 2560)
+                    return "6K 2.4:1";
+                else if(width == 6144 && height == 3456)
+                    return "6K";
+                
+                // Ursa 4.6K G2
+                else if(width == 2048 && height == 1080)
+                    return "2K DCI";
+                else if(width == 2048 && height == 1152)
+                    return "2K 16:9";
+                else if(width == 3072 && height == 2560)
+                    return "3K Ana";
+                else if(width == 4096 && height == 2304)
+                    return "4K 16:9";
+                else if(width == 4608 && (height == 2592 || height == 1920))
+                    return "4.6K 2.4:1";
+
+                // Ursa 12K
+                else if(width == 2560 && height == 2136)
+                    return "4K Ana";
+                else if(width == 4096 && height == 1704)
+                    return "4K 2.4:1";
+                else if(width == 6144 && height == 3240)
+                    return "6K S16";
+                else if(width == 5120 && height == 4272)
+                    return "8K Ana";
+                else if(width == 8192 && height == 3408)
+                    return "8K 2.4:1";
+                else if(width == 7680 && height == 4320)
+                    return "8K 16:9";
+                else if(width == 8192 && height == 4320)
+                    return "8K DCI";
+                else if(width == 7680 && height == 6408)
+                    return "12K Ana";
+                else if(width == 12288 && height == 5112)
+                    return "12K 2.4:1";
+                else if(width == 11520 && height == 6480)
+                    return "12K 16:9";
+                else if(width == 12288 && height == 6480)
+                    return "12K DCI";
+
+                else // We don't know the short name so output the full dimensions
+                    return (String(width) + String(" x ") + String(height)).c_str();
+            }
         };
 
         struct BatteryStatusData
