@@ -1,5 +1,5 @@
-// Magic Pocket Control
-// By Mark Sze
+// Magic Pocket Control, by Mark Sze
+// For viewing and changing basic settings on Blackmagic Design Pocket Cinema Cameras and URSA 4.6K G2 and 12K.
 
 #include <Arduino.h>
 #include <stdint.h>
