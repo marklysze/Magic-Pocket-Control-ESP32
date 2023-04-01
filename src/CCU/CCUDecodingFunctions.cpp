@@ -1,44 +1,48 @@
 #include "CCUDecodingFunctions.h"
 #include <stdexcept>
 
-void CCUDecodingFunctions::DecodeCCUPacket(const byte* byteArray, int length)
+void CCUDecodingFunctions::DecodeCCUPacket(std::vector<byte> byteArray) // const byte* byteArray, int length)
 {
-    bool isValid = CCUValidationFunctions::ValidateCCUPacket(byteArray, length);
-
-    // BMDCameraConnection::getCamera()->testReceived("From DecodeCCUPacket");
+    bool isValid = CCUValidationFunctions::ValidateCCUPacket(byteArray);
 
     if (isValid)
     {
+        /*
         byte commandLength = byteArray[PacketFormatIndex::CommandLength];
-        // Serial.print("Command Length: ");Serial.println(commandLength);
         CCUPacketTypes::Category category = static_cast<CCUPacketTypes::Category>(byteArray[PacketFormatIndex::Category]);
         byte parameter = byteArray[PacketFormatIndex::Parameter];
-        // Serial.print("Parameter: ");Serial.println(parameter);
 
         byte dataLength = static_cast<byte>(commandLength - CCUPacketTypes::kCCUCommandHeaderSize);
-        // Serial.print("Data Length: ");Serial.println(dataLength);
         byte payloadOffset = CCUPacketTypes::kCUUPayloadOffset;
-        // Serial.print("Payload Offset: ");Serial.println(payloadOffset);
         byte* payloadData = new byte[dataLength];
         memcpy(payloadData, byteArray + payloadOffset, dataLength);
+        */
+
+        byte commandLength = byteArray[PacketFormatIndex::CommandLength];
+        CCUPacketTypes::Category category = static_cast<CCUPacketTypes::Category>(byteArray[PacketFormatIndex::Category]);
+        byte parameter = byteArray[PacketFormatIndex::Parameter];
+
+        byte dataLength = static_cast<byte>(commandLength - CCUPacketTypes::kCCUCommandHeaderSize);
+        byte payloadOffset = CCUPacketTypes::kCUUPayloadOffset;
+        std::vector<byte> payloadData(byteArray.begin() + payloadOffset, byteArray.begin() + payloadOffset + dataLength);
 
         try
         {
-            DecodePayloadData(category, parameter, payloadData, dataLength);
+            DecodePayloadData(category, parameter, payloadData); //, dataLength);
         }
         catch (const std::exception& ex)
         {
             Serial.print("Exception in DecodeCCUPacket: ");Serial.println(ex.what());
-            delete[] payloadData;
+            // delete[] payloadData;
             throw ex;
         }
 
-        delete[] payloadData;
+        // delete[] payloadData;
     }
 }
 
 // implementation of DecodePayloadData function
-void CCUDecodingFunctions::DecodePayloadData(CCUPacketTypes::Category category, byte parameter, byte* payloadData, int payloadDataLength)
+void CCUDecodingFunctions::DecodePayloadData(CCUPacketTypes::Category category, byte parameter, std::vector<byte> payloadData) //, byte* payloadData, int payloadDataLength)
 {
     if(category != CCUPacketTypes::Category::Status)
     {
@@ -47,19 +51,19 @@ void CCUDecodingFunctions::DecodePayloadData(CCUPacketTypes::Category category, 
 
     switch (category) {
         case CCUPacketTypes::Category::Lens:
-            DecodeLensCategory(parameter, payloadData, payloadDataLength);
+            DecodeLensCategory(parameter, payloadData.data(), payloadData.size()); // payloadDataLength);
             break;
         case CCUPacketTypes::Category::Video:
-            DecodeVideoCategory(parameter, payloadData, payloadDataLength);
+            DecodeVideoCategory(parameter, payloadData.data(), payloadData.size());
             break;
         case CCUPacketTypes::Category::Status:
-            DecodeStatusCategory(parameter, payloadData, payloadDataLength);
+            DecodeStatusCategory(parameter, payloadData.data(), payloadData.size());
             break;
         case CCUPacketTypes::Category::Media:
-            DecodeMediaCategory(parameter, payloadData, payloadDataLength);
+            DecodeMediaCategory(parameter, payloadData.data(), payloadData.size());
             break;
         case CCUPacketTypes::Category::Metadata:
-            DecodeMetadataCategory(parameter, payloadData, payloadDataLength);
+            DecodeMetadataCategory(parameter, payloadData.data(), payloadData.size());
             break;
         default:
             break;

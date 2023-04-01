@@ -19,6 +19,9 @@ class Constants
         static const std::string UUID_BMD_BCS_DEVICE_NAME;
 
         static const std::string UnknownEnumValue;
+
+        // Colour RGB565 calculator: http://www.rinkydinkelectronics.com/calc_rgb565.php
+        const static int LIGHT_RED = 0xF9E7; /* 255, 60, 60 */
 };
 
 #endif

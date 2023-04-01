@@ -8,17 +8,17 @@
 class CCUEncodingFunctions
 {
     public:
-        CCUPacketTypes::Command CreateVideoWhiteBalanceCommand(short whiteBalance, short tint);
-        CCUPacketTypes::Command CreateVoidCommand(CCUPacketTypes::Category category, byte parameter);
-        CCUPacketTypes::Command CreateVideoSetAutoWBCommand();
-        CCUPacketTypes::Command CreateRecordingFormatCommand(CCUPacketTypes::RecordingFormatData recordingFormatData);
-        CCUPacketTypes::Command CreateRecordingFormatStatusCommand();
-        CCUPacketTypes::Command CreateFixed16Command(short value, CCUPacketTypes::Category category, byte parameter);
+        static CCUPacketTypes::Command CreateVideoWhiteBalanceCommand(short whiteBalance, short tint);
+        static CCUPacketTypes::Command CreateVoidCommand(CCUPacketTypes::Category category, byte parameter);
+        static CCUPacketTypes::Command CreateVideoSetAutoWBCommand();
+        static CCUPacketTypes::Command CreateRecordingFormatCommand(CCUPacketTypes::RecordingFormatData recordingFormatData);
+        static CCUPacketTypes::Command CreateRecordingFormatStatusCommand();
+        static CCUPacketTypes::Command CreateFixed16Command(short value, CCUPacketTypes::Category category, byte parameter);
         template <typename T>
-        CCUPacketTypes::Command CreateCommand(T value, CCUPacketTypes::Category category, byte parameter);
-        CCUPacketTypes::Command CreateVideoSensorGainCommand(byte value);
-        CCUPacketTypes::Command CreateVideoISOCommand(int value);
-        CCUPacketTypes::Command CreateTransportInfoCommand(TransportInfo transportInfo);
+        static CCUPacketTypes::Command CreateCommand(T value, CCUPacketTypes::Category category, byte parameter);
+        static CCUPacketTypes::Command CreateVideoSensorGainCommand(byte value);
+        static CCUPacketTypes::Command CreateVideoISOCommand(int value);
+        static CCUPacketTypes::Command CreateTransportInfoCommand(TransportInfo transportInfo);
 };
 
 #endif

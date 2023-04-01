@@ -249,14 +249,32 @@ void BMDCameraConnection::disconnect()
     // Serial.println("Disconnect called.");
 }
 
+void BMDCameraConnection::sendCommandToOutgoing(CCUPacketTypes::Command command)
+{
+    std::vector<byte> data = command.serialize();
+
+    for(int i = 0; i < data.size(); i++)
+    {
+        Serial.print(data[i]);
+        Serial.print(" ");
+    }
+    Serial.println("");
+
+    bleChar_OutgoingCameraControl->writeValue(data.data(), data.size(), true);
+}
+
 // Incoming Control Notifications
 void BMDCameraConnection::IncomingCameraControlNotify(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify)
 {
     // Must be between 8 and 64 bytes inclusive
     if(length >= 8 && length <= 64)
     {
+        // Convert data to vector
+        std::vector<byte> data(pData, pData + length);
+
         // Decode the packet
-        CCUDecodingFunctions::DecodeCCUPacket(pData, length);
+        // CCUDecodingFunctions::DecodeCCUPacket(pData, length);
+        CCUDecodingFunctions::DecodeCCUPacket(data);
     }
     else
         Serial.println("Invalid incoming packet length.");

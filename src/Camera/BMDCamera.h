@@ -17,9 +17,6 @@ public:
     BMDCamera();
     ~BMDCamera();
 
-    void onIrisReceived(short apertureNumber, short infStopIndex);
-    void onNormalisedApertureReceived(short normalisedAperture);
-
     void setAsConnected();
     void setAsDisconnected();
 
@@ -31,6 +28,9 @@ public:
         ccu_fixed_t remainingRecordTimeMinutes;
         std::string remainingRecordTimeString;
     };
+
+    // Quick access attributes
+    bool isRecording;
 
     // Lens Attributes
 
@@ -130,7 +130,9 @@ public:
     void onRemainingRecordTimeMinsReceived(std::vector<ccu_fixed_t> inRecordTimeMins);
     void onRemainingRecordTimeStringReceived(std::vector<std::string> inRecordTimeStrings);
 
+
     // Media Attributes
+
     void onCodecReceived(CodecInfo inCodec);
     bool hasCodec();
     CodecInfo getCodec();
@@ -140,8 +142,8 @@ public:
     TransportInfo getTransportMode();
 
 
-
     // Metadata Attributes
+
     void onReelNumberReceived(short inReelNumber);
     bool hasReelNumber();
     short getReelNumber();

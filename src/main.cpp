@@ -12,6 +12,7 @@
 
 // Main BMD Libraries
 #include "Camera\ConstantsTypes.h"
+#include "Camera\PacketWriter.h"
 #include "CCU\CCUUtility.h"
 #include "CCU\CCUPacketTypes.h"
 #include "CCU\CCUValidationFunctions.h"
@@ -62,6 +63,9 @@ int connectedScreenIndex = 0; // The index of the screen we're on:
 // 6 is Framerate
 // 7 is Resolution
 // 8 is Media
+
+int tapped_x = -1;
+int tapped_y = -1;
 
 
 // Screen for when there's no connection, it's scanning, and it's trying to connect.
@@ -177,51 +181,59 @@ void Screen_Dashboard()
   window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
 
   // ISO
-  window.fillSmoothRoundRect(20, 5, 75, 65, 3, TFT_DARKGREY, TFT_TRANSPARENT);
-  window.setTextSize(2);
-  window.textcolor = TFT_WHITE;
-  window.textbgcolor = TFT_DARKGREY;
-
   if(camera->hasSensorGainISOValue())
+  {
+    window.fillSmoothRoundRect(20, 5, 75, 65, 3, TFT_DARKGREY, TFT_TRANSPARENT);
+    window.setTextSize(2);
+    window.textcolor = TFT_WHITE;
+    window.textbgcolor = TFT_DARKGREY;
+
     window.drawCentreString(String(camera->getSensorGainISOValue()), 58, 28, tft.textfont);
-  
-  window.setTextSize(1);
-  window.drawCentreString("ISO", 58, 59, tft.textfont);
+    
+    window.setTextSize(1);
+    window.drawCentreString("ISO", 58, 59, tft.textfont);
+  }
 
   // Shutter
   xshift = 80;
-  window.fillSmoothRoundRect(20 + xshift, 5, 75, 65, 3, TFT_DARKGREY, TFT_TRANSPARENT);
-  window.setTextSize(2);
-  window.textcolor = TFT_WHITE;
-  window.textbgcolor = TFT_DARKGREY;
-
   if(camera->hasShutterAngle())
+  {
+    window.fillSmoothRoundRect(20 + xshift, 5, 75, 65, 3, TFT_DARKGREY, TFT_TRANSPARENT);
+    window.setTextSize(2);
+    window.textcolor = TFT_WHITE;
+    window.textbgcolor = TFT_DARKGREY;
+
+    
     window.drawCentreString(String(camera->getShutterAngle() / 100), 58 + xshift, 28, tft.textfont);
-  
-  window.setTextSize(1);
-  window.drawCentreString("SHUTTER", 58 + xshift, 59, tft.textfont);
+    
+    window.setTextSize(1);
+    window.drawCentreString("SHUTTER", 58 + xshift, 59, tft.textfont);
+  }
 
   // WhiteBalance and Tint
   xshift += 80;
-  window.fillSmoothRoundRect(20 + xshift, 5, 135, 65, 3, TFT_DARKGREY, TFT_TRANSPARENT);
-  window.setTextSize(2);
-  window.textcolor = TFT_WHITE;
-  window.textbgcolor = TFT_DARKGREY;
+  if(camera->hasWhiteBalance() || camera->hasTint())
+  {
+    window.fillSmoothRoundRect(20 + xshift, 5, 135, 65, 3, TFT_DARKGREY, TFT_TRANSPARENT);
+    window.setTextSize(2);
+    window.textcolor = TFT_WHITE;
+    window.textbgcolor = TFT_DARKGREY;
 
-  if(camera->hasWhiteBalance())
-    window.drawCentreString(String(camera->getWhiteBalance()), 58 + xshift, 28, tft.textfont);
-  
-  window.setTextSize(1);
-  window.drawCentreString("WB", 58 + xshift, 59, tft.textfont);
+    if(camera->hasWhiteBalance())
+      window.drawCentreString(String(camera->getWhiteBalance()), 58 + xshift, 28, tft.textfont);
+    
+    window.setTextSize(1);
+    window.drawCentreString("WB", 58 + xshift, 59, tft.textfont);
 
-  xshift += 66;
+    xshift += 66;
 
-  window.setTextSize(2);
-  if(camera->hasTint())
-    window.drawCentreString(String(camera->getTint()), 58 + xshift, 28, tft.textfont);
-  
-  window.setTextSize(1);
-  window.drawCentreString("TINT", 58 + xshift, 59, tft.textfont);
+    window.setTextSize(2);
+    if(camera->hasTint())
+      window.drawCentreString(String(camera->getTint()), 58 + xshift, 28, tft.textfont);
+    
+    window.setTextSize(1);
+    window.drawCentreString("TINT", 58 + xshift, 59, tft.textfont);
+  }
 
   // Codec
   if(camera->hasCodec())
@@ -302,7 +314,38 @@ void Screen_Recording()
   connectedScreenIndex = 1;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
-  int xshift = 0;
+
+  // If we have a tap, we should determine if it is on anything
+  if(tapped_x != -1)
+  {
+    // Serial.print("Screen_Recording tapped at: ");
+    // Serial.print(tapped_x);
+    // Serial.print(",");
+    // Serial.println(tapped_y);
+
+    if(tapped_x >= 195 && tapped_y <= 128)
+    {
+      // Record button
+      auto transportInfo = camera->getTransportMode();
+      
+
+      if(camera->isRecording)
+      {
+        Serial.print("Record Stop");
+        transportInfo.mode = CCUPacketTypes::MediaTransportMode::Preview;
+      }
+      else
+      {
+        Serial.print("Record Start");
+        transportInfo.mode = CCUPacketTypes::MediaTransportMode::Record;
+      }
+
+      PacketWriter::writeTransportPacket(transportInfo, &cameraConnection);
+      // PacketWriter::writeWhiteBalance(5600, -10, &cameraConnection);
+      // PacketWriter::writeISO(3200, &cameraConnection);
+    }
+  }
+
 
   window.fillSprite(TFT_BLACK);
 
@@ -311,7 +354,8 @@ void Screen_Recording()
   window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
 
   // Record button
-  window.drawSmoothCircle(257, 62, 62, TFT_LIGHTGREY, TFT_TRANSPARENT); // Outer
+  if(camera->isRecording) window.fillSmoothCircle(257, 62, 62, Constants::LIGHT_RED, TFT_TRANSPARENT); // Recording solid
+  window.drawSmoothCircle(257, 62, 61, (camera->isRecording ? TFT_RED : TFT_LIGHTGREY), TFT_TRANSPARENT); // Outer
   window.fillSmoothCircle(257, 62, 40, TFT_RED, TFT_TRANSPARENT); // Inner
 
   // Timecode
@@ -324,6 +368,30 @@ void Screen_Recording()
   window.pushSprite(0, 0);
 }
 
+
+/*
+void Screen_SlideTest()
+{
+  connectedScreenIndex = 2;
+
+  slideWindow.fillSprite(TFT_BLACK);
+
+  for(int i = IWIDTH; i > (IWIDTH * -1); i--)
+  {
+    // Left Half One Screen
+    slideWindow.drawRect(IWIDTH * -1, 0, IWIDTH, IHEIGHT, TFT_PURPLE);
+
+    // Right Half One Screen
+    slideWindow.drawRect(IWIDTH * 1, 0, IWIDTH, IHEIGHT, TFT_GREEN);
+
+    slideWindow.pushToSprite(&window, i, 0);
+
+    window.pushSprite(0, 0);
+
+    delay(10);
+  }
+}
+*/
 
 void setup() {
 
@@ -341,7 +409,7 @@ void setup() {
   tft.fillScreen(TFT_BLACK);
 
   window.createSprite(IWIDTH, IHEIGHT);
-  window.drawString("Blackmagic Camera Control", 20, 20);
+  // window.drawString("Blackmagic Camera Control", 20, 20);
 
   spriteBluetooth.createSprite(30, 46);
   spriteBluetooth.setSwapBytes(true);
@@ -357,7 +425,7 @@ void setup() {
   // cameraConnection.initialise(); // Serial Pass Key entry
   cameraConnection.initialise(&window, &spritePassKey, &touch, IWIDTH, IHEIGHT); // Screen Pass Key entry
 
-  window.drawSmoothCircle(IWIDTH - 25, 25, 22, TFT_WHITE, TFT_TRANSPARENT);
+  // window.drawSmoothCircle(IWIDTH - 25, 25, 22, TFT_WHITE, TFT_TRANSPARENT);
   window.pushSprite(0, 0);
 
   // Start capturing touchscreen touches
@@ -530,6 +598,11 @@ void loop() {
     */
   }
 
+  // Reset tapped point
+  tapped_x = -1;
+  tapped_y = -1;
+
+
   if (touch.available()) {
     /*
     Serial.print(touch.gesture());
@@ -575,6 +648,10 @@ void loop() {
         case CST816S::GESTURE::NONE:
           Serial.println("Tap");
           // tft.fillSmoothCircle(IWIDTH - touch.data.y, touch.data.x, 10, TFT_GREEN, TFT_TRANSPARENT);
+
+          // Save the tapped position for the screens to pick up
+          tapped_x = oriented_x;
+          tapped_y = oriented_y;
           break;
       }
     }

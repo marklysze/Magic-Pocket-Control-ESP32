@@ -578,6 +578,8 @@ void BMDCamera::onTransportModeReceived(TransportInfo inTransportMode)
             mediaSlots[i].medium = transportMode->slots[i].medium;
         }
     }
+
+    isRecording = transportMode->mode == CCUPacketTypes::MediaTransportMode::Record;
 }
 bool BMDCamera::hasTransportMode()
 {

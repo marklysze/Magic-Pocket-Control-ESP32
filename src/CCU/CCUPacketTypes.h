@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <Arduino.h>
+#include <vector>
 #include "Camera\ConstantsTypes.h"
 
 // Packet Format Index
@@ -681,6 +682,8 @@ class CCUPacketTypes
                 // use serializedData
                 delete[] serializedData;
             */
+
+           /*
             byte* serialize()
             {
                 byte headersSize = (byte)(CCUPacketTypes::kCCUPacketHeaderSize + CCUPacketTypes::kCCUCommandHeaderSize);
@@ -707,6 +710,34 @@ class CCUPacketTypes
 
                 return buffer;
             }
+            */
+
+           std::vector<byte> serialize()
+            {
+                const byte headersSize = static_cast<byte>(CCUPacketTypes::kCCUPacketHeaderSize + CCUPacketTypes::kCCUCommandHeaderSize);
+                const byte payloadSize = sizeof(data);
+                const byte padBytes = static_cast<byte>(((length + 3) & ~3) - length);
+                std::vector<byte> buffer(headersSize + payloadSize + padBytes, 0);
+
+                buffer[PacketFormatIndex::Destination] = target;
+                buffer[PacketFormatIndex::CommandLength] = length;
+                buffer[PacketFormatIndex::CommandId] = static_cast<byte>(commandID);
+                buffer[PacketFormatIndex::Source] = reserved;
+
+                buffer[PacketFormatIndex::Category] = static_cast<byte>(category);
+                buffer[PacketFormatIndex::Parameter] = parameter;
+                buffer[PacketFormatIndex::DataType] = dataType;
+                buffer[PacketFormatIndex::OperationType] = static_cast<byte>(operationType);
+
+                for(int payloadIndex = 0; payloadIndex < sizeof(data); payloadIndex++)
+                {
+                    int packetIndex = PacketFormatIndex::PayloadStart + payloadIndex;
+                    buffer[packetIndex] = data[payloadIndex];
+                }
+
+                return buffer;
+            }
+
         };
 };
 

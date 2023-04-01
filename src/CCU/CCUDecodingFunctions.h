@@ -15,16 +15,13 @@
 #include "Camera\CodecInfo.h"
 #include "Camera\CameraModels.h"
 #include "Camera\TransportInfo.h"
-// #include "Camera\BMDCameraConnection.h"
-
-//class BMDCameraConnection; // forward declaration as both header files include each other.
 
 class CCUDecodingFunctions
 {
 public:
-    static void DecodeCCUPacket(const byte* byteArray, int length);
+    static void DecodeCCUPacket(std::vector<byte> byteArray); // const byte* byteArray, int length);
 
-    static void DecodePayloadData(CCUPacketTypes::Category category, byte parameter, byte* payloadData, int payloadDataLength);
+    static void DecodePayloadData(CCUPacketTypes::Category category, byte parameter, std::vector<byte> payloadData); //, byte* payloadData, int payloadDataLength);
 
     template<typename T>
     static std::vector<T> ConvertPayloadDataWithExpectedCount(byte* data, int byteCount, int expectedCount);

@@ -1,6 +1,10 @@
 ﻿#include "CCUEncodingFunctions.h"
 
-CCUPacketTypes::Command CCUEncodingFunctions::CreateVideoWhiteBalanceCommand(short whiteBalance, short tint) {
+CCUPacketTypes::Command CCUEncodingFunctions::CreateVideoWhiteBalanceCommand(short whiteBalance, short tint)
+{
+    Serial.println(whiteBalance);
+    Serial.println(tint);
+
     short dataArray[] = { whiteBalance, tint };
     byte* payloadData = CCUUtility::ToByteArrayFromArray(dataArray, sizeof(dataArray));
 
@@ -160,7 +164,7 @@ CCUPacketTypes::Command CCUEncodingFunctions::CreateVideoISOCommand(int value)
 
 CCUPacketTypes::Command CCUEncodingFunctions::CreateTransportInfoCommand(TransportInfo transportInfo)
 {
-    byte* data = transportInfo.serialize();
+    std::vector<byte> data = transportInfo.toArray();
     CCUPacketTypes::Command command(
         CCUPacketTypes::kBroadcastTarget,
         CCUPacketTypes::CommandID::ChangeConfiguration,
@@ -168,9 +172,9 @@ CCUPacketTypes::Command CCUEncodingFunctions::CreateTransportInfoCommand(Transpo
         static_cast<byte>(CCUPacketTypes::MediaParameter::TransportMode),
         CCUPacketTypes::OperationType::AssignValue,
         static_cast<byte>(CCUPacketTypes::DataTypes::kInt8),
-        data);
+        data.data());
 
-    delete[] data;
+    // delete[] data;
 
     return command;
 }
