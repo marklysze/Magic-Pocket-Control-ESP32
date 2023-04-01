@@ -1,3 +1,6 @@
+// Magic Pocket Control
+// By Mark Sze
+
 #include <Arduino.h>
 #include <stdint.h>
 #include <string.h>
