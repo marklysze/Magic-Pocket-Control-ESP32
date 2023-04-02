@@ -18,9 +18,9 @@ int32_t CCUPacketTypes::CCUPercentFromFixed(ccu_fixed_t f) {
 
 const std::array<int, 4> CCUPacketTypes::slotActiveMasks =
 {
-    static_cast<int>(MediaTransportFlag::Disk1Active),
-    static_cast<int>(MediaTransportFlag::Disk2Active),
-    static_cast<int>(MediaTransportFlag::Disk3Active),
+    0x20, //static_cast<int>(MediaTransportFlag::Disk1Active),
+    0x40, //static_cast<int>(MediaTransportFlag::Disk2Active),
+    0x10, //static_cast<int>(MediaTransportFlag::Disk3Active),
     0
 };
 

@@ -272,11 +272,14 @@ void BMDCameraConnection::sendCommandToOutgoing(CCUPacketTypes::Command command)
 {
     std::vector<byte> data = command.serialize();
 
+    /*
     for(int i = 0; i < data.size(); i++)
     {
         Serial.print(data[i]);
         Serial.print(" ");
     }
+    */
+   
     Serial.println("");
 
     bleChar_OutgoingCameraControl->writeValue(data.data(), data.size(), true);

@@ -65,6 +65,24 @@ int connectedScreenIndex = 0; // The index of the screen we're on:
 int tapped_x = -1;
 int tapped_y = -1;
 
+// Display elements on the screen common to all pages
+void Screen_Common(int sideBarColour)
+{
+    // Sidebar colour
+    window.fillRect(0, 0, 13, 170, sideBarColour);
+    window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
+
+  if(cameraConnection.status == BMDCameraConnection::Connected && BMDControlSystem::getInstance()->hasCamera())
+  {
+    // Show the recording outline
+    if(BMDControlSystem::getInstance()->getCamera()->isRecording)
+    {
+      window.drawRect(15, 0, IWIDTH - 15, IHEIGHT, TFT_RED);
+      window.drawRect(16, 1, IWIDTH - 13, IHEIGHT - 2, TFT_RED);
+    }
+  }
+}
+
 
 // Screen for when there's no connection, it's scanning, and it's trying to connect.
 void Screen_NoConnection()
@@ -77,7 +95,7 @@ void Screen_NoConnection()
   window.fillSprite(TFT_BLACK);
 
   // Status
-  window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
+  // window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
 
   // window.fillSmoothCircle(IWIDTH - 25, 25, 18, TFT_RED, TFT_TRANSPARENT);
 
@@ -89,11 +107,13 @@ void Screen_NoConnection()
   switch(cameraConnection.status)
   {
     case BMDCameraConnection::Scanning:
-      window.fillRect(0, 0, 13, 170, TFT_BLUE);
+      // window.fillRect(0, 0, 13, 170, TFT_BLUE);
+      Screen_Common(TFT_BLUE); // Common elements
       window.drawString("Scanning...", 70, 20);
       break;
     case BMDCameraConnection::ScanningFound:
-      window.fillRect(0, 0, 13, 170, TFT_BLUE);
+      // window.fillRect(0, 0, 13, 170, TFT_BLUE);
+      Screen_Common(TFT_BLUE); // Common elements
       if(cameraConnection.cameraAddresses.size() == 1)
       {
         window.drawString("Found, connecting...", 70, 20);
@@ -103,23 +123,28 @@ void Screen_NoConnection()
         window.drawString("Found cameras", 70, 20);
       break;
     case BMDCameraConnection::ScanningNoneFound:
-      window.fillRect(0, 0, 13, 170, TFT_RED);
+      // window.fillRect(0, 0, 13, 170, TFT_RED);
+      Screen_Common(TFT_RED); // Common elements
       window.drawString("No camera found", 70, 20);
       break;
     case BMDCameraConnection::Connecting:
-      window.fillRect(0, 0, 13, 170, TFT_YELLOW);
+      // window.fillRect(0, 0, 13, 170, TFT_YELLOW);
+      Screen_Common(TFT_YELLOW); // Common elements
       window.drawString("Connecting...", 70, 20);
       break;
     case BMDCameraConnection::NeedPassKey:
-      window.fillRect(0, 0, 13, 170, TFT_PURPLE);
+      // window.fillRect(0, 0, 13, 170, TFT_PURPLE);
+      Screen_Common(TFT_PURPLE); // Common elements
       window.drawString("Need Pass Key", 70, 20);
       break;
     case BMDCameraConnection::FailedPassKey:
-      window.fillRect(0, 0, 13, 170, TFT_ORANGE);
+      // window.fillRect(0, 0, 13, 170, TFT_ORANGE);
+      Screen_Common(TFT_ORANGE); // Common elements
       window.drawString("Wrong Pass Key", 70, 20);
       break;
     case BMDCameraConnection::Disconnected:
-      window.fillRect(0, 0, 13, 170, TFT_RED);
+      // window.fillRect(0, 0, 13, 170, TFT_RED);
+      Screen_Common(TFT_RED); // Common elements
       window.drawString("Disconnected (wait)", 70, 20);
       break;
     default:
@@ -174,9 +199,11 @@ void Screen_Dashboard()
 
   window.fillSprite(TFT_BLACK);
 
+  Screen_Common(TFT_GREEN); // Common elements
+
   // Left side
-  window.fillRect(0, 0, 13, 170, TFT_GREEN);
-  window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
+  // window.fillRect(0, 0, 13, 170, TFT_GREEN);
+  // window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
 
   // ISO
   if(camera->hasSensorGainISOValue())
@@ -344,12 +371,13 @@ void Screen_Recording()
     }
   }
 
-
   window.fillSprite(TFT_BLACK);
 
+  Screen_Common(TFT_GREEN); // Common elements
+
   // Left side
-  window.fillRect(0, 0, 13, 170, TFT_GREEN);
-  window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
+  // window.fillRect(0, 0, 13, 170, TFT_GREEN);
+  // window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
 
   // Record button
   if(camera->isRecording) window.fillSmoothCircle(257, 62, 62, Constants::DARK_RED, TFT_RED); // Recording solid
@@ -444,6 +472,8 @@ void setup() {
   // Start capturing touchscreen touches
   touch.begin();
 }
+
+int memoryLoopCounter;
 
 void loop() {
 
@@ -670,6 +700,12 @@ void loop() {
     }
   }
 
-  delay(10);
+  delay(25);
   // Serial.println("<X>");
+
+  if(memoryLoopCounter++ % 400 == 0)
+  {
+    Serial.print("Heap Size Free: "); Serial.print(ESP.getFreeHeap()); Serial.print(" of "); Serial.println(ESP.getHeapSize());
+    Serial.print("PSRAM Size Free: "); Serial.print(ESP.getFreePsram()); Serial.print(" of "); Serial.println(ESP.getPsramSize());
+  }
 }
