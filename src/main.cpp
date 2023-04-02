@@ -32,11 +32,6 @@
 // Include the watchdog library so we can hold stop it timing out while pass key entry.
 #include "esp_task_wdt.h"
 
-// Remove later
-// #include <random>
-// #include <cstdint>
-
-
 // https://github.com/fbiego/CST816S
 // Touch with Gesture for the touch controller on the T-Display-S3
 CST816S touch(PIN_IIC_SDA, PIN_IIC_SCL, PIN_TOUCH_RES, PIN_TOUCH_INT);
@@ -66,6 +61,7 @@ int connectedScreenIndex = 0; // The index of the screen we're on:
 // 6 is Framerate
 // 7 is Resolution
 // 8 is Media
+// 9 is Lens
 
 int tapped_x = -1;
 int tapped_y = -1;
