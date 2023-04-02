@@ -65,6 +65,8 @@ void CCUDecodingFunctions::DecodePayloadData(CCUPacketTypes::Category category, 
         case CCUPacketTypes::Category::Metadata:
             DecodeMetadataCategory(parameter, payloadData.data(), payloadData.size());
             break;
+        case CCUPacketTypes::Category::Display:
+            DecodeDisplayCategory(parameter, payloadData.data(), payloadData.size());
         default:
             break;
     }
@@ -826,6 +828,7 @@ void CCUDecodingFunctions::DecodeTransportMode(byte* inData, int inDataLength)
     transportInfo.mode = static_cast<CCUPacketTypes::MediaTransportMode>(data[0]);
     transportInfo.speed = static_cast<sbyte>(data[1]);
 
+    /*
     switch(transportInfo.mode)
     {
         case CCUPacketTypes::MediaTransportMode::Play:
@@ -838,14 +841,15 @@ void CCUDecodingFunctions::DecodeTransportMode(byte* inData, int inDataLength)
             Serial.println("Recording.");
             break;
     }
-
+    */
+   
     byte flags = static_cast<byte>(data[2]);
 
     transportInfo.loop = static_cast<bool>((static_cast<int>(flags) & static_cast<int>(CCUPacketTypes::MediaTransportFlag::Loop)) > 0);
     transportInfo.playAll = static_cast<bool>((static_cast<int>(flags) & static_cast<int>(CCUPacketTypes::MediaTransportFlag::PlayAll)) > 0);
     transportInfo.timelapseRecording = static_cast<bool>((static_cast<int>(flags) & static_cast<int>(CCUPacketTypes::MediaTransportFlag::TimelapseRecording)) > 0);
 
-    Serial.print("DecodeTransportMode, Loop is "); Serial.print(transportInfo.loop); Serial.print(", playAll is "); Serial.print(transportInfo.playAll); Serial.print(", TimelapseRecording is "); Serial.println(transportInfo.timelapseRecording);
+    // Serial.print("DecodeTransportMode, Loop is "); Serial.print(transportInfo.loop); Serial.print(", playAll is "); Serial.print(transportInfo.playAll); Serial.print(", TimelapseRecording is "); Serial.println(transportInfo.timelapseRecording);
 
     // The remaining data is for storage slots
     int slotCount = data.size() - 3;
@@ -856,7 +860,7 @@ void CCUDecodingFunctions::DecodeTransportMode(byte* inData, int inDataLength)
         transportInfo.slots[i].active = flags & CCUPacketTypes::slotActiveMasks[i];
         transportInfo.slots[i].medium = static_cast<CCUPacketTypes::ActiveStorageMedium>(data[i + 3]);
 
-        Serial.print("DecodeTransportMode Slot #"); Serial.print(i); Serial.print(", Active is "); Serial.print(transportInfo.slots[i].active); Serial.print(", Storage Medium: "); Serial.println(data[i + 3]);
+        // Serial.print("DecodeTransportMode Slot #"); Serial.print(i); Serial.print(", Active is "); Serial.print(transportInfo.slots[i].active); Serial.print(", Storage Medium: "); Serial.println(data[i + 3]);
     }
 
     BMDControlSystem::getInstance()->getCamera()->onTransportModeReceived(transportInfo);
@@ -1085,4 +1089,87 @@ void CCUDecodingFunctions::DecodeLensIris(byte* inData, int inDataLength)
     // "DecodeLensType Lens Type:" <-- this shows when there's no info between camera and lens.
 
     BMDControlSystem::getInstance()->getCamera()->onLensIrisReceived(lensIris);
+}
+
+// DISPLAY CATEGORY
+
+void CCUDecodingFunctions::DecodeDisplayCategory(byte parameter, byte* payloadData, int payloadLength)
+{
+    if(CCUUtility::byteValueExistsInArray(CCUPacketTypes::DisplayParameterValues, sizeof(CCUPacketTypes::DisplayParameterValues) / sizeof(CCUPacketTypes::MetadataParameterValues[0]), parameter))
+    {
+        CCUPacketTypes::DisplayParameter parameterType = static_cast<CCUPacketTypes::DisplayParameter>(parameter);
+
+        switch (parameterType)
+        {
+            case CCUPacketTypes::DisplayParameter::TimecodeSource:
+                DecodeTimecodeSource(payloadData, payloadLength);
+                break;
+            case CCUPacketTypes::DisplayParameter::Overlays:
+                // Not handled.
+                break;
+            case CCUPacketTypes::DisplayParameter::ZebraLevel:
+                // Not handled.
+                break;
+            case CCUPacketTypes::DisplayParameter::PeakingLevel:
+                // Not handled.
+                break;
+            case CCUPacketTypes::DisplayParameter::ColourBars:
+                // Not handled.
+                break;
+            case CCUPacketTypes::DisplayParameter::FocusAssist:
+                // Not handled.
+                break;
+        default:
+            Serial.print("DecodeDisplayCategory, ParameterType not known: "); Serial.println(static_cast<byte>(parameterType));
+            break;
+        }
+    }
+    else
+        throw "Invalid value for Display Parameter.";
+}
+
+void CCUDecodingFunctions::DecodeTimecodeSource(byte* inData, int inDataLength)
+{
+    std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, 1);
+    CCUPacketTypes::DisplayTimecodeSource timecodeSource = static_cast<CCUPacketTypes::DisplayTimecodeSource>(data[0]);
+
+    BMDControlSystem::getInstance()->getCamera()->onTimecodeSourceReceived(timecodeSource);
+}
+
+
+// Timecode decoding
+const char* kTimecodeDigits[] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+const int kTimecodeSize = sizeof(uint32_t);
+const uint32_t kTimecodeDropFrameMask = 0x80000000;
+void CCUDecodingFunctions::TimecodeToString(std::vector<byte> timecodeBytes)
+{
+    uint32_t timecode = ((uint32_t)timecodeBytes[3] << 24) |
+                      ((uint32_t)timecodeBytes[2] << 16) |
+                      ((uint32_t)timecodeBytes[1] << 8) |
+                      (uint32_t)timecodeBytes[0];
+
+    std::string str = "";
+    int digitCount = kTimecodeSize * 2;
+    int shift = kTimecodeSize * 8 - 4;
+    bool dropFrame = (timecode & kTimecodeDropFrameMask) > 0;
+
+    // Convert BCD timecode to string
+    for (int i = 0; i < digitCount; i++) {
+        int mask = (i == 0) ? 0x3 : 0xF;
+        int digit = (int)(timecode >> shift) & mask;
+
+        if (digit < 10) {
+            str += kTimecodeDigits[digit];
+        } else {
+            str += "-";
+        }
+
+        if ((i % 2 == 1) && (i < digitCount - 1)) {
+            str += (dropFrame && i >= 5) ? ";" : ":";
+        }
+
+        shift -= 4;
+    }
+
+    BMDControlSystem::getInstance()->getCamera()->onTimecodeReceived(str);
 }

@@ -153,6 +153,16 @@ std::string BMDCamera::getSlotMediumStatusString(int slotIndex)
         throw std::runtime_error("Invalid Media Slot index.");
 }
 
+BMDCamera::MediaSlot BMDCamera::getActiveMediaSlot()
+{
+    if(mediaSlots.size() > activeMediaSlotIndex)
+    {
+        return mediaSlots[activeMediaSlotIndex];
+    }
+    else
+        throw std::runtime_error("Active Media Slot index not set or media slots not populated.");
+}
+
 
 //
 // VIDEO Attributes
@@ -577,6 +587,10 @@ void BMDCamera::onTransportModeReceived(TransportInfo inTransportMode)
             mediaSlots[i].active = transportMode->slots[i].active;
             mediaSlots[i].medium = transportMode->slots[i].medium;
         }
+
+        // Keep track of the active media slot
+        if(mediaSlots[i].active)
+            activeMediaSlotIndex = i;
     }
 
     isRecording = transportMode->mode == CCUPacketTypes::MediaTransportMode::Record;
@@ -949,4 +963,40 @@ std::string BMDCamera::getLensIris()
         return *lensIris;
     else
         return "";
+}
+
+// Timecode
+
+void BMDCamera::onTimecodeSourceReceived(CCUPacketTypes::DisplayTimecodeSource inTimecodeSource)
+{
+    if(timecodeSource)
+        *timecodeSource = inTimecodeSource;
+    else
+        timecodeSource = std::make_shared<CCUPacketTypes::DisplayTimecodeSource>(inTimecodeSource);
+}
+bool BMDCamera::hasTimecodeSource()
+{
+    return static_cast<bool>(timecodeSource);
+}
+CCUPacketTypes::DisplayTimecodeSource BMDCamera::getTimecodeSource()
+{
+    if(timecodeSource)
+        return *timecodeSource;
+    else
+        throw std::runtime_error("Timecode Source not assigned to.");
+}
+
+void BMDCamera::onTimecodeReceived(std::string inTimecode)
+{
+    if(timecode)
+        *timecode = inTimecode;
+    else
+        timecode = std::make_shared<std::string>(inTimecode);
+}
+std::string BMDCamera::getTimecodeString()
+{
+    if(timecode)
+        return *timecode;
+    else
+        return "00:00:00:00";
 }

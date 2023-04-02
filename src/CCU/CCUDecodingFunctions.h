@@ -77,11 +77,16 @@ public:
     static void DecodeLensType(byte* inData, int inDataLength);
     static void DecodeLensIris(byte* inData, int inDataLength);
 
+    static void DecodeDisplayCategory(byte parameter, byte* payloadData, int payloadLength);
+    static void DecodeTimecodeSource(byte* inData, int inDataLength);
+
     // For DecodeRemainingRecordTime function
     struct SecondsWithOverflow {
         uint16_t seconds;
         bool over;
     };
+
+    static void TimecodeToString(std::vector<byte> timecodeBytes);
 
     static SecondsWithOverflow simplifyTime(int16_t time);
     static std::string makeTimeLabel(SecondsWithOverflow time);

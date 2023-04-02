@@ -21,7 +21,7 @@ class Constants
         static const std::string UnknownEnumValue;
 
         // Colour RGB565 calculator: http://www.rinkydinkelectronics.com/calc_rgb565.php
-        const static int LIGHT_RED = 0xF9E7; /* 255, 60, 60 */
+        const static int DARK_RED = 0x8800; /* 140, 0, 0 */
 };
 
 #endif

@@ -145,9 +145,10 @@ class CCUPacketTypes
             ZebraLevel = 2,
             PeakingLevel = 3,
             ColourBars = 4,
-            FocusAssist = 5
+            FocusAssist = 5,
+            TimecodeSource = 7
         };
-        const static byte DisplayParameterValues[6]; // Added to support checking a value is valid within the enum
+        const static byte DisplayParameterValues[7]; // Added to support checking a value is valid within the enum
 
         enum class TallyParameter : byte
         {
@@ -301,6 +302,13 @@ class CCUPacketTypes
             Custom = 1,
             FilmToVideo = 2,
             FilmToExtendedVideo = 3
+        };
+
+        // Display: Timecode Source
+        enum class DisplayTimecodeSource : byte
+        {
+            Clip = 0,
+            Timecode = 1
         };
 
         // Status: Battery: Flags

@@ -24,7 +24,6 @@
 #include "BMDControlSystem.h"
 
 // Images
-// #include "PNGdec.h"
 #include "Images\ImageBluetooth.h"
 #include "Images\ImagePocket4k.h"
 // PNG png;
@@ -353,16 +352,25 @@ void Screen_Recording()
   window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
 
   // Record button
-  if(camera->isRecording) window.fillSmoothCircle(257, 62, 62, Constants::LIGHT_RED, TFT_TRANSPARENT); // Recording solid
-  window.drawSmoothCircle(257, 62, 61, (camera->isRecording ? TFT_RED : TFT_LIGHTGREY), TFT_TRANSPARENT); // Outer
-  window.fillSmoothCircle(257, 62, 40, TFT_RED, TFT_TRANSPARENT); // Inner
+  if(camera->isRecording) window.fillSmoothCircle(257, 62, 62, Constants::DARK_RED, TFT_RED); // Recording solid
+  window.drawSmoothCircle(257, 62, 61, (camera->isRecording ? TFT_RED : TFT_LIGHTGREY), (camera->isRecording ? TFT_RED : TFT_BLACK)); // Outer
+  window.fillSmoothCircle(257, 62, 40, TFT_RED, (camera->isRecording ? TFT_RED : TFT_BLACK)); // Inner
 
   // Timecode
   window.setTextSize(2);
-  window.textcolor = TFT_WHITE;
+  window.textcolor = (camera->isRecording ? TFT_RED : TFT_WHITE);
   window.textbgcolor = TFT_BLACK;
-  window.drawCentreString("00:00:00:00", 167, 136, tft.textfont);
+  window.drawString(camera->getTimecodeString().c_str(), 30, 57);
 
+  // Remaining time
+  if(camera->getMediaSlots().size() != 0)
+  {
+    window.textcolor = TFT_LIGHTGREY;
+    window.drawString((camera->getActiveMediaSlot().GetMediumString() + " " + camera->getActiveMediaSlot().remainingRecordTimeString).c_str(), 30, 100);
+
+    window.setTextSize(1);
+    window.drawString("REMAINING TIME", 30, 120);
+  }
 
   window.pushSprite(0, 0);
 }
@@ -393,6 +401,12 @@ void Screen_SlideTest()
 */
 
 void setup() {
+
+  // Power and Backlight settings for T-Display-S3
+	pinMode(15, OUTPUT); // PIN_POWER_ON 15
+	pinMode(38, OUTPUT); // PIN_LCD_BL 38
+	digitalWrite(15, HIGH);
+	digitalWrite(38, HIGH);
 
   Serial.begin(115200);
   Serial.println("Booting...");
@@ -656,6 +670,6 @@ void loop() {
     }
   }
 
-  delay(25);
+  delay(10);
   // Serial.println("<X>");
 }

@@ -66,9 +66,11 @@ class BMDCameraConnection
         BLERemoteCharacteristic* bleChar_IncomingCameraControl;
         BLERemoteCharacteristic* bleChar_OutgoingCameraControl;
         BLERemoteCharacteristic* bleChar_DeviceName;
+        BLERemoteCharacteristic* bleChar_Timecode;
 
         // BLE Notification functions
         static void IncomingCameraControlNotify(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify);
+        static void IncomingTimecodeNotify(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify);
 
         // For accessing the connection object from a static function
         static BMDCameraConnection* instancePtr;

@@ -27,6 +27,11 @@ public:
         CCUPacketTypes::MediaStatus status;
         ccu_fixed_t remainingRecordTimeMinutes;
         std::string remainingRecordTimeString;
+
+        std::string GetMediumString()
+        {
+            return CCUPacketTypesString::GetEnumString(medium);
+        }
     };
 
     // Quick access attributes
@@ -60,6 +65,7 @@ public:
     const std::vector<BMDCamera::MediaSlot> getMediaSlots();
     std::string getSlotActiveStorageMediumString(int slotIndex);
     std::string getSlotMediumStatusString(int slotIndex);
+    MediaSlot getActiveMediaSlot();
 
 
     // Video Attributes
@@ -216,8 +222,18 @@ public:
     bool hasLensIris();
     std::string getLensIris();
 
+    // Display Attributes
+
+    void onTimecodeSourceReceived(CCUPacketTypes::DisplayTimecodeSource inTimecodeSource);
+    bool hasTimecodeSource();
+    CCUPacketTypes::DisplayTimecodeSource getTimecodeSource();
+
+    void onTimecodeReceived(std::string inTimecode);
+    std::string getTimecodeString();
+
 private:
     bool connected = false;
+    int activeMediaSlotIndex = -1; // The index of the active media slot, used for quick access to info on it.
 
     // Custom Attributes
     std::vector<MediaSlot> mediaSlots;
@@ -276,6 +292,10 @@ private:
     std::shared_ptr<std::string> lensDistance;
     std::shared_ptr<std::string> lensType;
     std::shared_ptr<std::string> lensIris;
+
+    // Display Attributes
+    std::shared_ptr<CCUPacketTypes::DisplayTimecodeSource> timecodeSource;
+    std::shared_ptr<std::string> timecode;
 };
 
 #endif

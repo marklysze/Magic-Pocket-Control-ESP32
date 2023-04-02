@@ -17,6 +17,8 @@ BMDCameraConnection::~BMDCameraConnection()
   
   delete bleChar_IncomingCameraControl;
   delete bleChar_OutgoingCameraControl;
+  delete bleChar_DeviceName;
+  delete bleChar_Timecode;
 
   // delete _cameraControl;
   initialised = false;
@@ -221,6 +223,23 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
             */
         }
 
+        // Subscribe to Incoming Camera Control messages (messages from the camera)
+        bleChar_Timecode = bleRemoteService->getCharacteristic(Constants::UUID_BMD_BCS_TIMECODE);
+        if (bleChar_Timecode == nullptr)
+        {
+            bleClient->disconnect();
+            status = ConnectionStatus::Disconnected;
+            return;
+        }
+        else
+        {
+            // Connect to the notifications from the characteristic
+            bleChar_Timecode->registerForNotify(IncomingTimecodeNotify, true);
+
+            Serial.println("Connected to Timecode Characteristic");
+        }
+
+
         // Create Camera
         BMDControlSystem::getInstance()->activateCamera();
 
@@ -278,4 +297,23 @@ void BMDCameraConnection::IncomingCameraControlNotify(BLERemoteCharacteristic *p
     }
     else
         Serial.println("Invalid incoming packet length.");
+}
+
+// Incoming Timecode
+void BMDCameraConnection::IncomingTimecodeNotify(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify)
+{
+    // Must be 12 byte
+    if(length == 12 ) //>= 8 && length <= 64)
+    {
+        // Convert data to vector
+        std::vector<byte> data(pData, pData + length);
+
+        // We take the last 4 bytes as they contain the timecode values
+        std::vector<byte> output(data.end() - 4, data.end());
+
+        // Decode the packet
+        CCUDecodingFunctions::TimecodeToString(output);
+    }
+    else
+        Serial.println("IncomingTimecodeNotify: Invalid incoming packet length.");
 }

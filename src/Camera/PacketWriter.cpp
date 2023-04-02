@@ -4,7 +4,7 @@ void PacketWriter::validateAndSendCCUCommand(CCUPacketTypes::Command command, BM
 {
     bool packetIsValid = CCUValidationFunctions::ValidateCCUPacket(command.serialize());
     if(packetIsValid) {
-        Serial.println("PacketWriter::validateAndSendCCUCommand: Send Command");
+        // Serial.println("PacketWriter::validateAndSendCCUCommand: Send Command");
         connection->sendCommandToOutgoing(command);
     }
     else
