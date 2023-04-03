@@ -14,6 +14,10 @@ The key features are:
 - Select the camera to connect to if you have multiple available
 - Entry of the Bluetooth connection code (6 digit pin) through a touchscreen numpad
 - Multiple screens that can be viewed by swiping left and right
+- Screens and functionality
+    - Dashboard: View the ISO, Shutter Speed, White Balance/Tint, Codec, FPS, active media device, and resolution
+    - Recording: Start and Stop recording, shows timecode and the remaining time left on the active media
+    - ISO: Change ISO
 
 # Why the LILYGO T-Display-S3 Touch version?
 I found this device had all the necessary components needed to connect and interact with the cameras:
@@ -37,7 +41,7 @@ You will need to do the following to ensure that the TFT_eSPI library is configu
 - Ensure you have uncommented the T-Display-S3 line (Around line 133) in the User_Setup_Select.h file (pio\build\libdeps\lilygo-t-display-s3\User_Setup_Select.h) for TFT_eSPI and also commented out the default line (Around line 30).
 
 # What can we do with these cameras?
-See the Blackmagic Camera Control Developer Information document, [Download here](https://documents.blackmagicdesign.com/DeveloperManuals/BlackmagicCameraControl.pdf). Though not that it's not up to date and I've used the sample code, noted below, to update functionality. There remains other functionality not documented or in the code samples that has been worked out by the community.
+See the Blackmagic Camera Control Developer Information document, [Download here](https://documents.blackmagicdesign.com/DeveloperManuals/BlackmagicCameraControl.pdf). It's not up-to-date and I've used the sample code, noted below, to update functionality. There remains other functionality not documented or in the code samples that has been worked out by the community.
 
 I converted a lot of the Swift (Mac) code from Blackmagic Design's Cameras Code Samples, [Download here](https://www.blackmagicdesign.com/au/developer/product/camera)
 
@@ -45,6 +49,7 @@ I converted a lot of the Swift (Mac) code from Blackmagic Design's Cameras Code 
 - BlueMagic32: A great project to control cameras with an ESP32. It provided a reference for the Bluetooth connection functionality. [https://github.com/schoolpost/BlueMagic32](https://github.com/schoolpost/BlueMagic32)
 - LILYGO: For creating this product and having some code examples for it. [https://github.com/Xinyuan-LilyGO/T-Display-S3](https://github.com/Xinyuan-LilyGO/T-Display-S3)
 - Volos Projects on YouTube: For having an entertaining set of videos on programming for the T-Display-S3 [T-Display-S3 Touch example](https://www.youtube.com/watch?v=qwRpdarrsQA)
+- ChatGPT: The ability to convert code from Swift to C++ and to assist with C++ coding has saved days of programming
 
 # FAQ
 1. I'm not seeing anything on the screen?
@@ -52,6 +57,7 @@ I converted a lot of the Swift (Mac) code from Blackmagic Design's Cameras Code 
 2. It's not working on my camera?
     - Ensure that you have Bluetooth turned on in the Setup menu on the camera
     - I have tested with the Pocket 4K and 6K (Original) - contact me if you are having trouble connecting to your camera.
+    - The version of your firmware may need to be updated to the latest version so the protocol used is compatible with your camera.
 
 # Disclaimer
 * The use of this software is at your own risk. The creator of this software cannot be held liable.
