@@ -1,9 +1,12 @@
 # Magic Pocket Control for the LILYGO T-Display-S3
 Blackmagic Design camera control on a LILYGO T-Display-S3 (ESP32)
+
 Designed for the Pocket 4K, Pocket 6K/G2/Pro, USRA G2 4.6K, URSA 12K
 
 # Why?
-My primary objective was to convert a Windows-based application I had for controlling my cameras to a small portable device. I'm opening up to the community who may find this useful or would like to contribute to it.
+My primary objective was to convert a Windows-based application I had for controlling my cameras to a small portable device.
+
+I'm opening up to the community who may find this useful or would like to contribute to it.
 
 # What can it do?
 The key features are:
@@ -33,8 +36,19 @@ You will need the following:
 You will need to do the following to ensure that the TFT_eSPI library is configured for the LilyGO T-Display-S3:
 - Ensure you have uncommented the T-Display-S3 line (Around line 133) in the User_Setup_Select.h file (pio\build\libdeps\lilygo-t-display-s3\User_Setup_Select.h) for TFT_eSPI and also commented out the default line (Around line 30).
 
+# What can we do with these cameras?
+See the Blackmagic Camera Control Developer Information document, [Download here](https://documents.blackmagicdesign.com/DeveloperManuals/BlackmagicCameraControl.pdf). Though not that it's not up to date and I've used the sample code, noted below, to update functionality. There remains other functionality not documented or in the code samples that has been worked out by the community.
+
+I converted a lot of the Swift (Mac) code from Blackmagic Design's Cameras Code Samples, [Download here](https://www.blackmagicdesign.com/au/developer/product/camera)
+
+# Thank you to...
+- BlueMagic32: A great project to control cameras with an ESP32. It provided a reference for the Bluetooth connection functionality. [https://github.com/schoolpost/BlueMagic32](https://github.com/schoolpost/BlueMagic32)
+- LILYGO: For creating this product and having some code examples for it. [https://github.com/Xinyuan-LilyGO/T-Display-S3](https://github.com/Xinyuan-LilyGO/T-Display-S3)
+- Volos Projects on YouTube: For having an entertaining set of videos on programming for the T-Display-S3 [T-Display-S3 Touch example](https://www.youtube.com/watch?v=qwRpdarrsQA)
+
 # FAQ
-1. I'm not seeing anything on the screen: Ensure you have uncommented the T-Display-S3 line (Around line 133) in the User_Setup_Select.h file for TFT_eSPI and also commented out the default line (Around line 30). In PlatformIO this is under libdeps\lilygo-t-display-s3\TFT_eSPI\TFT_eSPI.h
+1. I'm not seeing anything on the screen?
+    - Ensure you have uncommented the T-Display-S3 line (Around line 133) in the User_Setup_Select.h file for TFT_eSPI and also commented out the default line (Around line 30). In PlatformIO this is under libdeps\lilygo-t-display-s3\TFT_eSPI\TFT_eSPI.h
 2. It's not working on my camera?
     - Ensure that you have Bluetooth turned on in the Setup menu on the camera
     - I have tested with the Pocket 4K and 6K (Original) - contact me if you are having trouble connecting to your camera.
@@ -42,3 +56,7 @@ You will need to do the following to ensure that the TFT_eSPI library is configu
 # Disclaimer
 * The use of this software is at your own risk. The creator of this software cannot be held liable.
 * Using this software therefore is completely at your own risk.
+
+# License
+* GPL-3.0 license
+* Coverted Swift code from the Blackmagic Design Cameras Code Samples [Download here](https://www.blackmagicdesign.com/au/developer/product/camera)
