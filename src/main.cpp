@@ -380,9 +380,9 @@ void Screen_Recording()
   // window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
 
   // Record button
-  if(camera->isRecording) window.fillSmoothCircle(257, 62, 62, Constants::DARK_RED, TFT_RED); // Recording solid
-  window.drawSmoothCircle(257, 62, 61, (camera->isRecording ? TFT_RED : TFT_LIGHTGREY), (camera->isRecording ? TFT_RED : TFT_BLACK)); // Outer
-  window.fillSmoothCircle(257, 62, 40, TFT_RED, (camera->isRecording ? TFT_RED : TFT_BLACK)); // Inner
+  if(camera->isRecording) window.fillSmoothCircle(257, 63, 58, Constants::DARK_RED, TFT_RED); // Recording solid
+  window.drawSmoothCircle(257, 63, 57, (camera->isRecording ? TFT_RED : TFT_LIGHTGREY), (camera->isRecording ? TFT_RED : TFT_BLACK)); // Outer
+  window.fillSmoothCircle(257, 63, 38, TFT_RED, (camera->isRecording ? TFT_RED : TFT_BLACK)); // Inner
 
   // Timecode
   window.setTextSize(2);
