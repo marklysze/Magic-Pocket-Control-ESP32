@@ -32,13 +32,12 @@ uint32_t ScreenSecurityHandler::onPassKeyRequest()
     _spritePassKeyPtr->setTextColor(TFT_WHITE);
     _spritePassKeyPtr->drawString("Code:", 24, 7);
 
-    // Draw the 12 buttons, left to right, top to bottom
+    // Draw the 11 buttons, left to right, top to bottom
     _spritePassKeyPtr->fillSmoothRoundRect(20, 30, 70, 40, 5, TFT_YELLOW, TFT_TRANSPARENT); // 7
     _spritePassKeyPtr->fillSmoothRoundRect(95, 30, 70, 40, 5, TFT_YELLOW, TFT_TRANSPARENT); // 8
     _spritePassKeyPtr->fillSmoothRoundRect(170, 30, 70, 40, 5, TFT_YELLOW, TFT_TRANSPARENT); // 9
     _spritePassKeyPtr->fillSmoothRoundRect(245, 30, 70, 40, 5, TFT_RED, TFT_TRANSPARENT); // Back
 
-    // _spritePassKeyPtr->setTextSize(1);
     _spritePassKeyPtr->setTextColor(TFT_BLACK);
     _spritePassKeyPtr->drawString("7", 50, 43);
     _spritePassKeyPtr->drawString("8", 125, 43);
@@ -80,7 +79,7 @@ uint32_t ScreenSecurityHandler::onPassKeyRequest()
         if(currentTime - startTime >= 15000)
         {
             // Took too long!
-            Serial.println("15 seconds to enter pass key, time expired.");
+            DEBUG_VERBOSE("15 seconds to enter pass key, time expired.");
             pinComplete = true;
             break;
         }
@@ -150,19 +149,19 @@ uint32_t ScreenSecurityHandler::onPassKeyRequest()
 
 void ScreenSecurityHandler::onPassKeyNotify(uint32_t pass_key)
 {
-    Serial.println("onPassKeyNotify");
+    DEBUG_VERBOSE("onPassKeyNotify");
     pass_key += 1;
 }
 
 bool ScreenSecurityHandler::onConfirmPIN(uint32_t pin)
 {
-    Serial.println("onConfirmPIN");
+    DEBUG_VERBOSE("onConfirmPIN");
     return true;
 }
 
 bool ScreenSecurityHandler::onSecurityRequest()
 {
-    Serial.println("onSecurityRequest");
+    DEBUG_VERBOSE("onSecurityRequest");
     return true;
 }
 
@@ -205,8 +204,6 @@ int ScreenSecurityHandler::KeyPressed(int x, int y)
         return 2;
     else if(x >= 170 && x <= 240 && y >= 120 && y <= 160)
         return 3;
-//    else if(x >= 245 && y >= 120 && y <= 160)
-//        return -2;
 
     return -2;
 }

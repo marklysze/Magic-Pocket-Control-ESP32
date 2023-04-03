@@ -38,18 +38,23 @@ You will need the following:
 
 # Configuring PlatformIO
 You will need to do the following to ensure that the TFT_eSPI library is configured for the LilyGO T-Display-S3:
+- The platformio.ini file within the project should already have TFT_eSPI as a library dependency. If you don't see TFT_eSPI under your ".pio\libdeps" folder > under the PlatformIO home page within Visual Studio Code, click on Libraries, search for TFT_eSPI. Click on it and then click on **Add to Project**, select your project and click **Add**. Proceed to the next point.
 - Ensure you have uncommented the T-Display-S3 line (Around line 133) in the User_Setup_Select.h file (pio\build\libdeps\lilygo-t-display-s3\User_Setup_Select.h) for TFT_eSPI and also commented out the default line (Around line 30).
+- Similarly, if you don't have the "Arduino_DebugUtils" under your ".pio\libdeps" folder, add the "Arduino_DebugUtils" library to the project using the same method above.
 
 # What can we do with these cameras?
 See the Blackmagic Camera Control Developer Information document, [Download here](https://documents.blackmagicdesign.com/DeveloperManuals/BlackmagicCameraControl.pdf). It's not up-to-date and I've used the sample code, noted below, to update functionality. There remains other functionality not documented or in the code samples that has been worked out by the community.
 
 I converted a lot of the Swift (Mac) code from Blackmagic Design's Cameras Code Samples, [Download here](https://www.blackmagicdesign.com/au/developer/product/camera)
 
+# How does the program work?
+[TBD]
+
 # Thank you to...
 - BlueMagic32: A great project to control cameras with an ESP32. It provided a reference for the Bluetooth connection functionality. [https://github.com/schoolpost/BlueMagic32](https://github.com/schoolpost/BlueMagic32)
 - LILYGO: For creating this product and having some code examples for it. [https://github.com/Xinyuan-LilyGO/T-Display-S3](https://github.com/Xinyuan-LilyGO/T-Display-S3)
-- Volos Projects on YouTube: For having an entertaining set of videos on programming for the T-Display-S3 [T-Display-S3 Touch example](https://www.youtube.com/watch?v=qwRpdarrsQA)
-- ChatGPT: The ability to convert code from Swift to C++ and to assist with C++ coding has saved days of programming
+- Volos Projects on YouTube: For having an entertaining set of videos on programming for the T-Display-S3. [T-Display-S3 Touch example](https://www.youtube.com/watch?v=qwRpdarrsQA)
+- ChatGPT: The ability to convert code from Swift to C++ and to assist with C++ coding has saved days of programming. [https://chat.openai.com/](https://chat.openai.com/)
 
 # FAQ
 1. I'm not seeing anything on the screen?

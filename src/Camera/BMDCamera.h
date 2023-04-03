@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <vector>
 #include <memory>
+#include "Arduino_DebugUtils.h"
 #include "Camera\ConstantsTypes.h"
 #include "CCU\CCUPacketTypes.h"
 #include "CCU\CCUPacketTypesString.h"

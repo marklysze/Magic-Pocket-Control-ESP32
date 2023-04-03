@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "Arduino_DebugUtils.h" // Debugging to Serial - https://github.com/arduino-libraries/Arduino_DebugUtils
+
 #include <TFT_eSPI.h> // Master copy here: https://github.com/Bodmer/TFT_eSPI
 
 // https://github.com/fbiego/CST816S
@@ -356,12 +358,12 @@ void Screen_Recording()
 
       if(camera->isRecording)
       {
-        Serial.print("Record Stop");
+        DEBUG_VERBOSE("Record Stop");
         transportInfo.mode = CCUPacketTypes::MediaTransportMode::Preview;
       }
       else
       {
-        Serial.print("Record Start");
+        DEBUG_VERBOSE("Record Start");
         transportInfo.mode = CCUPacketTypes::MediaTransportMode::Record;
       }
 
@@ -437,10 +439,13 @@ void setup() {
 	digitalWrite(38, HIGH);
 
   Serial.begin(115200);
-  Serial.println("Booting...");
 
   // Allow a timeout of 20 seconds for time for the pass key entry.
   esp_task_wdt_init(20, true);
+
+  // SET DEBUG LEVEL
+  Debug.setDebugLevel(DBG_DEBUG);
+  Debug.timestampOn();
 
   // Initialise the screen
   tft.init();
@@ -483,7 +488,7 @@ void loop() {
   unsigned long currentTime = millis();
 
   if (cameraConnection.status == BMDCameraConnection::ConnectionStatus::Disconnected && currentTime - lastConnectedTime >= reconnectInterval) {
-    Serial.println("Disconnected for too long, trying to reconnect");
+    DEBUG_VERBOSE("Disconnected for too long, trying to reconnect");
     cameraConnection.scan();
 
     if(connectedScreenIndex != -1) // Move to the No Connection screen if we're not on it
@@ -518,7 +523,7 @@ void loop() {
   }
   else if(cameraConnection.status == BMDCameraConnection::ScanningNoneFound)
   {
-    Serial.println("Status Scanning NONE Found. Marking as Disconnected.");
+    DEBUG_VERBOSE("Status Scanning NONE Found. Marking as Disconnected.");
     cameraConnection.status = BMDCameraConnection::Disconnected;
     lastConnectedTime = currentTime;
 
@@ -526,142 +531,21 @@ void loop() {
     Screen_NoConnection();
   }
 
-  /*
-  if(connectedScreenIndex < 0 && cameraConnection.status == BMDCameraConnection::ConnectionStatus::Connected)
-  {
-    // When we've just connected, go to the dashboard
-    Screen_Dashboard();
-
-    lastConnectedTime = currentTime;
-  }
-  else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::NeedPassKey)
-  {
-    // If we need the Pass Key, show the Pass Key screen
-    Screen_PassKey();
-  }
-  else if(connectedScreenIndex >= 0 && cameraConnection.status == BMDCameraConnection::ConnectionStatus::Disconnected) // Disconnected
-  {
-    // Lost connection
-    Screen_NoConnection();
-  }
-  */
-
-  if(false && BMDControlSystem::getInstance()->hasCamera())
-  {
-    // std::shared_ptr<BMDCamera> camera = BMDControlSystem::getInstance()->getCamera();
-    auto camera = BMDControlSystem::getInstance()->getCamera();
-
-    tft.drawString("ISO: ", 20, 40);
-    if(camera->hasSensorGainISOValue())
-      tft.drawString(String(camera->getSensorGainISOValue()), 100, 40);
-
-    tft.drawString("Codec: ", 20, 60);
-    if(camera->hasCodec())
-      tft.drawString(String(camera->getCodec().to_string().c_str()), 100, 60);
-
-    tft.drawString("White Bal.: ", 20, 80);
-    if(camera->hasWhiteBalance())
-      tft.drawString(String(camera->getWhiteBalance()), 100, 80);
-
-    tft.drawString("Tint: ", 20, 100);
-    if(camera->hasTint())
-      tft.drawString(String(camera->getTint()), 100, 100);
-
-    std::vector<BMDCamera::MediaSlot> mediaSlots = camera->getMediaSlots();
-    for(int i = 0; i < mediaSlots.size(); i++)
-    {
-      tft.drawString("Slot", 20, 120 + (i * 20));
-      tft.drawString(String(i + 1), 50, 120 + (i * 20));
-
-      if(mediaSlots[i].active)
-        tft.drawString("*", 60, 120 + (i * 20));
-
-      tft.drawString(camera->getSlotActiveStorageMediumString(i).c_str(), 75, 120 + (i * 20));
-
-      tft.drawString(camera->getSlotMediumStatusString(i).c_str(), 120, 120 + (i * 20));
-
-      tft.drawString(mediaSlots[i].remainingRecordTimeString.c_str(), 160, 120 + (i * 20));
-    }
-
-    // if(mediaSlots.size() == 0)
-      // tft.drawString("No Media Slots", 20, 120);
-
-    /*
-    tft.drawString("ISO: ", 20, 40);
-    if(camera->hasSensorGainISO())
-      tft.drawString(String(camera->getSensorGainISO()), 100, 40);
-
-    tft.drawString("ISO Value: ", 20, 60);
-    if(camera->hasSensorGainISOValue())
-      tft.drawString(String(camera->getSensorGainISOValue()).c_str(), 100, 60);
-
-    tft.drawString("White Balance: ", 20, 80);
-    if(camera->hasWhiteBalance())
-      tft.drawString(String(camera->getWhiteBalance()), 100, 80);
-
-    tft.drawString("Tint: ", 20, 100);
-    if(camera->hasTint())
-      tft.drawString(String(camera->getTint()), 100, 100);
-
-    tft.drawString("Shutter Speed: ", 20, 120);
-    if(camera->hasShutterSpeed())
-      tft.drawString(String(camera->getShutterSpeed()), 100, 120);
-
-    tft.drawString("LUT Enabled? ", 20, 140);
-    if(camera->hasSelectedLUTEnabled() && camera->getSelectedLUTEnabled())
-      tft.drawString("Yes", 100, 140);
-
-    */
-
-    /* Meta Attributes
-
-    tft.drawString("Model Name: ", 20, 40);
-    if(camera->hasModelName())
-      tft.drawString(camera->getModelName().c_str(), 100, 40);
-
-    tft.drawString("Lens Type: ", 20, 60);
-    if(camera->hasLensType())
-      tft.drawString(camera->getLensType().c_str(), 100, 60);
-
-    tft.drawString("Lens Focal: ", 20, 80);
-    if(camera->hasLensFocalLength())
-      tft.drawString(camera->getLensFocalLength().c_str(), 100, 80);
-
-    tft.drawString("Lens Aperture: ", 20, 100);
-    if(camera->hasLensIris())
-      tft.drawString(camera->getLensIris().c_str(), 100, 100);
-
-    tft.drawString("Camera Id: ", 20, 120);
-    if(camera->hasCameraId())
-      tft.drawString(camera->getCameraId().c_str(), 100, 120);
-
-    tft.drawString("Project Name: ", 20, 140);
-    if(camera->hasProjectName())
-      tft.drawString(camera->getProjectName().c_str(), 100, 140);
-    */
-  }
-
   // Reset tapped point
   tapped_x = -1;
   tapped_y = -1;
 
 
+  // Is there a touch event available?
   if (touch.available()) {
-    /*
-    Serial.print(touch.gesture());
-    Serial.print("\t");
-    Serial.print(touch.event());
-    Serial.print("\t");
-    Serial.print(touch.data.x);
-    Serial.print("\t");
-    Serial.println(touch.data.y);
-    */
    
+    // We only consider events when the finger has lifted up (rather than pressed down or held)
     if(touch.data.eventID == CST816S::TOUCHEVENT::UP)
     {
       int oriented_x = IWIDTH - touch.data.y;
       int oriented_y = touch.data.x;
 
+      // Display touch point
       // tft.fillSmoothCircle(IWIDTH - touch.data.y, touch.data.x, 10, TFT_GREEN, TFT_TRANSPARENT);
 
       switch(touch.data.gestureID)
@@ -674,7 +558,6 @@ void loop() {
               Screen_Recording();
               break;
           }
-          // tft.fillSmoothCircle(IWIDTH - touch.data.y, touch.data.x, 10, generateRandomColor(), TFT_TRANSPARENT);
           break;
         case CST816S::GESTURE::SWIPE_UP:
           // Swiping Left  (sideways)
@@ -689,8 +572,7 @@ void loop() {
         case CST816S::GESTURE::SWIPE_RIGHT:
           break;
         case CST816S::GESTURE::NONE:
-          Serial.println("Tap");
-          // tft.fillSmoothCircle(IWIDTH - touch.data.y, touch.data.x, 10, TFT_GREEN, TFT_TRANSPARENT);
+          DEBUG_VERBOSE("Tap");
 
           // Save the tapped position for the screens to pick up
           tapped_x = oriented_x;
@@ -703,9 +585,10 @@ void loop() {
   delay(25);
   // Serial.println("<X>");
 
-  if(memoryLoopCounter++ % 400 == 0)
+  // Keep track of the memory use to check that there aren't memory leaks (or significant memory leaks)
+  if(Debug.getDebugLevel() >= DBG_VERBOSE && memoryLoopCounter++ % 400 == 0)
   {
-    Serial.print("Heap Size Free: "); Serial.print(ESP.getFreeHeap()); Serial.print(" of "); Serial.println(ESP.getHeapSize());
-    Serial.print("PSRAM Size Free: "); Serial.print(ESP.getFreePsram()); Serial.print(" of "); Serial.println(ESP.getPsramSize());
+    DEBUG_VERBOSE("Heap Size Free: %d of %d", ESP.getFreeHeap(), ESP.getHeapSize());
+    // Serial.print("Heap Size Free: "); Serial.print(ESP.getFreeHeap()); Serial.print(" of "); Serial.println(ESP.getHeapSize());
   }
 }

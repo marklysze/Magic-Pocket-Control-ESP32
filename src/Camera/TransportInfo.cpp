@@ -1,5 +1,6 @@
 ﻿#include "TransportInfo.h"
 
+// Convert TransportInfo object to a byte array for transport
 std::vector<byte> TransportInfo::toArray()
 {
     byte flags = 0;

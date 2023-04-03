@@ -4,11 +4,10 @@ void PacketWriter::validateAndSendCCUCommand(CCUPacketTypes::Command command, BM
 {
     bool packetIsValid = CCUValidationFunctions::ValidateCCUPacket(command.serialize());
     if(packetIsValid) {
-        // Serial.println("PacketWriter::validateAndSendCCUCommand: Send Command");
         connection->sendCommandToOutgoing(command);
     }
     else
-        Serial.println("PacketWriter::validateAndSendCCUCommand: Invalid Packet");
+        DEBUG_ERROR("PacketWriter::validateAndSendCCUCommand: Invalid Packet");
 }
 
 void PacketWriter::writeWhiteBalance(short whiteBalance, short tint, BMDCameraConnection* connection)

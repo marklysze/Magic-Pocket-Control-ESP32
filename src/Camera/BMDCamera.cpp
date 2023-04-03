@@ -125,7 +125,7 @@ ccu_fixed_t BMDCamera::getFocalLengthMM()
 // When auto focus button is pressed
 void BMDCamera::onAutoFocusPressed()
 {
-    Serial.println("Auto Focus button pressed.");
+    DEBUG_VERBOSE("Auto Focus button pressed.");
 }
 
 const std::vector<BMDCamera::MediaSlot> BMDCamera::getMediaSlots()

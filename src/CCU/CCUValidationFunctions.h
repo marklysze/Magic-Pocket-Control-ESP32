@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <type_traits>
 #include <vector>
+#include "Arduino_DebugUtils.h"
 #include "Camera\ConstantsTypes.h"
 #include "CCUUtility.h"
 #include "CCUPacketTypes.h"
@@ -15,7 +16,7 @@ class CCUValidationFunctions {
             byte packetSize = byteArray.size(); // static_cast<byte>(size);
             bool isSizeValid = (packetSize >= CCUPacketTypes::kPacketSizeMin && packetSize <= CCUPacketTypes::kPacketSizeMax);
             if (!isSizeValid) {
-                Serial.println("ValidateCCUPacket: Size is not valid.");
+                DEBUG_ERROR("ValidateCCUPacket: Size is not valid.");
                 //Logger.LogWithInfo("CCU packet (" + String(packetSize) + " bytes) is not between " + String(CCUPacketTypes::kPacketSizeMin) + " and " + String(CCUPacketTypes::kPacketSizeMax) + " bytes.");
                 return false;
             }
@@ -24,7 +25,7 @@ class CCUValidationFunctions {
             byte expectedPayloadSize = commandLength - CCUPacketTypes::kCCUCommandHeaderSize;
             byte actualPayloadSize = packetSize - (CCUPacketTypes::kCCUPacketHeaderSize + CCUPacketTypes::kCCUCommandHeaderSize);
             if (actualPayloadSize < expectedPayloadSize) {
-                Serial.println("ValidateCCUPacket: Actual payload size less than expected payload size.");
+                DEBUG_ERROR("ValidateCCUPacket: Actual payload size less than expected payload size.");
                 //Logger.LogWithInfo("Payload (" + String(actualPayloadSize) + ") is smaller than expected (" + String(expectedPayloadSize) + ").");
                 return false;
             }
@@ -37,7 +38,7 @@ class CCUValidationFunctions {
             }
             catch(const std::exception& e)
             {
-                Serial.println("ValidateCCUPacket: CCU packet has invalid category.");
+                DEBUG_ERROR("ValidateCCUPacket: CCU packet has invalid category.");
                 return false;
             }
 
@@ -94,13 +95,13 @@ class CCUValidationFunctions {
             {
                 if(categoryValue != 255) // Ignore outputting Category ID 255
                 {
-                    Serial.print("ValidateCCUPacket: CCU packet has invalid category and parameter, category "); Serial.print(categoryValue); Serial.print(", Parameter Value: "); Serial.println(parameterValue);
+                    DEBUG_ERROR("ValidateCCUPacket: CCU packet has invalid category and parameter, category %i, Parameter Value: %i", categoryValue, parameterValue);
                 }
 
                 return false;
             }
             else if (!isParameterValid) {
-                Serial.print("ValidateCCUPacket: CCU packet has invalid parameter for category: "); Serial.print(categoryValue); Serial.print(", Parameter Value: "); Serial.println(parameterValue);
+                DEBUG_ERROR("ValidateCCUPacket: CCU packet has invalid parameter for category: %i, Parameter Value: ", categoryValue, parameterValue);
                 return false;
             }
 

@@ -2,6 +2,7 @@
 #define BMDCAMERACONNECTION_H
 
 #include "BLEDevice.h"
+#include "Arduino_DebugUtils.h"
 #include "BLE\SerialSecurityHandler.h"
 #include "BLE\ScreenSecurityHandler.h"
 #include "BLE\BMDBLEClientCallback.h"

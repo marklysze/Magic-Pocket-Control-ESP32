@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <Arduino.h>
 #include <vector>
+#include "Arduino_DebugUtils.h"
 #include "Camera\ConstantsTypes.h"
 
 // Packet Format Index
@@ -665,12 +666,8 @@ class CCUPacketTypes
                 int packetSize = commandLength + CCUPacketTypes::kCCUPacketHeaderSize;
                 if(packetSize > CCUPacketTypes::kPacketSizeMax)
                 {
-                    Serial.print("Packet size (");
-                    Serial.print(packetSize);
-                    Serial.print(") exceeds kPacketSizeMax (");
-                    Serial.print(CCUPacketTypes::kPacketSizeMax);
-                    Serial.println("). Aborting InitCommand.");
-                    // throw "Packet size (" + packetSize + ") exceeds kPacketSizeMax (" + CCUPacketTypes::kPacketSizeMax + "). Aborting InitCommand.";
+                    DEBUG_ERROR("Packet size (%i) exceeds kPacketSizeMax (%i). Aborting InitCommand.", packetSize, CCUPacketTypes::kPacketSizeMax);
+                    throw std::runtime_error("Packet size exceeds kPacketSizeMax. Aborting InitCommand.");
                 }
 
                 this->target = target;
@@ -683,42 +680,6 @@ class CCUPacketTypes
                 this->dataType = dataType;
                 this->data = data;
             }
-
-            // WARNING - make sure to use "new" and delete the buffer when not needed: delete[] buffer;
-            /* LIKE THIS:
-                byte* serializedData = obj.serialize();
-                // use serializedData
-                delete[] serializedData;
-            */
-
-           /*
-            byte* serialize()
-            {
-                byte headersSize = (byte)(CCUPacketTypes::kCCUPacketHeaderSize + CCUPacketTypes::kCCUCommandHeaderSize);
-                byte payloadSize = sizeof(data);
-                byte padBytes = (byte)(((length + 3) & ~3) - length);
-                byte* buffer = new byte[headersSize + payloadSize + padBytes];
-                memset(buffer, 0, headersSize + payloadSize + padBytes);
-
-                buffer[PacketFormatIndex::Destination] = target;
-                buffer[PacketFormatIndex::CommandLength] = length;
-                buffer[PacketFormatIndex::CommandId] = ((byte)commandID);
-                buffer[PacketFormatIndex::Source] = reserved;
-
-                buffer[PacketFormatIndex::Category] = (byte)category;
-                buffer[PacketFormatIndex::Parameter] = parameter;
-                buffer[PacketFormatIndex::DataType] = dataType;
-                buffer[PacketFormatIndex::OperationType] = (byte)operationType;
-
-                for(int payloadIndex = 0; payloadIndex < sizeof(data); payloadIndex++)
-                {
-                    int packetIndex = PacketFormatIndex::PayloadStart + payloadIndex;
-                    buffer[packetIndex] = data[payloadIndex];
-                }
-
-                return buffer;
-            }
-            */
 
            std::vector<byte> serialize()
             {

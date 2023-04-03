@@ -85,7 +85,7 @@ bool BMDCameraConnection::scan()
     bleScan->setWindow(449);
     bleScan->setActiveScan(false);
 
-    Serial.println("Scan starting (5 seconds).");
+    DEBUG_VERBOSE("Scan starting (5 seconds).");
     bleScan->start(5, BMDCameraConnection::connectCallback, false);
 
     return true;
@@ -109,8 +109,7 @@ void BMDCameraConnection::connectCallback(BLEScanResults scanResults) {
             {
                 instance->cameraAddresses.push_back(device.getAddress());
 
-                Serial.print("Blackmagic Camera found ");
-                Serial.println(device.getAddress().toString().c_str());
+                DEBUG_VERBOSE("Blackmagic Camera found %s", device.getAddress().toString());
             }
         }
     }
@@ -127,8 +126,7 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
 {
     if(!cameraAddresses.empty())
     {
-        Serial.print("Cameras found: ");
-        Serial.println(cameraAddresses.size());
+        DEBUG_VERBOSE("Cameras found: %i", cameraAddresses.size());
 
         // Create the client (this device)
         bleClient = bleDevice.createClient();
@@ -137,7 +135,7 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
 
         if(bleClient == nullptr)
         {
-            Serial.println("Failed to create Client");
+            DEBUG_ERROR("Failed to create Client");
             status = ConnectionStatus::Disconnected;
             return;
         }
@@ -147,7 +145,7 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
 
         delay(500);
 
-        Serial.println("Created Bluetooth client and associated connect/disconnect call backs");
+        DEBUG_VERBOSE("Created Bluetooth client and associated connect/disconnect call backs");
 
         // Connect to the first BLE Server (Camera)
         status = ConnectionStatus::Connecting;
@@ -155,7 +153,7 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
 
         if(!connectedToCamera)
         {
-            Serial.println("Unable to connect to camera.");
+            DEBUG_ERROR("Unable to connect to camera.");
             status = ConnectionStatus::Disconnected;
             return;
         }
@@ -171,7 +169,7 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
             return;
         }
         else
-            Serial.println("Connected to Blackmagic Camera Service");
+            DEBUG_VERBOSE("Connected to Blackmagic Camera Service");
 
         // Subscribe to Device Name to send our device name
         bleChar_DeviceName = bleRemoteService->getCharacteristic(Constants::UUID_BMD_BCS_DEVICE_NAME);
@@ -196,15 +194,14 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
             // Connect to the notifications from the characteristic
             bleChar_IncomingCameraControl->registerForNotify(IncomingCameraControlNotify, false);
 
-            Serial.println("Connected to Incoming Camera Control Characteristic");
+            DEBUG_VERBOSE("Connected to Incoming Camera Control Characteristic");
         }
 
         // Subscribe to Outgoing Camera Control messages (messages to the camera)
         bleChar_OutgoingCameraControl = bleRemoteService->getCharacteristic(Constants::UUID_BMD_BCS_OUTGOING_CAMERA_CONTROL);
         if (bleChar_OutgoingCameraControl == nullptr)
         {
-            Serial.print("Failed to find our characteristic UUID: ");
-            Serial.println(Constants::UUID_BMD_BCS_OUTGOING_CAMERA_CONTROL.c_str());
+            DEBUG_ERROR("Failed to find our characteristic UUID: %s", Constants::UUID_BMD_BCS_OUTGOING_CAMERA_CONTROL);
 
             bleClient->disconnect();
             status = ConnectionStatus::Disconnected;
@@ -212,7 +209,7 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
         }
         else
         {
-            Serial.println("Got Outgoing Camera Control Characteristic");
+            DEBUG_VERBOSE("Got Outgoing Camera Control Characteristic");
 
             /* This demonstrates sending a record command using this outgoing characteristic. From BlueMagic32.
             Serial.println("Trying to hit record.");
@@ -236,7 +233,7 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
             // Connect to the notifications from the characteristic
             bleChar_Timecode->registerForNotify(IncomingTimecodeNotify, true);
 
-            Serial.println("Connected to Timecode Characteristic");
+            DEBUG_VERBOSE("Connected to Timecode Characteristic");
         }
 
 
@@ -248,7 +245,7 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
     }
     else
     {
-        Serial.print("No cameras found in scan.");
+        DEBUG_VERBOSE("No cameras found in scan.");
         status = ConnectionStatus::Disconnected;
     }
 }
@@ -299,7 +296,7 @@ void BMDCameraConnection::IncomingCameraControlNotify(BLERemoteCharacteristic *p
         CCUDecodingFunctions::DecodeCCUPacket(data);
     }
     else
-        Serial.println("Invalid incoming packet length.");
+        DEBUG_ERROR("Invalid incoming packet length.");
 }
 
 // Incoming Timecode
@@ -318,5 +315,5 @@ void BMDCameraConnection::IncomingTimecodeNotify(BLERemoteCharacteristic *pBLERe
         CCUDecodingFunctions::TimecodeToString(output);
     }
     else
-        Serial.println("IncomingTimecodeNotify: Invalid incoming packet length.");
+        DEBUG_ERROR("IncomingTimecodeNotify: Invalid incoming packet length.");
 }

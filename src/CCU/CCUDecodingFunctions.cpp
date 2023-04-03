@@ -32,7 +32,7 @@ void CCUDecodingFunctions::DecodeCCUPacket(std::vector<byte> byteArray) // const
         }
         catch (const std::exception& ex)
         {
-            Serial.print("Exception in DecodeCCUPacket: ");Serial.println(ex.what());
+            DEBUG_ERROR("Exception in DecodeCCUPacket: %s", ex.what());
             // delete[] payloadData;
             throw ex;
         }
@@ -91,33 +91,33 @@ void CCUDecodingFunctions::DecodeLensCategory(byte parameter, byte* payloadData,
             break;
         case CCUPacketTypes::LensParameter::ApertureOrdinal:
             // Not catered for
-            Serial.print("DecodeLensCategory, ParameterType ApertureOrdinal not catered for: "); Serial.println(static_cast<byte>(parameterType));
+            DEBUG_VERBOSE("DecodeLensCategory, ParameterType ApertureOrdinal not catered for: %i", static_cast<byte>(parameterType));
             break;
         case CCUPacketTypes::LensParameter::AutoAperture:
             // Not catered for
-            Serial.print("DecodeLensCategory, ParameterType AutoAperture not catered for: "); Serial.println(static_cast<byte>(parameterType));
+            DEBUG_VERBOSE("DecodeLensCategory, ParameterType AutoAperture not catered for: %i", static_cast<byte>(parameterType));
             break;
         case CCUPacketTypes::LensParameter::AutoFocus:
             DecodeAutoFocus(payloadData, payloadLength);
             break;
         case CCUPacketTypes::LensParameter::ContinuousZoom:
             // Not catered for
-            Serial.print("DecodeLensCategory, ParameterType ContinuousZoom not catered for: "); Serial.println(static_cast<byte>(parameterType));
+            DEBUG_VERBOSE("DecodeLensCategory, ParameterType ContinuousZoom not catered for: %i", static_cast<byte>(parameterType));
             break;
         case CCUPacketTypes::LensParameter::Focus:
             // Not catered for
-            Serial.print("DecodeLensCategory, ParameterType Focus not catered for: "); Serial.println(static_cast<byte>(parameterType));
+            DEBUG_VERBOSE("DecodeLensCategory, ParameterType Focus not catered for: %i", static_cast<byte>(parameterType));
             break;
         case CCUPacketTypes::LensParameter::ImageStabilisation:
             // Not catered for
-            Serial.print("DecodeLensCategory, ParameterType ImageStabilisation not catered for: "); Serial.println(static_cast<byte>(parameterType));
+            DEBUG_VERBOSE("DecodeLensCategory, ParameterType ImageStabilisation not catered for: %i", static_cast<byte>(parameterType));
             break;
         case CCUPacketTypes::LensParameter::Zoom:
             DecodeZoom(payloadData, payloadLength);
             break;
         case CCUPacketTypes::LensParameter::ZoomNormalised:
             // Not catered for
-            Serial.print("DecodeLensCategory, ParameterType ZoomNormalised not catered for: "); Serial.println(static_cast<byte>(parameterType));
+            DEBUG_VERBOSE("DecodeLensCategory, ParameterType ZoomNormalised not catered for: %i", static_cast<byte>(parameterType));
             break;
         default:
             break;
@@ -131,13 +131,13 @@ template<typename T>
 std::vector<T> CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount(byte* data, int byteCount, int expectedCount) {
     int typeSize = sizeof(T);
     if (typeSize > byteCount) {
-        Serial.println("Payload type size (" + String(typeSize) + ") is smaller than data size (" + String(byteCount) + ")");
+        DEBUG_ERROR("Payload type size (%i) is smaller than data size (%i)", typeSize, byteCount);
         throw "Payload type size (" + String(typeSize) + ") is smaller than data size (" + String(byteCount) + ")";
     }
 
     int convertedCount = byteCount / typeSize;
     if (expectedCount != convertedCount) {
-        Serial.println("Payload expected count (" + String(expectedCount) + ") not equal to converted count (" + String(convertedCount) + ")");
+        DEBUG_ERROR("Payload expected count (%i) not equal to converted count (%i)", expectedCount, convertedCount);
         throw "Payload expected count (" + String(expectedCount) + ") not equal to converted count (" + String(convertedCount) + ")";
     }
 
@@ -502,7 +502,7 @@ void CCUDecodingFunctions::DecodeStatusCategory(byte parameter, byte* payloadDat
                 break;
             case CCUPacketTypes::StatusParameter::DisplayTimecode:
                 // Not catered for
-                Serial.print("DecodeStatusCategory, ParameterType DisplayTimecode not catered for: "); Serial.println(static_cast<byte>(parameterType));
+                DEBUG_VERBOSE("DecodeStatusCategory, ParameterType DisplayTimecode not catered for: %i", static_cast<byte>(parameterType));
                 break;
             case CCUPacketTypes::StatusParameter::MediaStatus:
                 DecodeMediaStatus(payloadData, payloadDataLength);
@@ -920,7 +920,7 @@ void CCUDecodingFunctions::DecodeMetadataCategory(byte parameter, byte* payloadD
                 DecodeLensIris(payloadData, payloadLength);
                 break;
         default:
-            Serial.print("DecodeMetadataCategory, ParameterType not known: "); Serial.println(static_cast<byte>(parameterType));
+            DEBUG_WARNING("DecodeMetadataCategory, ParameterType not known: %i", static_cast<byte>(parameterType));
             break;
         }
     }
@@ -1120,7 +1120,7 @@ void CCUDecodingFunctions::DecodeDisplayCategory(byte parameter, byte* payloadDa
                 // Not handled.
                 break;
         default:
-            Serial.print("DecodeDisplayCategory, ParameterType not known: "); Serial.println(static_cast<byte>(parameterType));
+            DEBUG_WARNING("DecodeDisplayCategory, ParameterType not known: %i", static_cast<byte>(parameterType));
             break;
         }
     }

@@ -34,25 +34,25 @@ uint32_t SerialSecurityHandler::onPassKeyRequest()
 
 void SerialSecurityHandler::onPassKeyNotify(uint32_t pass_key)
 {
-    Serial.println("onPassKeyNotify");
+    DEBUG_VERBOSE("onPassKeyNotify");
     pass_key += 1;
 }
 
 bool SerialSecurityHandler::onConfirmPIN(uint32_t pin)
 {
-    Serial.println("onConfirmPIN");
+    DEBUG_VERBOSE("onConfirmPIN");
     return true;
 }
 
 bool SerialSecurityHandler::onSecurityRequest()
 {
-    Serial.println("onSecurityRequest");
+    DEBUG_VERBOSE("onSecurityRequest");
     return true;
 }
 
 void SerialSecurityHandler::onAuthenticationComplete(esp_ble_auth_cmpl_t auth_cmpl)
 {
-    Serial.println("onAuthenticationComplete");
+    DEBUG_VERBOSE("onAuthenticationComplete");
 
     // Update the connection status based on the outcome of the authentication
     if(auth_cmpl.success)
