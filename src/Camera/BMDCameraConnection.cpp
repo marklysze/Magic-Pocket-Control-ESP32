@@ -1,6 +1,7 @@
 #include "BMDCameraConnection.h"
 
-static const std::string CODEAPPNAME ="BMDCameraESP32";
+// Update this to what you would like shown on the back of the camera
+static const std::string CODEAPPNAME ="Magic Pocket Control";
 
 BMDCameraConnection::BMDCameraConnection() {}
 
@@ -14,13 +15,19 @@ BMDCameraConnection::~BMDCameraConnection()
 
   if(bleChar_IncomingCameraControl != nullptr)
     bleChar_IncomingCameraControl->registerForNotify(NULL, false); // Clear notification (housekeeping)
-  
+
+  if(bleChar_Timecode != nullptr)
+    bleChar_Timecode->registerForNotify(NULL, false); // Clear notification (housekeeping)
+
+  if(bleChar_Timecode != nullptr)
+    bleChar_Timecode->registerForNotify(NULL, false); // Clear notification (housekeeping)
+
   delete bleChar_IncomingCameraControl;
   delete bleChar_OutgoingCameraControl;
   delete bleChar_DeviceName;
   delete bleChar_Timecode;
+  delete bleChar_ProtocolVersion;
 
-  // delete _cameraControl;
   initialised = false;
   bleDevice.deinit(true);
 }
@@ -33,14 +40,12 @@ void BMDCameraConnection::initialise()
 
     appName = CODEAPPNAME;
 
-    bleDevice.init("BMD Camera");
+    bleDevice.init("MPC");
     bleDevice.setPower(ESP_PWR_LVL_P9);
     bleDevice.setEncryptionLevel(ESP_BLE_SEC_ENCRYPT);
 
     SerialSecurityHandler* securityHandler = new SerialSecurityHandler(this);
     bleDevice.setSecurityCallbacks(securityHandler);
-
-    // bleDevice.setSecurityCallbacks(new SerialSecurityHandler());
 
     bleSecurity = new BLESecurity();
     bleSecurity->setAuthenticationMode(ESP_LE_AUTH_REQ_SC_BOND);
@@ -48,10 +53,12 @@ void BMDCameraConnection::initialise()
     bleSecurity->setRespEncryptionKey(ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK);
 
     status = ConnectionStatus::Disconnected;
+    // disconnect();
 
     initialised = true;
 }
 
+// Initialise and use Touch Screen numpad security
 void BMDCameraConnection::initialise(TFT_eSprite* windowPtr, TFT_eSprite* spritePassKeyPtr, CST816S* touchPtr, int screenWidth, int screenHeight)
 {
     if(initialised)
@@ -59,7 +66,7 @@ void BMDCameraConnection::initialise(TFT_eSprite* windowPtr, TFT_eSprite* sprite
 
     appName = CODEAPPNAME;
 
-    bleDevice.init("BMD Camera");
+    bleDevice.init("MPC");
     bleDevice.setPower(ESP_PWR_LVL_P9);
     bleDevice.setEncryptionLevel(ESP_BLE_SEC_ENCRYPT);
 
@@ -72,6 +79,7 @@ void BMDCameraConnection::initialise(TFT_eSprite* windowPtr, TFT_eSprite* sprite
     bleSecurity->setRespEncryptionKey(ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK);
 
     status = ConnectionStatus::Disconnected;
+    // disconnect();
 
     initialised = true;
 }
@@ -136,7 +144,8 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
         if(bleClient == nullptr)
         {
             DEBUG_ERROR("Failed to create Client");
-            status = ConnectionStatus::Disconnected;
+            disconnect();
+            // status = ConnectionStatus::Disconnected;
             return;
         }
 
@@ -149,12 +158,14 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
 
         // Connect to the first BLE Server (Camera)
         status = ConnectionStatus::Connecting;
+        DEBUG_DEBUG("connect: Connection Status set to %i", status);
         bool connectedToCamera = bleClient->connect(cameraAddress); // if you pass BLEAdvertisedDevice instead of address, it will be recognized type of peer device address (public or private)
 
         if(!connectedToCamera)
         {
             DEBUG_ERROR("Unable to connect to camera.");
-            status = ConnectionStatus::Disconnected;
+            disconnect();
+            // status = ConnectionStatus::Disconnected;
             return;
         }
 
@@ -164,12 +175,35 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
         {
             // Serial.print("Failed to find our service UUID: ");
             // Serial.println(BmdCameraService.toString().c_str());
-            bleClient->disconnect();
-            status = ConnectionStatus::Disconnected;
+            // bleClient->disconnect();
+            disconnect();
+            // status = ConnectionStatus::Disconnected;
             return;
         }
         else
             DEBUG_VERBOSE("Connected to Blackmagic Camera Service");
+
+        // Check the Protocol Version to make sure it's compatible
+        bleChar_ProtocolVersion = bleRemoteService->getCharacteristic(Constants::UUID_BMD_BCS_PROTOCOL_VERSION);
+        if(bleChar_ProtocolVersion != nullptr)
+        {
+            std::string cameraProtocolVersion = bleChar_ProtocolVersion->readValue();
+
+            std::vector<int> versionNumbers = ProtocolVersionNumber::ConvertVersionStringToInts(cameraProtocolVersion.c_str());
+            if(!ProtocolVersionNumber::CompatibilityVerified(versionNumbers[0], versionNumbers[1], versionNumbers[2]))
+            {
+                DEBUG_ERROR("Camera Protocol Version is incompatible, aborting: %s", cameraProtocolVersion.c_str());
+                disconnect();
+                status = ConnectionStatus::IncompatibleProtocol;
+                return;
+            }
+        }
+        else
+        {
+            DEBUG_ERROR("Could not access Protocol Version Characteristic, aborting.");
+            disconnect();
+            return;
+        }
 
         // Subscribe to Device Name to send our device name
         bleChar_DeviceName = bleRemoteService->getCharacteristic(Constants::UUID_BMD_BCS_DEVICE_NAME);
@@ -183,10 +217,8 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
         bleChar_IncomingCameraControl = bleRemoteService->getCharacteristic(Constants::UUID_BMD_BCS_INCOMING_CAMERA_CONTROL);
         if (bleChar_IncomingCameraControl == nullptr)
         {
-        // Serial.print("Failed to find our characteristic UUID: ");
-        // Serial.println(OutgoingCameraControl.toString().c_str());
-            bleClient->disconnect();
-            status = ConnectionStatus::Disconnected;
+            DEBUG_ERROR("Could not connect to Incoming Camera Control Characteristic");
+            disconnect();
             return;
         }
         else
@@ -201,10 +233,8 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
         bleChar_OutgoingCameraControl = bleRemoteService->getCharacteristic(Constants::UUID_BMD_BCS_OUTGOING_CAMERA_CONTROL);
         if (bleChar_OutgoingCameraControl == nullptr)
         {
-            DEBUG_ERROR("Failed to find our characteristic UUID: %s", Constants::UUID_BMD_BCS_OUTGOING_CAMERA_CONTROL);
-
-            bleClient->disconnect();
-            status = ConnectionStatus::Disconnected;
+            DEBUG_ERROR("Could not connect to Outgoing Camera Control Characteristic");
+            disconnect();
             return;
         }
         else
@@ -224,8 +254,9 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
         bleChar_Timecode = bleRemoteService->getCharacteristic(Constants::UUID_BMD_BCS_TIMECODE);
         if (bleChar_Timecode == nullptr)
         {
-            bleClient->disconnect();
-            status = ConnectionStatus::Disconnected;
+            // bleClient->disconnect();
+            disconnect();
+            // status = ConnectionStatus::Disconnected;
             return;
         }
         else
@@ -246,7 +277,7 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
     else
     {
         DEBUG_VERBOSE("No cameras found in scan.");
-        status = ConnectionStatus::Disconnected;
+        disconnect();
     }
 }
 
@@ -255,14 +286,13 @@ void BMDCameraConnection::disconnect()
     // Clear known cameras
     cameraAddresses.clear();
 
-    status = ConnectionStatus::Disconnected;
-
     if(bleClient->isConnected())
         bleClient->disconnect();
 
-    BMDControlSystem::getInstance()->deactivateCamera();
+    if(BMDControlSystem::getInstance()->hasCamera())
+        BMDControlSystem::getInstance()->deactivateCamera();
 
-    // Serial.println("Disconnect called.");
+    status = ConnectionStatus::Disconnected;
 }
 
 void BMDCameraConnection::sendCommandToOutgoing(CCUPacketTypes::Command command)

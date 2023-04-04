@@ -11,12 +11,8 @@
 #include "BMDControlSystem.h"
 #include <TFT_eSPI.h>
 #include "ESP32\CST816S\CST816S.h"
-
-// Forward declaration
 #include "CCU\CCUDecodingFunctions.h"
-//class CCUDecodingFunctions;
-
-// class SerialSecurityHandler;
+#include "Config\Versions.h"
 
 class BMDCameraConnection
 {
@@ -31,7 +27,8 @@ class BMDCameraConnection
             ScanningFound,
             ScanningNoneFound,
             NeedPassKey,
-            FailedPassKey
+            FailedPassKey,
+            IncompatibleProtocol
         };
 
         BMDCameraConnection();
@@ -47,7 +44,6 @@ class BMDCameraConnection
 
         ConnectionStatus status;
         std::vector<BLEAddress> cameraAddresses;
-
 
         static void connectCallback(BLEScanResults scanResults);
 
@@ -68,6 +64,7 @@ class BMDCameraConnection
         BLERemoteCharacteristic* bleChar_OutgoingCameraControl;
         BLERemoteCharacteristic* bleChar_DeviceName;
         BLERemoteCharacteristic* bleChar_Timecode;
+        BLERemoteCharacteristic* bleChar_ProtocolVersion;
 
         // BLE Notification functions
         static void IncomingCameraControlNotify(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify);

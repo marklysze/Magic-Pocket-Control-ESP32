@@ -6,6 +6,7 @@ const std::string Constants::UUID_BMD_BCS_OUTGOING_CAMERA_CONTROL = "5DD3465F-1A
 const std::string Constants::UUID_BMD_BCS_INCOMING_CAMERA_CONTROL = "B864E140-76A0-416A-BF30-5876504537D9";
 const std::string Constants::UUID_BMD_BCS_TIMECODE = "6D8F2110-86F1-41BF-9AFB-451D87E976C8";
 const std::string Constants::UUID_BMD_BCS_DEVICE_NAME = "FFAC0C52-C9FB-41A0-B063-CC76282EB89C";
+const std::string Constants::UUID_BMD_BCS_PROTOCOL_VERSION = "8F1FD018-B508-456F-8F82-3D392BEE2706";
 
 // When getting enum value as string, if there's no matching value, return this string
 const std::string Constants::UnknownEnumValue = "[Unknown]";

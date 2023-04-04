@@ -5,3 +5,6 @@
 .vscode/ipch
 .vscode
 .test
+src/Images/*.psd
+src/Images/*.jpg
+src/Images/*.jsx

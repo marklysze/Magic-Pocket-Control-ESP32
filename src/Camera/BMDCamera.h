@@ -36,7 +36,7 @@ public:
     };
 
     // Quick access attributes
-    bool isRecording;
+    bool isRecording = 0;
 
     // Lens Attributes
 

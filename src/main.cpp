@@ -26,6 +26,7 @@
 #include "BMDControlSystem.h"
 
 // Images
+#include "Images\MPCSplash.h"
 #include "Images\ImageBluetooth.h"
 #include "Images\ImagePocket4k.h"
 // PNG png;
@@ -43,6 +44,7 @@ BMDCameraConnection* BMDCameraConnection::instancePtr = &cameraConnection; // Re
 
 TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 TFT_eSprite window = TFT_eSprite(&tft);
+TFT_eSprite spriteMPCSplash = TFT_eSprite(&tft);
 TFT_eSprite spriteBluetooth = TFT_eSprite(&tft);
 TFT_eSprite spritePocket4k = TFT_eSprite(&tft);
 TFT_eSprite spritePassKey = TFT_eSprite(&tft);
@@ -74,7 +76,7 @@ void Screen_Common(int sideBarColour)
     window.fillRect(0, 0, 13, 170, sideBarColour);
     window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
 
-  if(cameraConnection.status == BMDCameraConnection::Connected && BMDControlSystem::getInstance()->hasCamera())
+  if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::Connected && BMDControlSystem::getInstance()->hasCamera())
   {
     // Show the recording outline
     if(BMDControlSystem::getInstance()->getCamera()->isRecording)
@@ -94,12 +96,18 @@ void Screen_NoConnection()
 
   connectedScreenIndex = -1;
 
-  window.fillSprite(TFT_BLACK);
+  // window.fillSprite(TFT_BLACK);
+  spriteMPCSplash.pushToSprite(&window, 0, 0);
 
   // Status
   // window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
 
   // window.fillSmoothCircle(IWIDTH - 25, 25, 18, TFT_RED, TFT_TRANSPARENT);
+
+  DEBUG_VERBOSE("Connection Value: %i", cameraConnection.status);
+
+  // Black background for text and Bluetooth Logo
+  window.fillRect(0, 3, IWIDTH, 51, TFT_BLACK);
 
   // Bluetooth Image
   spriteBluetooth.pushToSprite(&window, 26, 6);
@@ -109,12 +117,10 @@ void Screen_NoConnection()
   switch(cameraConnection.status)
   {
     case BMDCameraConnection::Scanning:
-      // window.fillRect(0, 0, 13, 170, TFT_BLUE);
       Screen_Common(TFT_BLUE); // Common elements
       window.drawString("Scanning...", 70, 20);
       break;
     case BMDCameraConnection::ScanningFound:
-      // window.fillRect(0, 0, 13, 170, TFT_BLUE);
       Screen_Common(TFT_BLUE); // Common elements
       if(cameraConnection.cameraAddresses.size() == 1)
       {
@@ -125,29 +131,29 @@ void Screen_NoConnection()
         window.drawString("Found cameras", 70, 20);
       break;
     case BMDCameraConnection::ScanningNoneFound:
-      // window.fillRect(0, 0, 13, 170, TFT_RED);
       Screen_Common(TFT_RED); // Common elements
       window.drawString("No camera found", 70, 20);
       break;
     case BMDCameraConnection::Connecting:
-      // window.fillRect(0, 0, 13, 170, TFT_YELLOW);
       Screen_Common(TFT_YELLOW); // Common elements
       window.drawString("Connecting...", 70, 20);
       break;
     case BMDCameraConnection::NeedPassKey:
-      // window.fillRect(0, 0, 13, 170, TFT_PURPLE);
       Screen_Common(TFT_PURPLE); // Common elements
       window.drawString("Need Pass Key", 70, 20);
       break;
     case BMDCameraConnection::FailedPassKey:
-      // window.fillRect(0, 0, 13, 170, TFT_ORANGE);
       Screen_Common(TFT_ORANGE); // Common elements
       window.drawString("Wrong Pass Key", 70, 20);
       break;
     case BMDCameraConnection::Disconnected:
-      // window.fillRect(0, 0, 13, 170, TFT_RED);
       Screen_Common(TFT_RED); // Common elements
       window.drawString("Disconnected (wait)", 70, 20);
+      break;
+    case BMDCameraConnection::IncompatibleProtocol:
+      // Note: This needs to be worked on as there's no incompatible protocol connections yet.
+      Screen_Common(TFT_RED); // Common elements
+      window.drawString("Incompatible Protocol", 70, 20);
       break;
     default:
       break;
@@ -174,7 +180,9 @@ void Screen_NoConnection()
   
   if(connectToCameraIndex != -1)
   {
+    DEBUG_DEBUG("Camera status [0]: %i", cameraConnection.status);
     cameraConnection.connect(cameraConnection.cameraAddresses[connectToCameraIndex]);
+    DEBUG_DEBUG("Camera status [2]: %i", cameraConnection.status);
     connectToCameraIndex = -1;
   }
 }
@@ -202,10 +210,6 @@ void Screen_Dashboard()
   window.fillSprite(TFT_BLACK);
 
   Screen_Common(TFT_GREEN); // Common elements
-
-  // Left side
-  // window.fillRect(0, 0, 13, 170, TFT_GREEN);
-  // window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
 
   // ISO
   if(camera->hasSensorGainISOValue())
@@ -368,18 +372,12 @@ void Screen_Recording()
       }
 
       PacketWriter::writeTransportPacket(transportInfo, &cameraConnection);
-      // PacketWriter::writeWhiteBalance(5600, -10, &cameraConnection);
-      // PacketWriter::writeISO(3200, &cameraConnection);
     }
   }
 
   window.fillSprite(TFT_BLACK);
 
   Screen_Common(TFT_GREEN); // Common elements
-
-  // Left side
-  // window.fillRect(0, 0, 13, 170, TFT_GREEN);
-  // window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
 
   // Record button
   if(camera->isRecording) window.fillSmoothCircle(257, 63, 58, Constants::DARK_RED, TFT_RED); // Recording solid
@@ -405,31 +403,6 @@ void Screen_Recording()
   window.pushSprite(0, 0);
 }
 
-
-/*
-void Screen_SlideTest()
-{
-  connectedScreenIndex = 2;
-
-  slideWindow.fillSprite(TFT_BLACK);
-
-  for(int i = IWIDTH; i > (IWIDTH * -1); i--)
-  {
-    // Left Half One Screen
-    slideWindow.drawRect(IWIDTH * -1, 0, IWIDTH, IHEIGHT, TFT_PURPLE);
-
-    // Right Half One Screen
-    slideWindow.drawRect(IWIDTH * 1, 0, IWIDTH, IHEIGHT, TFT_GREEN);
-
-    slideWindow.pushToSprite(&window, i, 0);
-
-    window.pushSprite(0, 0);
-
-    delay(10);
-  }
-}
-*/
-
 void setup() {
 
   // Power and Backlight settings for T-Display-S3
@@ -444,7 +417,7 @@ void setup() {
   esp_task_wdt_init(20, true);
 
   // SET DEBUG LEVEL
-  Debug.setDebugLevel(DBG_DEBUG);
+  Debug.setDebugLevel(DBG_VERBOSE);
   Debug.timestampOn();
 
   // Initialise the screen
@@ -452,27 +425,30 @@ void setup() {
 
   // Landscape mode
   tft.setRotation(3);
-  tft.fillScreen(TFT_BLACK);
+  // tft.fillScreen(TFT_BLACK);
 
   window.createSprite(IWIDTH, IHEIGHT);
   // window.drawString("Blackmagic Camera Control", 20, 20);
 
+  spriteMPCSplash.createSprite(IWIDTH, IHEIGHT);
+  spriteMPCSplash.setSwapBytes(true);
+  spriteMPCSplash.pushImage(0, 0, IWIDTH, IHEIGHT, MPCSplash);
+
+  spriteMPCSplash.pushToSprite(&window, 0, 0);
+  window.pushSprite(0, 0);
+
   spriteBluetooth.createSprite(30, 46);
   spriteBluetooth.setSwapBytes(true);
-  spriteBluetooth.pushImage(0,0,30,46,Wikipedia_Bluetooth_30x46);
+  spriteBluetooth.pushImage(0, 0, 30, 46, Wikipedia_Bluetooth_30x46);
 
   spritePocket4k.createSprite(110, 61);
   spritePocket4k.setSwapBytes(true);
-  spritePocket4k.pushImage(0,0,110,61,blackmagic_pocket_4k_110x61);
+  spritePocket4k.pushImage(0, 0, 110, 61, blackmagic_pocket_4k_110x61);
 
   spritePassKey.createSprite(IWIDTH, IHEIGHT);
 
   // Prepare for Bluetooth connections and start scanning for cameras
-  // cameraConnection.initialise(); // Serial Pass Key entry
   cameraConnection.initialise(&window, &spritePassKey, &touch, IWIDTH, IHEIGHT); // Screen Pass Key entry
-
-  // window.drawSmoothCircle(IWIDTH - 25, 25, 22, TFT_WHITE, TFT_TRANSPARENT);
-  window.pushSprite(0, 0);
 
   // Start capturing touchscreen touches
   touch.begin();
@@ -489,6 +465,11 @@ void loop() {
 
   if (cameraConnection.status == BMDCameraConnection::ConnectionStatus::Disconnected && currentTime - lastConnectedTime >= reconnectInterval) {
     DEBUG_VERBOSE("Disconnected for too long, trying to reconnect");
+
+    // Set the status to Scanning and then show the NoConnection screen to render the Scanning page before starting the scan (which blocks so it can't render the Scanning page before it finishes)
+    cameraConnection.status = BMDCameraConnection::ConnectionStatus::Scanning;
+    Screen_NoConnection();
+
     cameraConnection.scan();
 
     if(connectedScreenIndex != -1) // Move to the No Connection screen if we're not on it
@@ -496,8 +477,6 @@ void loop() {
   }
   else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::Connected)
   {
-    // Serial.print(connectedScreenIndex);
-
     if(connectedScreenIndex >= 0)
     {
       switch(connectedScreenIndex)
@@ -516,18 +495,18 @@ void loop() {
 
     lastConnectedTime = currentTime;
   }
-  else if(cameraConnection.status == BMDCameraConnection::ScanningFound)
+  else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::ScanningFound)
   {
-    // if(connectedScreenIndex != -1) // Move to the No Connection screen if we're not on it
     Screen_NoConnection();
+
+    lastConnectedTime = currentTime;
   }
-  else if(cameraConnection.status == BMDCameraConnection::ScanningNoneFound)
+  else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::ScanningNoneFound)
   {
     DEBUG_VERBOSE("Status Scanning NONE Found. Marking as Disconnected.");
     cameraConnection.status = BMDCameraConnection::Disconnected;
     lastConnectedTime = currentTime;
 
-    // if(connectedScreenIndex != -1) // Move to the No Connection screen if we're not on it
     Screen_NoConnection();
   }
 
@@ -583,12 +562,10 @@ void loop() {
   }
 
   delay(25);
-  // Serial.println("<X>");
 
   // Keep track of the memory use to check that there aren't memory leaks (or significant memory leaks)
   if(Debug.getDebugLevel() >= DBG_VERBOSE && memoryLoopCounter++ % 400 == 0)
   {
     DEBUG_VERBOSE("Heap Size Free: %d of %d", ESP.getFreeHeap(), ESP.getHeapSize());
-    // Serial.print("Heap Size Free: "); Serial.print(ESP.getFreeHeap()); Serial.print(" of "); Serial.println(ESP.getHeapSize());
   }
 }

@@ -3,9 +3,7 @@
 
 #include <BLEClient.h>
 #include <Camera\BMDCameraConnection.h>
-// #include "BMDControlSystem.h"
 
-// class BMDControlSystem;
 class BMDCameraConnection; // forward declaration as both header files include each other.
 
 // This class is for notifications on the BLEClient object in terms of connects and disconnects
@@ -21,4 +19,4 @@ private:
     BMDCameraConnection* cameraConnection;
 };
 
-#endif // BMDBLECLIENTCALLBACK_H
+#endif

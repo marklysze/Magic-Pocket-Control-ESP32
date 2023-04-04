@@ -28,6 +28,9 @@ I found this device had all the necessary components needed to connect and inter
 - Powered over USB-C or a battery
 - Cheap! ~$22USD (or $40AUD for us Aussies)
 
+# Can't I use a mobile/tablet app?
+Yes, indeed you can! Alternatively, this is designed as a lightweight small device that allows you to see and control basic functions of your camera. It can act as a dedicated device for each camera you have, or simply to avoid touching the camera to control it (when it's on a gimbal, mounted somewhere, or in a moving car :) ).
+
 # How do I run this?
 You will need the following:
 - A LILYGO T-Display-S3 **Touch version** [Buy here, ~$22USD](https://www.lilygo.cc/products/t-display-s3?variant=42589373268149)

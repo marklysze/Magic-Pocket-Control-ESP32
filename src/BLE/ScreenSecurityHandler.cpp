@@ -1,6 +1,6 @@
 #include "ScreenSecurityHandler.h"
 
-// Take in the 
+// Take in all the pointers we need access to to render the screen and handle touch
 ScreenSecurityHandler::ScreenSecurityHandler(BMDCameraConnection* bmdCameraConnectionPtr, TFT_eSprite* windowPtr, TFT_eSprite* spritePassKeyPtr, CST816S* touchPtr, int screenWidth, int screenHeight)
 {
   _bmdCameraConnectionPtr = bmdCameraConnectionPtr;

@@ -17,6 +17,7 @@ class Constants
         static const std::string UUID_BMD_BCS_INCOMING_CAMERA_CONTROL;
         static const std::string UUID_BMD_BCS_TIMECODE;
         static const std::string UUID_BMD_BCS_DEVICE_NAME;
+        static const std::string UUID_BMD_BCS_PROTOCOL_VERSION;
 
         static const std::string UnknownEnumValue;
 

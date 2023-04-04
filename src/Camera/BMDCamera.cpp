@@ -9,11 +9,13 @@ BMDCamera::~BMDCamera() {}
 void BMDCamera::setAsConnected()
 {
     connected = true;
+    // isRecording = false;
 }
 
 void BMDCamera::setAsDisconnected()
 {
     connected = false;
+    // isRecording = false;
 }
 
 //
@@ -594,6 +596,7 @@ void BMDCamera::onTransportModeReceived(TransportInfo inTransportMode)
     }
 
     isRecording = transportMode->mode == CCUPacketTypes::MediaTransportMode::Record;
+    DEBUG_VERBOSE("isRecording: %i", isRecording);
 }
 bool BMDCamera::hasTransportMode()
 {
