@@ -9,13 +9,11 @@ BMDCamera::~BMDCamera() {}
 void BMDCamera::setAsConnected()
 {
     connected = true;
-    // isRecording = false;
 }
 
 void BMDCamera::setAsDisconnected()
 {
     connected = false;
-    // isRecording = false;
 }
 
 //

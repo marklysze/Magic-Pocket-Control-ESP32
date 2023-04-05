@@ -7,17 +7,6 @@ void CCUDecodingFunctions::DecodeCCUPacket(std::vector<byte> byteArray) // const
 
     if (isValid)
     {
-        /*
-        byte commandLength = byteArray[PacketFormatIndex::CommandLength];
-        CCUPacketTypes::Category category = static_cast<CCUPacketTypes::Category>(byteArray[PacketFormatIndex::Category]);
-        byte parameter = byteArray[PacketFormatIndex::Parameter];
-
-        byte dataLength = static_cast<byte>(commandLength - CCUPacketTypes::kCCUCommandHeaderSize);
-        byte payloadOffset = CCUPacketTypes::kCUUPayloadOffset;
-        byte* payloadData = new byte[dataLength];
-        memcpy(payloadData, byteArray + payloadOffset, dataLength);
-        */
-
         byte commandLength = byteArray[PacketFormatIndex::CommandLength];
         CCUPacketTypes::Category category = static_cast<CCUPacketTypes::Category>(byteArray[PacketFormatIndex::Category]);
         byte parameter = byteArray[PacketFormatIndex::Parameter];
@@ -28,27 +17,19 @@ void CCUDecodingFunctions::DecodeCCUPacket(std::vector<byte> byteArray) // const
 
         try
         {
-            DecodePayloadData(category, parameter, payloadData); //, dataLength);
+            DecodePayloadData(category, parameter, payloadData);
         }
         catch (const std::exception& ex)
         {
             DEBUG_ERROR("Exception in DecodeCCUPacket: %s", ex.what());
-            // delete[] payloadData;
             throw ex;
         }
-
-        // delete[] payloadData;
     }
 }
 
 // implementation of DecodePayloadData function
 void CCUDecodingFunctions::DecodePayloadData(CCUPacketTypes::Category category, byte parameter, std::vector<byte> payloadData) //, byte* payloadData, int payloadDataLength)
 {
-    if(category != CCUPacketTypes::Category::Status)
-    {
-        // Serial.print("DecodePayloadData, Category: "); Serial.println(static_cast<byte>(category));
-    }
-
     switch (category) {
         case CCUPacketTypes::Category::Lens:
             DecodeLensCategory(parameter, payloadData.data(), payloadData.size()); // payloadDataLength);
@@ -212,23 +193,18 @@ void CCUDecodingFunctions::DecodeApertureNormalised(byte* inData, int inDataLeng
         float apertureValue = static_cast<float>(apertureNormalisedNumber) / 2048.0f; // Convert to float and perform division
         // std::string apertureString = "Decode Aperture Normalised: " + std::to_string(static_cast<int>(apertureValue * 100.0f)) + "%"; // Multiply by 100 to get percentage and convert to string
 
-        // Serial.println(apertureString.c_str());
-
         BMDControlSystem::getInstance()->getCamera()->onHasLens(true); // A lens is attached
 
         BMDControlSystem::getInstance()->getCamera()->onApertureNormalisedReceived(static_cast<int>(apertureValue * 100.0f));
     }
     else
     {
-        // Serial.println("Decoded Aperture Normalized: No Lens Information");
-
         BMDControlSystem::getInstance()->getCamera()->onHasLens(false); // No Lens
     }
 }
 
 void CCUDecodingFunctions::DecodeAutoFocus(byte* inData, int inDataLength)
 {
-    // Serial.print("DecodeAutoFocus: "); Serial.println(inDataLength);
     bool instantaneousAutoFocusPressed = true;
 
     BMDControlSystem::getInstance()->getCamera()->onAutoFocusPressed();
@@ -236,7 +212,6 @@ void CCUDecodingFunctions::DecodeAutoFocus(byte* inData, int inDataLength)
 
 void CCUDecodingFunctions::DecodeZoom(byte* inData, int inDataLength)
 {
-    // ccu_fixed_t
     std::vector<ccu_fixed_t> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 1);
     ccu_fixed_t focalLengthMM = data[0];
 
@@ -375,28 +350,6 @@ void CCUDecodingFunctions::DecodeAutoExposureMode(byte* inData, int inDataLength
 {
     std::vector<sbyte> data = ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, 1);
     CCUPacketTypes::AutoExposureMode autoExposureMode = static_cast<CCUPacketTypes::AutoExposureMode>(data[0]);
-
-    /*
-    Serial.print("Decoded Auto Exposure Mode: ");
-    switch(autoExposureMode)
-    {
-        case CCUPacketTypes::AutoExposureMode::Manual:
-            Serial.println("Manual");
-            break;
-        case CCUPacketTypes::AutoExposureMode::Iris:
-            Serial.println("Iris");
-            break;
-        case CCUPacketTypes::AutoExposureMode::Shutter:
-            Serial.println("Shutter");
-            break;
-        case CCUPacketTypes::AutoExposureMode::IrisAndShutter:
-            Serial.println("IrisAndShutter");
-            break;
-        case CCUPacketTypes::AutoExposureMode::ShutterAndIris:
-            Serial.println("ShutterAndIris");
-            break;
-    }
-    */
    
    BMDControlSystem::getInstance()->getCamera()->onAutoExposureModeReceived(autoExposureMode);
 }
@@ -406,8 +359,6 @@ void CCUDecodingFunctions::DecodeShutterAngle(byte* inData, int inDataLength)
     std::vector<int32_t> data = ConvertPayloadDataWithExpectedCount<int32_t>(inData, inDataLength, 1);
     int32_t shutterAngleX100 = data[0];
 
-    // Serial.print("Decoded Exposure (Shutter Angle x 100): "); Serial.println(shutterAngleX100);
-
     BMDControlSystem::getInstance()->getCamera()->onShutterAngleReceived(shutterAngleX100);
 }
 
@@ -415,8 +366,6 @@ void CCUDecodingFunctions::DecodeShutterSpeed(byte* inData, int inDataLength)
 {
     std::vector<int32_t> data = ConvertPayloadDataWithExpectedCount<int32_t>(inData, inDataLength, 1);
     int32_t shutterSpeed = data[0]; // Result is the denominator in 1/X, e.g. shutterSpeed = 24 is a shutter speed of 1/24
-
-    // Serial.print("Decoded Exposure (Shutter Speed): "); Serial.println(shutterSpeed);
 
     BMDControlSystem::getInstance()->getCamera()->onShutterSpeedReceived(shutterSpeed);
 }
@@ -426,8 +375,6 @@ void CCUDecodingFunctions::DecodeGain(byte* inData, int inDataLength)
     std::vector<byte> data = ConvertPayloadDataWithExpectedCount<byte>(inData, inDataLength, 1);
     byte gain = data[0];
 
-    // Serial.print("Decoded Gain): "); Serial.println(gain);
-
     BMDControlSystem::getInstance()->getCamera()->onSensorGainDBReceived(gain);
 }
 
@@ -435,8 +382,6 @@ void CCUDecodingFunctions::DecodeISO(byte* inData, int inDataLength)
 {
     std::vector<int32_t> data = ConvertPayloadDataWithExpectedCount<int32_t>(inData, inDataLength, 1);
     int32_t iso = data[0];
-
-    // Serial.print("Decoded ISO: "); Serial.println(iso);
 
     BMDControlSystem::getInstance()->getCamera()->onSensorGainISOValueReceived(iso);
 }
@@ -446,30 +391,6 @@ void CCUDecodingFunctions::DecodeDisplayLUT(byte* inData, int inDataLength)
     std::vector<byte> data = ConvertPayloadDataWithExpectedCount<byte>(inData, inDataLength, 2);
     CCUPacketTypes::SelectedLUT selectedLut = static_cast<CCUPacketTypes::SelectedLUT>(data[0]);
     bool enabled = data[1] == 1;
-
-    /*
-    Serial.print("Decoded Display LUT: ");
-    switch(selectedLut)
-    {
-        case CCUPacketTypes::SelectedLUT::None:
-            Serial.print("None");
-            break;
-        case CCUPacketTypes::SelectedLUT::Custom:
-            Serial.print("Custom");
-            break;
-        case CCUPacketTypes::SelectedLUT::FilmToVideo:
-            Serial.print("FilmToVideo");
-            break;
-        case CCUPacketTypes::SelectedLUT::FilmToExtendedVideo:
-            Serial.print("FilmToExtendedVideo");
-            break;
-    }
-
-    if(enabled)
-        Serial.println(", Enabled");
-    else
-        Serial.println(", Not Enabled");
-    */
 
    BMDControlSystem::getInstance()->getCamera()->onSelectedLUTReceived(selectedLut);
    BMDControlSystem::getInstance()->getCamera()->onSelectedLUTEnabledReceived(enabled);
@@ -555,32 +476,20 @@ void CCUDecodingFunctions::DecodeCameraSpec(byte* inData, int inDataLength)
 {
     std::vector<byte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<byte>(inData, inDataLength, 4);
 
-    // Serial.print("DecodeCameraSpec #1: ");Serial.println(data[0]);
-    // Serial.print("DecodeCameraSpec #2: ");Serial.println(data[1]); // This is the camera model, 14 = Pocket 6K.
-    // Serial.print("DecodeCameraSpec #3: ");Serial.println(data[2]);
-    // Serial.print("DecodeCameraSpec #4: ");Serial.println(data[3]);
-
     if(data[1] < CameraModels::NumberOfCameraModels)
     {
-        CameraModel cameraModel = CameraModels::fromValue(data[1]);
+        CameraModel cameraModel = CameraModels::fromValue(data[1]); // This is the camera model, 14 = Pocket 6K.
 
         std::string cameraName = CameraModels::modelToName.at(cameraModel);
 
-        // Serial.print("Camera Name: "); Serial.println(cameraName.c_str());
-
-        // if(CameraModels::isPocket(cameraModel)) Serial.println("Classified as a Pocket Camera");
-            
         // Update Camera object
         BMDControlSystem::getInstance()->getCamera()->onModelNameReceived(cameraName);
         BMDControlSystem::getInstance()->getCamera()->onIsPocketReceived(CameraModels::isPocket(cameraModel));
 
         std::string setName = BMDControlSystem::getInstance()->getCamera()->getModelName();
-        // Serial.print("Retrieved Camera Name: "); Serial.println(setName.c_str());
     }
     else
     {
-        // Serial.print("Unknown Camera with a value of: "); Serial.println(data[1]);
-
         BMDControlSystem::getInstance()->getCamera()->onModelNameReceived("UNKNOWN CAMERA MODEL");
     }
 }
@@ -594,29 +503,9 @@ void CCUDecodingFunctions::DecodeMediaStatus(byte* inData, int inDataLength)
 
     for(int index = 0; index < slotCount; index++)
     {
-        // Serial.print("Slot #"); Serial.print(index);
-
         CCUPacketTypes::MediaStatus slotMediaStatus = static_cast<CCUPacketTypes::MediaStatus>(data[index]);
 
         mediaStatuses.push_back(slotMediaStatus);
-
-        /*
-        switch(slotMediaStatus)
-        {
-            case CCUPacketTypes::MediaStatus::None:
-                Serial.println(": None");
-                break;
-            case CCUPacketTypes::MediaStatus::Ready:
-                Serial.println(": Ready");
-                break;
-            case CCUPacketTypes::MediaStatus::MountError:
-                Serial.println(": Mount Error");
-                break;
-            case CCUPacketTypes::MediaStatus::RecordError:
-                Serial.println(": Record Error");
-                break;
-        }
-        */
     }
 
     BMDControlSystem::getInstance()->getCamera()->onMediaStatusReceived(mediaStatuses);
@@ -849,8 +738,6 @@ void CCUDecodingFunctions::DecodeTransportMode(byte* inData, int inDataLength)
     transportInfo.playAll = static_cast<bool>((static_cast<int>(flags) & static_cast<int>(CCUPacketTypes::MediaTransportFlag::PlayAll)) > 0);
     transportInfo.timelapseRecording = static_cast<bool>((static_cast<int>(flags) & static_cast<int>(CCUPacketTypes::MediaTransportFlag::TimelapseRecording)) > 0);
 
-    // Serial.print("DecodeTransportMode, Loop is "); Serial.print(transportInfo.loop); Serial.print(", playAll is "); Serial.print(transportInfo.playAll); Serial.print(", TimelapseRecording is "); Serial.println(transportInfo.timelapseRecording);
-
     // The remaining data is for storage slots
     int slotCount = data.size() - 3;
     transportInfo.slots = std::vector<TransportInfo::TransportInfoSlot>(slotCount, TransportInfo::TransportInfoSlot());
@@ -859,8 +746,6 @@ void CCUDecodingFunctions::DecodeTransportMode(byte* inData, int inDataLength)
     {
         transportInfo.slots[i].active = flags & CCUPacketTypes::slotActiveMasks[i];
         transportInfo.slots[i].medium = static_cast<CCUPacketTypes::ActiveStorageMedium>(data[i + 3]);
-
-        // Serial.print("DecodeTransportMode Slot #"); Serial.print(i); Serial.print(", Active is "); Serial.print(transportInfo.slots[i].active); Serial.print(", Storage Medium: "); Serial.println(data[i + 3]);
     }
 
     BMDControlSystem::getInstance()->getCamera()->onTransportModeReceived(transportInfo);
@@ -933,16 +818,12 @@ void CCUDecodingFunctions::DecodeReel(byte* inData, int inDataLength)
     std::vector<short> data = ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 1);
     short reelNumber = data[0];
 
-    // Serial.print("DecodeReel, Reel Number: "); Serial.println(reelNumber);
-
     BMDControlSystem::getInstance()->getCamera()->onReelNumberReceived(reelNumber);
 }
 
 void CCUDecodingFunctions::DecodeScene(byte* inData, int inDataLength)
 {
     std::string sceneString = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
-
-    // Serial.print("DecodeScene Scene: "); Serial.println(sceneString.c_str());
 
     BMDControlSystem::getInstance()->getCamera()->onSceneNameReceived(sceneString);
 }
@@ -953,8 +834,6 @@ void CCUDecodingFunctions::DecodeSceneTags(byte* inData, int inDataLength)
     CCUPacketTypes::MetadataSceneTag sceneTag = static_cast<CCUPacketTypes::MetadataSceneTag>(data[0]);
     CCUPacketTypes::MetadataLocationTypeTag locationType = static_cast<CCUPacketTypes::MetadataLocationTypeTag>(data[1]);
     CCUPacketTypes::MetadataDayNightTag dayOrNight = static_cast<CCUPacketTypes::MetadataDayNightTag>(data[2]);
-
-    // Serial.print("DecodeSceneTags Scene Tag is "); Serial.print((sbyte)sceneTag); Serial.print(", Location Type is "); Serial.print((byte)locationType); Serial.print(", DayOrNight is ");Serial.println((byte)dayOrNight);
 
     BMDControlSystem::getInstance()->getCamera()->onSceneTagReceived(sceneTag);
     BMDControlSystem::getInstance()->getCamera()->onLocationTypeReceived(locationType);
@@ -967,8 +846,6 @@ void CCUDecodingFunctions::DecodeTake(byte* inData, int inDataLength)
     sbyte takeNumber = data[0];
     CCUPacketTypes::MetadataTakeTag takeTag = static_cast<CCUPacketTypes::MetadataTakeTag>(data[1]);
 
-    // Serial.print("DecodeTake Take Number is "); Serial.print((sbyte)takeNumber); Serial.print(", Take Tag is "); Serial.println((sbyte)takeTag);
-
     BMDControlSystem::getInstance()->getCamera()->onTakeTagReceived(takeTag);
     BMDControlSystem::getInstance()->getCamera()->onTakeNumberReceived(takeNumber);
 }
@@ -978,16 +855,12 @@ void CCUDecodingFunctions::DecodeGoodTake(byte* inData, int inDataLength)
     std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, 1);
     sbyte goodTake = data[0];
 
-    // Serial.print("DecodeGoodTake Good Take is "); Serial.println((sbyte)goodTake);
-
     BMDControlSystem::getInstance()->getCamera()->onGoodTakeReceived(goodTake);
 }
 
 void CCUDecodingFunctions::DecodeCameraId(byte* inData, int inDataLength)
 {
     std::string cameraId = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
-
-    // Serial.print("DecodeCameraId CameraId is "); Serial.println(cameraId.c_str());
 
     BMDControlSystem::getInstance()->getCamera()->onCameraIdReceived(cameraId);
 }
@@ -996,8 +869,6 @@ void CCUDecodingFunctions::DecodeCameraOperator(byte* inData, int inDataLength)
 {
     std::string cameraOperator = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
 
-    // Serial.print("DecodeCameraOperator Camera Operator is "); Serial.println(cameraOperator.c_str());
-
     BMDControlSystem::getInstance()->getCamera()->onCameraOperatorReceived(cameraOperator);
 }
 
@@ -1005,16 +876,12 @@ void CCUDecodingFunctions::DecodeDirector(byte* inData, int inDataLength)
 {
     std::string director = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
 
-    // Serial.print("DecodeDirector Director is "); Serial.println(director.c_str());
-
     BMDControlSystem::getInstance()->getCamera()->onDirectorReceived(director);
 }
 
 void CCUDecodingFunctions::DecodeProjectName(byte* inData, int inDataLength)
 {
     std::string projectName = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
-
-    // Serial.print("DecodeProjectName Project Name is "); Serial.println(projectName.c_str());
 
     BMDControlSystem::getInstance()->getCamera()->onProjectNameReceived(projectName);
 }
@@ -1024,8 +891,6 @@ void CCUDecodingFunctions::DecodeSlateForType(byte* inData, int inDataLength)
 {
     std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, 1);
     CCUPacketTypes::MetadataSlateForType slateForType = static_cast<CCUPacketTypes::MetadataSlateForType>(data[0]);
-
-    // Serial.print("DecodeSlateForType Slate For Type is "); Serial.println((sbyte)slateForType);
 
     BMDControlSystem::getInstance()->getCamera()->onSlateTypeReceived(slateForType);
 }
@@ -1043,8 +908,6 @@ void CCUDecodingFunctions::DecodeSlateForName(byte* inData, int inDataLength)
         name = name.substr(match.position() + match.length());
     }
 
-    // Serial.print("DecodeSlateForName Name is "); Serial.println(name.c_str());
-
     BMDControlSystem::getInstance()->getCamera()->onSlateNameReceived(name);
 }
 
@@ -1052,7 +915,6 @@ void CCUDecodingFunctions::DecodeLensFocalLength(byte* inData, int inDataLength)
 {
     std::string lensFocalLength = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
 
-    // Serial.print("DecodeLensFocalLength Lens Focal Length: "); Serial.println(lensFocalLength.c_str());
     // DecodeLensFocalLength Lens Focal Length: 65mm
 
     BMDControlSystem::getInstance()->getCamera()->onLensFocalLengthReceived(lensFocalLength);
@@ -1062,7 +924,6 @@ void CCUDecodingFunctions::DecodeLensDistance(byte* inData, int inDataLength)
 {
     std::string lensDistance = ConvertPayloadDataToString(inData, inDataLength);
 
-    // Serial.print("DecodeLensFocalDistance Lens Distance: "); Serial.println(lensDistance.c_str());
     // DecodeLensFocalDistance Lens Distance: Inf
     // DecodeLensFocalDistance Lens Distance: 26100mm to 41310mm
 
@@ -1073,7 +934,6 @@ void CCUDecodingFunctions::DecodeLensType(byte* inData, int inDataLength)
 {
     std::string lensType = ConvertPayloadDataToString(inData, inDataLength);
 
-    // Serial.print("DecodeLensType Lens Type: "); Serial.println(lensType.c_str());
     // DecodeLensType Lens Type: Canon EF-S 55-250mm f/4-5.6 IS
     // "DecodeLensType Lens Type:" <-- this shows when there's no info between camera and lens.
 
@@ -1084,7 +944,6 @@ void CCUDecodingFunctions::DecodeLensIris(byte* inData, int inDataLength)
 {
     std::string lensIris = ConvertPayloadDataToString(inData, inDataLength);
 
-    // Serial.print("DecodeLensType Lens Iris: "); Serial.println(lensIris.c_str());
     // DecodeLensType Lens Type: Canon EF-S 55-250mm f/4-5.6 IS
     // "DecodeLensType Lens Type:" <-- this shows when there's no info between camera and lens.
 

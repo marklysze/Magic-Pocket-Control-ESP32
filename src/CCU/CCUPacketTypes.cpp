@@ -24,7 +24,7 @@ const std::array<int, 4> CCUPacketTypes::slotActiveMasks =
     0
 };
 
-// MS CHECK THAT THESE ARE ACTUALLY BEING USED IN THE VALIDATION FUNCTION, MAY NEED TO MOVE THIS SETTING OF VALUES
+// Used to validate the data that relates to enum's is valid, lists the enums and their valid values
 const byte CCUPacketTypes::LensParameterValues[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 const byte CCUPacketTypes::VideoParameterValues[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
 const byte CCUPacketTypes::AudioParameterValues[7] = {0, 1, 2, 3, 4, 5, 6};

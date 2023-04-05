@@ -25,8 +25,6 @@ public:
 
     template<typename T>
     static std::vector<T> ConvertPayloadDataWithExpectedCount(byte* data, int byteCount, int expectedCount);
-    // template <typename T>
-    // static std::vector<T> ConvertPayloadData(const std::vector<byte>& data);
     static std::string ConvertPayloadDataToString(byte* data, int byteCount);
 
 

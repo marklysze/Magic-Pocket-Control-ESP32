@@ -12,12 +12,11 @@
 
 class CCUValidationFunctions {
     public:
-       static bool ValidateCCUPacket(std::vector<byte> byteArray) { //const byte* byteArray, const size_t size) {
-            byte packetSize = byteArray.size(); // static_cast<byte>(size);
+       static bool ValidateCCUPacket(std::vector<byte> byteArray) {
+            byte packetSize = byteArray.size();
             bool isSizeValid = (packetSize >= CCUPacketTypes::kPacketSizeMin && packetSize <= CCUPacketTypes::kPacketSizeMax);
             if (!isSizeValid) {
                 DEBUG_ERROR("ValidateCCUPacket: Size is not valid.");
-                //Logger.LogWithInfo("CCU packet (" + String(packetSize) + " bytes) is not between " + String(CCUPacketTypes::kPacketSizeMin) + " and " + String(CCUPacketTypes::kPacketSizeMax) + " bytes.");
                 return false;
             }
 
@@ -26,7 +25,6 @@ class CCUValidationFunctions {
             byte actualPayloadSize = packetSize - (CCUPacketTypes::kCCUPacketHeaderSize + CCUPacketTypes::kCCUCommandHeaderSize);
             if (actualPayloadSize < expectedPayloadSize) {
                 DEBUG_ERROR("ValidateCCUPacket: Actual payload size less than expected payload size.");
-                //Logger.LogWithInfo("Payload (" + String(actualPayloadSize) + ") is smaller than expected (" + String(expectedPayloadSize) + ").");
                 return false;
             }
 
