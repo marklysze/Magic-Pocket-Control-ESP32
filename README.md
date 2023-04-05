@@ -1,7 +1,11 @@
 # Magic Pocket Control for ESP32 devices
 Blackmagic Design camera control on a LILYGO T-Display-S3, M5Stack M5StickC Plus, Freenove ESP32-S3-WROOM, or (hopefully) any other ESP32 device.
 
-Designed for the Pocket 4K, Pocket 6K/G2/Pro, USRA G2 4.6K, URSA 12K.
+:movie_camera: Designed for the Pocket 4K, Pocket 6K/G2/Pro, USRA G2 4.6K, URSA 12K.
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
+:star: How about a Star?
 
 # Why?
 My primary objective was to convert a Windows-based application I had for controlling my cameras to a small portable device.
@@ -20,6 +24,9 @@ The key features are:
     - Recording: Start and Stop recording, shows timecode and the remaining time left on the active media
     - ISO: Change ISO
 - Use many read and write settings of the camera (Record Start & Stop, ISO, Shutter Speed / Angle, White Balance, Tint, Codec, Resolution, FPS, Off-speed Recording, Media, Slate, Project Name, Lens Data)
+
+# What can you do?
+I hope you find the functionality useful and it would be great if you could contribute your improvements, suggestions, or general feedback to the project!
 
 # Why did I choose the LILYGO T-Display-S3 Touch version to program for?
 I found this device had all the necessary components needed to connect and interact with the cameras:
@@ -66,7 +73,7 @@ board = adafruit_itsybitsy_esp32
 6. Save the file
 7. Create a main source file under *src/main/* that has the ID of the board prefixed by "main-", e.g. "src/main/main-adafruit_itsybitsy_esp32.cpp"
 8. Choose the new environment using the bottom environment bottom of Visual Studio Code
-9. Click Build to compile (make sure your main file has at least "void setup()" and "void loop()" defined
+9. Click Build to compile (make sure your main file has at least "void setup()" and "void loop()" defined)
 
 
 You will need to do the following to ensure that the TFT_eSPI library is configured for the LilyGO T-Display-S3 or any other device that you're using it for:
@@ -108,3 +115,6 @@ I converted a lot of the Swift (Mac) code from Blackmagic Design's Cameras Code 
 # License
 * GPL-3.0 license
 * Coverted Swift code from the Blackmagic Design Cameras Code Samples [Download here](https://www.blackmagicdesign.com/au/developer/product/camera)
+
+# :thumbsup: Thank you
+Thanks for being part of the community! :sparkles:
