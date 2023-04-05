@@ -1,7 +1,7 @@
 #include "BMDCameraConnection.h"
 
 // Update this to what you would like shown on the back of the camera
-static const std::string CODEAPPNAME ="Magic Pocket Control";
+const std::string BMDCameraConnection::CODEAPPNAME ="Magic Pocket Control";
 
 BMDCameraConnection::BMDCameraConnection() {}
 
@@ -45,32 +45,6 @@ void BMDCameraConnection::initialise()
     bleDevice.setEncryptionLevel(ESP_BLE_SEC_ENCRYPT);
 
     SerialSecurityHandler* securityHandler = new SerialSecurityHandler(this);
-    bleDevice.setSecurityCallbacks(securityHandler);
-
-    bleSecurity = new BLESecurity();
-    bleSecurity->setAuthenticationMode(ESP_LE_AUTH_REQ_SC_BOND);
-    bleSecurity->setCapability(ESP_IO_CAP_IN);
-    bleSecurity->setRespEncryptionKey(ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK);
-
-    status = ConnectionStatus::Disconnected;
-    // disconnect();
-
-    initialised = true;
-}
-
-// Initialise and use Touch Screen numpad security
-void BMDCameraConnection::initialise(TFT_eSprite* windowPtr, TFT_eSprite* spritePassKeyPtr, CST816S* touchPtr, int screenWidth, int screenHeight)
-{
-    if(initialised)
-        return;
-
-    appName = CODEAPPNAME;
-
-    bleDevice.init("MPC");
-    bleDevice.setPower(ESP_PWR_LVL_P9);
-    bleDevice.setEncryptionLevel(ESP_BLE_SEC_ENCRYPT);
-
-    ScreenSecurityHandler* securityHandler = new ScreenSecurityHandler(this, windowPtr, spritePassKeyPtr, touchPtr, screenWidth, screenHeight);
     bleDevice.setSecurityCallbacks(securityHandler);
 
     bleSecurity = new BLESecurity();
