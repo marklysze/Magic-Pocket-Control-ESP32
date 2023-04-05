@@ -1,7 +1,7 @@
 # Magic Pocket Control for ESP32 devices
-Blackmagic Design camera control on a LILYGO T-Display-S3, M5Stack M5StickC Plus, Freenove ESP32-S3-WROOM, or hopefully any other ESP32 device.
+Blackmagic Design camera control on a LILYGO T-Display-S3, M5Stack M5StickC Plus, Freenove ESP32-S3-WROOM, or (hopefully) any other ESP32 device.
 
-Designed for the Pocket 4K, Pocket 6K/G2/Pro, USRA G2 4.6K, URSA 12K
+Designed for the Pocket 4K, Pocket 6K/G2/Pro, USRA G2 4.6K, URSA 12K.
 
 # Why?
 My primary objective was to convert a Windows-based application I had for controlling my cameras to a small portable device.
@@ -13,8 +13,9 @@ The key features are:
 - Connect to the cameras wirelessly over Bluetooth LE
 - Select the camera to connect to if you have multiple available
 - Entry of the Bluetooth connection code (6 digit pin) through a touchscreen numpad (LILYGO T-Display-S3)
+- Entry of the Bluetooth connection code (6 digit pin) through the serial console (when you don't have touch-screen or keypad)
 - Multiple screens that can be viewed by swiping left and right (LILYGO T-Display-S3)
-- Screens and functionality
+- Screens and functionality (LILYGO T-Display-S3)
     - Dashboard: View the ISO, Shutter Speed, White Balance/Tint, Codec, FPS, active media device, and resolution
     - Recording: Start and Stop recording, shows timecode and the remaining time left on the active media
     - ISO: Change ISO
@@ -32,7 +33,7 @@ I found this device had all the necessary components needed to connect and inter
 # What ESP32 devices are support?
 Hopefully all of them are supported and I have a few that I'm developing for to check they work - LILYGO T-Display-S3, M5Stack M5StickC Plus, Freenove ESP32-S3-WROOM.
 
-It would be great if you could let the community know what ESP32 device you have and whether it works
+It would be great if you could let the community know what ESP32 device you have and whether it works and I'll update this note.
 
 # Can't I use a mobile/tablet app?
 Yes, indeed you can! Alternatively, this is designed as a lightweight small device that allows you to see and control basic functions of your camera. It can act as a dedicated device for each camera you have, or simply to avoid touching the camera to control it (when it's on a gimbal, mounted somewhere, or in a moving car :) ).
@@ -65,7 +66,8 @@ board = adafruit_itsybitsy_esp32
 6. Save the file
 7. Create a main source file under *src/main/* that has the ID of the board prefixed by "main-", e.g. "src/main/main-adafruit_itsybitsy_esp32.cpp"
 8. Choose the new environment using the bottom environment bottom of Visual Studio Code
-9. Click Build to compile (make sure your main file has at least "void setup()" and "void loop()" defined.
+9. Click Build to compile (make sure your main file has at least "void setup()" and "void loop()" defined
+
 
 You will need to do the following to ensure that the TFT_eSPI library is configured for the LilyGO T-Display-S3 or any other device that you're using it for:
 - The platformio.ini file within the project should already have TFT_eSPI as a library dependency. If you don't see TFT_eSPI under your ".pio\libdeps" folder > under the PlatformIO home page within Visual Studio Code, click on Libraries, search for TFT_eSPI. Click on it and then click on **Add to Project**, select your project and click **Add**. Proceed to the next point.
@@ -73,7 +75,7 @@ You will need to do the following to ensure that the TFT_eSPI library is configu
 - Similarly, if you don't have the "Arduino_DebugUtils" under your ".pio\libdeps" folder, add the "Arduino_DebugUtils" library to the project using the same method above.
 
 # What can we do with these cameras?
-See the Blackmagic Camera Control Developer Information document, [Download here](https://documents.blackmagicdesign.com/DeveloperManuals/BlackmagicCameraControl.pdf). It's not up-to-date and I've used the sample code, noted below, to update functionality. There remains other functionality not documented or in the code samples that has been worked out by the community.
+See the Blackmagic Camera Control Developer Information document, [here](https://documents.blackmagicdesign.com/DeveloperManuals/BlackmagicCameraControl.pdf). It's not up-to-date and I've used the sample code, noted below, to update functionality. There remains other functionality not documented or in the code samples that has been worked out by the community.
 
 I converted a lot of the Swift (Mac) code from Blackmagic Design's Cameras Code Samples, [Download here](https://www.blackmagicdesign.com/au/developer/product/camera)
 
@@ -94,8 +96,10 @@ I converted a lot of the Swift (Mac) code from Blackmagic Design's Cameras Code 
     - Ensure that you have Bluetooth turned on in the Setup menu on the camera
     - I have tested with the Pocket 4K and 6K (Original) - contact me if you are having trouble connecting to your camera.
     - The version of your firmware may need to be updated to the latest version so the protocol used is compatible with your camera.
-3. What can we do with the cameras?
-    - Check Blackmagic Design's [Camera Control document](https://documents.blackmagicdesign.com/DeveloperManuals/BlackmagicCameraControl.pdf) for a description of the functionality available. The first few pages contain the main information.
+3. How do I enter the PIN code to connect?
+    - If you're using the LILYGO T-Display-S3 touch-version there's an on-screen numpad that appears when you're required to enter the code.
+    - If you're using another ESP32, such as one without a screen, you can use the Serial console to enter the PIN code (see the M5Stick example code) for the first time you connect. Once you've done that you can unplug the device from your computer.
+    - Once you've entered the code and connected succesfully both devices should remember each other for future connections, unless you clear the connections (as can be done on the Camera under the Bluetooth screen).
 
 # Disclaimer
 * The use of this software is at your own risk. The creator of this software cannot be held liable.
