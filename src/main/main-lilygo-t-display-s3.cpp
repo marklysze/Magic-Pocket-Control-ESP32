@@ -31,7 +31,16 @@
 #include "Images\MPCSplash.h"
 #include "Images\ImageBluetooth.h"
 #include "Images\ImagePocket4k.h"
-// PNG png;
+#include "Images\WBBright.h"
+#include "Images\WBCloud.h"
+#include "Images\WBFlourescent.h"
+#include "Images\WBIncandescent.h"
+#include "Images\WBMixedLight.h"
+#include "Images\WBBrightBG.h"
+#include "Images\WBCloudBG.h"
+#include "Images\WBFlourescentBG.h"
+#include "Images\WBIncandescentBG.h"
+#include "Images\WBMixedLightBG.h"
 
 // Include the watchdog library so we can hold stop it timing out while pass key entry.
 #include "esp_task_wdt.h"
@@ -46,10 +55,23 @@ BMDCameraConnection* BMDCameraConnection::instancePtr = &cameraConnection; // Re
 
 TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 TFT_eSprite window = TFT_eSprite(&tft);
+TFT_eSprite spritePassKey = TFT_eSprite(&tft);
+
+// Images
 TFT_eSprite spriteMPCSplash = TFT_eSprite(&tft);
 TFT_eSprite spriteBluetooth = TFT_eSprite(&tft);
 TFT_eSprite spritePocket4k = TFT_eSprite(&tft);
-TFT_eSprite spritePassKey = TFT_eSprite(&tft);
+TFT_eSprite spriteWBBright = TFT_eSprite(&tft);
+TFT_eSprite spriteWBCloud = TFT_eSprite(&tft);
+TFT_eSprite spriteWBFlourescent = TFT_eSprite(&tft);
+TFT_eSprite spriteWBIncandescent = TFT_eSprite(&tft);
+TFT_eSprite spriteWBMixedLight = TFT_eSprite(&tft);
+TFT_eSprite spriteWBBrightBG = TFT_eSprite(&tft);
+TFT_eSprite spriteWBCloudBG = TFT_eSprite(&tft);
+TFT_eSprite spriteWBFlourescentBG = TFT_eSprite(&tft);
+TFT_eSprite spriteWBIncandescentBG = TFT_eSprite(&tft);
+TFT_eSprite spriteWBMixedLightBG = TFT_eSprite(&tft);
+
 
 #define IWIDTH 320
 #define IHEIGHT 170
@@ -60,7 +82,7 @@ int connectedScreenIndex = 0; // The index of the screen we're on:
 // 0 is Dashboard
 // 1 is Recording
 // 2 is ISO
-// 3 is Shutter
+// 3 is Shutter Angle & Shutter Speed
 // 4 is WB / Tint
 // 5 is Codec
 // 6 is Framerate
@@ -673,10 +695,10 @@ void Screen_ShutterAngle()
   if(currentShutterAngle == labelShutterAngle) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
   window.drawCentreString(String(labelShutterAngle / 100).c_str(), 160, 131, tft.textfont);
 
-  // Custom ISO - show if ISO is not one of the above values
+  // Custom Shutter Angle - show if not one of the above values
   if(currentShutterAngle != 0)
   {
-    // Only show the ISO value if it's not a standard one
+    // Only show the Shutter angle value if it's not a standard one
     if(currentShutterAngle != 1500 && currentShutterAngle != 6000 && currentShutterAngle != 9000 && currentShutterAngle != 12000 && currentShutterAngle != 15000 && currentShutterAngle != 18000 && currentShutterAngle != 27000 && currentShutterAngle != 36000)
     {
       float customShutterAngle = currentShutterAngle / 100.0;
@@ -688,6 +710,347 @@ void Screen_ShutterAngle()
       window.drawCentreString("CUSTOM", 260, 149, tft.textfont);
     }
   }
+
+  window.pushSprite(0, 0);
+}
+
+void Screen_ShutterSpeed()
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = 3;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // Shutter Speed Values: 1/30, 1/50, 1/60, 1/125, 1/200, 1/250, 1/500, 1/2000, CUSTOM
+  // Note that the protocol takes the denominator as its parameter value. So for 1/60 we'll pass 60.
+
+  // If we have a tap, we should determine if it is on anything
+  if(tapped_x != -1)
+  {
+    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 160)
+    {
+      // Tapped within the area
+      int newShutterSpeed = 0;
+
+      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
+        newShutterSpeed = 30;
+      else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
+        newShutterSpeed = 50;
+      else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
+        newShutterSpeed = 60;
+
+      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 110 && tapped_y <= 115)
+        newShutterSpeed = 125;
+      else if(tapped_x >= 115 && tapped_y >= 75 && tapped_x <= 205 && tapped_y <= 115)
+        newShutterSpeed = 200;
+      else if(tapped_x >= 210 && tapped_y >= 75 && tapped_x <= 310 && tapped_y <= 115)
+        newShutterSpeed = 250;
+
+      else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 110 && tapped_y <= 160)
+        newShutterSpeed = 500;
+      else if(tapped_x >= 115 && tapped_y >= 120 && tapped_x <= 205 && tapped_y <= 160)
+        newShutterSpeed = 2000;
+
+      if(newShutterSpeed != 0)
+      {
+        // Shutter Speed selected, send it to the camera
+        PacketWriter::writeShutterSpeed(newShutterSpeed, &cameraConnection);
+      }
+    }
+  }
+
+  window.fillSprite(TFT_BLACK);
+
+  Screen_Common(TFT_GREEN); // Common elements
+
+  // Get the current Shutter Speed
+  int currentShutterSpeed = 0;
+  if(camera->hasShutterSpeed())
+    currentShutterSpeed = camera->getShutterSpeed();
+  else
+    DEBUG_DEBUG("DO NOT HAVE SHUTTER SPEED!");
+
+  // Shutter Speed label
+  window.textcolor = TFT_WHITE;
+  window.textbgcolor = TFT_BLACK;
+
+  if(camera->hasRecordingFormat())
+  {
+    window.setTextSize(1);
+    window.drawRightString(camera->getRecordingFormat().frameRate_string().c_str() + String(" fps"), 310, 9, tft.textfont);
+  }
+
+  window.setTextSize(2);
+  window.drawString("SHUTTER SPEED", 30, 9);
+
+  window.textbgcolor = TFT_DARKGREY;
+
+  // 1/30
+  int labelShutterSpeed = 30;
+  window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentShutterSpeed == labelShutterSpeed) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString("1/" + String(labelShutterSpeed), 65, 41, tft.textfont);
+
+  // 1/50
+  labelShutterSpeed = 50;
+  window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentShutterSpeed == labelShutterSpeed) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString("1/" + String(labelShutterSpeed), 160, 41, tft.textfont);
+
+  // 1/60
+  labelShutterSpeed = 60;
+  window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentShutterSpeed == labelShutterSpeed) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString("1/" + String(labelShutterSpeed), 260, 41, tft.textfont);
+
+  // 1/125
+  labelShutterSpeed = 125;
+  window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentShutterSpeed == labelShutterSpeed) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString("1/" + String(labelShutterSpeed), 65, 87, tft.textfont);
+
+  // 1/200
+  labelShutterSpeed = 200;
+  window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentShutterSpeed == labelShutterSpeed) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString("1/" + String(labelShutterSpeed), 160, 87, tft.textfont);
+
+  // 1/250
+  labelShutterSpeed = 250;
+  window.fillSmoothRoundRect(210, 75, 100, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentShutterSpeed == labelShutterSpeed) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString("1/" + String(labelShutterSpeed), 260, 87, tft.textfont);
+
+  // 1/500
+  labelShutterSpeed = 500;
+  window.fillSmoothRoundRect(20, 120, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentShutterSpeed == labelShutterSpeed) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString("1/" + String(labelShutterSpeed), 65, 131, tft.textfont);
+
+  // 1/2000
+  labelShutterSpeed = 2000;
+  window.fillSmoothRoundRect(115, 120, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentShutterSpeed == labelShutterSpeed) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString("1/" + String(labelShutterSpeed), 160, 131, tft.textfont);
+
+  // Custom Shutter Speed - show if not one of the above values
+  if(currentShutterSpeed != 0)
+  {
+    // Only show the Shutter Speed value if it's not a standard one
+    if(currentShutterSpeed != 30 && currentShutterSpeed != 50 && currentShutterSpeed != 60 && currentShutterSpeed != 125 && currentShutterSpeed != 200 && currentShutterSpeed != 250 && currentShutterSpeed != 500 && currentShutterSpeed != 2000)
+    {
+      window.fillSmoothRoundRect(210, 120, 100, 40, 3, TFT_DARKGREEN, TFT_TRANSPARENT);
+      window.textbgcolor = TFT_DARKGREEN;
+      window.drawCentreString("1/" + String(currentShutterSpeed), 260, 126, tft.textfont);
+      window.setTextSize(1);
+      window.drawCentreString("CUSTOM", 260, 149, tft.textfont);
+    }
+  }
+
+  window.pushSprite(0, 0);
+}
+
+void Screen_WBTint()
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = 4;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // White Balance and Tint
+  // WB: Bright, Incandescent, Fluorescent, Mixed Light, Cloud
+
+  // Get the current White Balance value
+  int currentWB = 0;
+  if(camera->hasWhiteBalance())
+    currentWB = camera->getWhiteBalance();
+
+  // Get the current Tint value
+  int currentTint = 0;
+  if(camera->hasTint())
+    currentTint = camera->getTint();
+
+  // If we have a tap, we should determine if it is on anything
+  if(tapped_x != -1)
+  {
+    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 160)
+    {
+      // Tapped within the area
+      int newWB = 0;
+      int newTint = 0;
+
+      // Check Preset Clicks
+      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 90 && tapped_y <= 70)
+      {
+        // Bright
+        newWB = 5600;
+        newTint = 10;
+      }
+      else if(tapped_x >= 95 && tapped_y >= 30 && tapped_x <= 165 && tapped_y <= 70)
+      {
+        // Incandescent
+        newWB = 3200;
+        newTint = 0;
+      }
+      else if(tapped_x >= 170 && tapped_y >= 30 && tapped_x <= 240 && tapped_y <= 70)
+      {
+        // Fluorescent
+        newWB = 4000;
+        newTint = 15;
+      }
+      else if(tapped_x >= 245 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 70)
+      {
+        // Mixed Light
+        newWB = 4500;
+        newTint = 15;
+      }
+      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 90 && tapped_y <= 115)
+      {
+        // Cloud
+        newWB = 5600;
+        newTint = 10;
+      }
+
+      // Preset clicked
+      if(newWB != 0)
+      {
+        // Send preset to camera
+        PacketWriter::writeWhiteBalance(newWB, newTint, &cameraConnection);
+      }
+      else
+      {
+        // Not a preset
+
+        DEBUG_DEBUG("Screen_WBTint, not a present tapped, checking for left/right WB Tint");
+
+        // WB Left
+        if(currentWB != 0 && currentWB >= 2550 && tapped_x >= 95 && tapped_y >= 75 && tapped_x <= 155 && tapped_y <= 115)
+        {
+          DEBUG_DEBUG("Left WB");
+
+          // Adjust down by 50
+          PacketWriter::writeWhiteBalance(currentWB - 50, currentTint, &cameraConnection);
+        }
+        else if(currentWB != 0 && currentWB <= 9950 && tapped_x >= 255 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
+        {
+          DEBUG_DEBUG("Right WB");
+
+          // Adjust up by 50
+          PacketWriter::writeWhiteBalance(currentWB + 50, currentTint, &cameraConnection);
+        }
+        else if(currentWB != 0 && currentTint > -50 && tapped_x >= 95 && tapped_y >= 120 && tapped_x <= 155 && tapped_y <= 160)
+        {
+          DEBUG_DEBUG("Left Tint");
+
+          // Adjust down by 1
+          PacketWriter::writeWhiteBalance(currentWB, currentTint - 1, &cameraConnection);
+        }
+        else if(currentWB != 0 && currentWB <= 9950 && tapped_x >= 255 && tapped_y >= 120 && tapped_x <= 315 && tapped_y <= 160)
+        {
+          DEBUG_DEBUG("Right Tint");
+          
+          // Adjust up by 1
+          PacketWriter::writeWhiteBalance(currentWB, currentTint + 1, &cameraConnection);
+        }
+      }
+    }
+
+  }
+
+  window.fillSprite(TFT_BLACK);
+
+  Screen_Common(TFT_GREEN); // Common elements
+
+  // ISO label
+  window.setTextSize(2);
+  window.textcolor = TFT_WHITE;
+  window.textbgcolor = TFT_BLACK;
+  window.drawString("WHITE BALANCE", 30, 9);
+  window.drawCentreString("TINT", 54, 132, tft.textfont);
+
+  window.textbgcolor = TFT_DARKGREY;
+
+  // Bright, 5600K
+  int lblWBKelvin = 5600;
+  int lblTint = 10;
+  window.fillSmoothRoundRect(20, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentWB == lblWBKelvin && currentTint == lblTint)
+    spriteWBBrightBG.pushToSprite(&window, 40, 35);
+  else
+    spriteWBBright.pushToSprite(&window, 40, 35);
+
+  // Incandescent, 3200K
+  lblWBKelvin = 3200;
+  lblTint = 0;
+  window.fillSmoothRoundRect(95, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentWB == lblWBKelvin && currentTint == lblTint)
+    spriteWBIncandescentBG.pushToSprite(&window, 115, 35);
+  else
+    spriteWBIncandescent.pushToSprite(&window, 115, 35);
+
+  // Fluorescent, 4000K
+  lblWBKelvin = 4000;
+  lblTint = 15;
+  window.fillSmoothRoundRect(170, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentWB == lblWBKelvin && currentTint == lblTint)
+    spriteWBFlourescentBG.pushToSprite(&window, 190, 35);
+  else
+    spriteWBFlourescent.pushToSprite(&window, 190, 35);
+
+  // Mixed Light, 4500K
+  lblWBKelvin = 4500;
+  lblTint = 15;
+  window.fillSmoothRoundRect(245, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentWB == lblWBKelvin && currentTint == lblTint)
+    spriteWBMixedLightBG.pushToSprite(&window, 265, 35);
+  else
+    spriteWBMixedLight.pushToSprite(&window, 265, 35);
+
+  // Cloud, 6500K
+  lblWBKelvin = 6500;
+  lblTint = 10;
+  window.fillSmoothRoundRect(20, 75, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentWB == lblWBKelvin && currentTint == lblTint)
+    spriteWBCloudBG.pushToSprite(&window, 40, 80);
+  else
+    spriteWBCloud.pushToSprite(&window, 40, 80);
+
+  // WB Adjust Left <
+  window.fillSmoothRoundRect(95, 75, 60, 40, 3, TFT_DARKGREY, TFT_TRANSPARENT);
+  window.drawCentreString("<", 125, 87, tft.textfont);
+
+  // Current White Balance Kelvin
+  window.fillSmoothRoundRect(160, 75, 90, 40, 3, TFT_DARKGREEN, TFT_TRANSPARENT);
+  window.textbgcolor = TFT_DARKGREEN;
+  window.drawCentreString(String(currentWB), 205, 82, tft.textfont);
+  window.setTextSize(1);
+  window.drawCentreString("KELVIN", 205, 104, tft.textfont);
+  window.setTextSize(2);
+
+  window.textbgcolor = TFT_DARKGREY;
+
+  // WB Adjust Right >
+  window.fillSmoothRoundRect(255, 75, 60, 40, 3, TFT_DARKGREY, TFT_TRANSPARENT);
+  window.drawCentreString(">", 284, 87, tft.textfont);
+
+  // Tint Adjust Left <
+  window.fillSmoothRoundRect(95, 120, 60, 40, 3, TFT_DARKGREY, TFT_TRANSPARENT);
+  window.drawCentreString("<", 125, 132, tft.textfont);
+
+  // Current Tint
+  window.fillSmoothRoundRect(160, 120, 90, 40, 3, TFT_DARKGREEN, TFT_TRANSPARENT);
+  window.textbgcolor = TFT_DARKGREEN;
+  window.drawCentreString(String(currentTint), 205, 132, tft.textfont);
+
+  window.textbgcolor = TFT_DARKGREY;
+
+  // Tint Adjust Right >
+  window.fillSmoothRoundRect(255, 120, 60, 40, 3, TFT_DARKGREY, TFT_TRANSPARENT);
+  window.drawCentreString(">", 284, 132, tft.textfont);
 
   window.pushSprite(0, 0);
 }
@@ -726,6 +1089,7 @@ void setup() {
   spriteMPCSplash.pushToSprite(&window, 0, 0);
   window.pushSprite(0, 0);
 
+  // Images
   spriteBluetooth.createSprite(30, 46);
   spriteBluetooth.setSwapBytes(true);
   spriteBluetooth.pushImage(0, 0, 30, 46, Wikipedia_Bluetooth_30x46);
@@ -733,6 +1097,46 @@ void setup() {
   spritePocket4k.createSprite(110, 61);
   spritePocket4k.setSwapBytes(true);
   spritePocket4k.pushImage(0, 0, 110, 61, blackmagic_pocket_4k_110x61);
+
+  spriteWBBright.createSprite(30, 30);
+  spriteWBBright.setSwapBytes(true);
+  spriteWBBright.pushImage(0, 0, 30, 30, WBBright);
+
+  spriteWBCloud.createSprite(30, 30);
+  spriteWBCloud.setSwapBytes(true);
+  spriteWBCloud.pushImage(0, 0, 30, 30, WBCloud);
+
+  spriteWBFlourescent.createSprite(30, 30);
+  spriteWBFlourescent.setSwapBytes(true);
+  spriteWBFlourescent.pushImage(0, 0, 30, 30, WBFlourescent);
+
+  spriteWBIncandescent.createSprite(30, 30);
+  spriteWBIncandescent.setSwapBytes(true);
+  spriteWBIncandescent.pushImage(0, 0, 30, 30, WBIncandescent);
+
+  spriteWBMixedLight.createSprite(30, 30);
+  spriteWBMixedLight.setSwapBytes(true);
+  spriteWBMixedLight.pushImage(0, 0, 30, 30, WBMixedLight);
+
+  spriteWBBrightBG.createSprite(30, 30);
+  spriteWBBrightBG.setSwapBytes(true);
+  spriteWBBrightBG.pushImage(0, 0, 30, 30, WBBrightBG);
+
+  spriteWBCloudBG.createSprite(30, 30);
+  spriteWBCloudBG.setSwapBytes(true);
+  spriteWBCloudBG.pushImage(0, 0, 30, 30, WBCloudBG);
+
+  spriteWBFlourescentBG.createSprite(30, 30);
+  spriteWBFlourescentBG.setSwapBytes(true);
+  spriteWBFlourescentBG.pushImage(0, 0, 30, 30, WBFlourescentBG);
+
+  spriteWBIncandescentBG.createSprite(30, 30);
+  spriteWBIncandescentBG.setSwapBytes(true);
+  spriteWBIncandescentBG.pushImage(0, 0, 30, 30, WBIncandescentBG);
+
+  spriteWBMixedLightBG.createSprite(30, 30);
+  spriteWBMixedLightBG.setSwapBytes(true);
+  spriteWBMixedLightBG.pushImage(0, 0, 30, 30, WBMixedLightBG);
 
   spritePassKey.createSprite(IWIDTH, IHEIGHT);
 
@@ -780,7 +1184,13 @@ void loop() {
           Screen_ISO();
           break;
         case 3:
-          Screen_ShutterAngle();
+          if(BMDControlSystem::getInstance()->getCamera()->shutterValueIsAngle)
+            Screen_ShutterAngle();
+          else
+            Screen_ShutterSpeed();
+          break;
+        case 4:
+          Screen_WBTint();
           break;
       }
 
@@ -836,7 +1246,13 @@ void loop() {
               Screen_ISO();
               break;
             case 2:
-              Screen_ShutterAngle();
+              if(BMDControlSystem::getInstance()->getCamera()->shutterValueIsAngle)
+                Screen_ShutterAngle();
+              else
+                Screen_ShutterSpeed();
+              break;
+            case 3:
+              Screen_WBTint();
               break;
           }
           break;
@@ -845,6 +1261,12 @@ void loop() {
           // Swiping Left  (sideways)
           switch(connectedScreenIndex)
           {
+            case 4:
+              if(BMDControlSystem::getInstance()->getCamera()->shutterValueIsAngle)
+                Screen_ShutterAngle();
+              else
+                Screen_ShutterSpeed();
+              break;
             case 3:
               Screen_ISO();
               break;

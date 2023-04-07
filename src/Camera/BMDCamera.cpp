@@ -195,6 +195,8 @@ void BMDCamera::onWhiteBalanceReceived(short inWhiteBalance)
         *whiteBalance = inWhiteBalance;
     else
         whiteBalance = std::make_shared<short>(inWhiteBalance);
+
+    DEBUG_DEBUG("White Balance: %i", inWhiteBalance);
 }
 
 bool BMDCamera::hasWhiteBalance()
@@ -216,6 +218,8 @@ void BMDCamera::onTintReceived(short inTint)
         *tint = inTint;
     else
         tint = std::make_shared<short>(inTint);
+
+    DEBUG_DEBUG("Tint: %i", inTint);
 }
 
 bool BMDCamera::hasTint()
