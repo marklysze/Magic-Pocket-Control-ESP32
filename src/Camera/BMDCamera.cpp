@@ -237,6 +237,8 @@ void BMDCamera::onShutterSpeedMSReceived(int32_t inShutterSpeedMS)
         *shutterSpeedMS = inShutterSpeedMS;
     else
         shutterSpeedMS = std::make_shared<int32_t>(inShutterSpeedMS);
+
+    DEBUG_DEBUG("Shutter Speed MS: %i", inShutterSpeedMS);
 }
 
 bool BMDCamera::hasShutterSpeedMS()
@@ -300,6 +302,8 @@ void BMDCamera::onShutterAngleReceived(int32_t inShutterAngle)
         *shutterAngle = inShutterAngle;
     else
         shutterAngle = std::make_shared<int32_t>(inShutterAngle);
+
+    DEBUG_DEBUG("Shutter Angle: %i", inShutterAngle);
 }
 
 bool BMDCamera::hasShutterAngle()
@@ -321,6 +325,8 @@ void BMDCamera::onShutterSpeedReceived(int32_t inShutterSpeed)
         *shutterSpeed = inShutterSpeed;
     else
         shutterSpeed = std::make_shared<int32_t>(inShutterSpeed);
+        
+    DEBUG_DEBUG("Shutter Speed: %i", inShutterSpeed);
 }
 
 bool BMDCamera::hasShutterSpeed()
@@ -594,7 +600,7 @@ void BMDCamera::onTransportModeReceived(TransportInfo inTransportMode)
     }
 
     isRecording = transportMode->mode == CCUPacketTypes::MediaTransportMode::Record;
-    DEBUG_VERBOSE("isRecording: %i", isRecording);
+    DEBUG_VERBOSE("isRecording: %s", (isRecording ? "Yes" : "No"));
 }
 bool BMDCamera::hasTransportMode()
 {

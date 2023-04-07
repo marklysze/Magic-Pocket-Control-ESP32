@@ -236,8 +236,10 @@ void Screen_Dashboard()
     window.textcolor = TFT_WHITE;
     window.textbgcolor = TFT_DARKGREY;
 
+    int currentShutterAngle = camera->getShutterAngle();
+    float ShutterAngleFloat = currentShutterAngle / 100.0;
     
-    window.drawCentreString(String(camera->getShutterAngle() / 100), 58 + xshift, 28, tft.textfont);
+    window.drawCentreString(String(ShutterAngleFloat, (currentShutterAngle % 100 == 0 ? 0 : 1)), 58 + xshift, 28, tft.textfont);
     
     window.setTextSize(1);
     window.drawCentreString("SHUTTER", 58 + xshift, 59, tft.textfont);
@@ -361,7 +363,6 @@ void Screen_Recording()
       // Record button
       auto transportInfo = camera->getTransportMode();
       
-
       if(camera->isRecording)
       {
         DEBUG_VERBOSE("Record Stop");
@@ -400,6 +401,281 @@ void Screen_Recording()
 
     window.setTextSize(1);
     window.drawString("REMAINING TIME", 30, 120);
+  }
+
+  window.pushSprite(0, 0);
+}
+
+void Screen_ISO()
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = 2;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // ISO Values, 200 / 400 / 1250 / 3200 / 8000
+
+  // If we have a tap, we should determine if it is on anything
+  if(tapped_x != -1)
+  {
+    // Serial.print("Screen_Recording tapped at: ");
+    // Serial.print(tapped_x);
+    // Serial.print(",");
+    // Serial.println(tapped_y);
+
+    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 160)
+    {
+      // Tapped within the area
+      int newISO = 0;
+
+      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
+        newISO = 200;
+      else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
+        newISO = 400;
+      else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
+        newISO = 8000;
+
+      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 110 && tapped_y <= 115)
+        newISO = 640;
+      else if(tapped_x >= 115 && tapped_y >= 75 && tapped_x <= 205 && tapped_y <= 115)
+        newISO = 800;
+      else if(tapped_x >= 210 && tapped_y >= 75 && tapped_x <= 310 && tapped_y <= 115)
+        newISO = 12800;
+
+      else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 110 && tapped_y <= 160)
+        newISO = 1250;
+      else if(tapped_x >= 115 && tapped_y >= 120 && tapped_x <= 205 && tapped_y <= 160)
+        newISO = 3200;
+
+      if(newISO != 0)
+      {
+        // ISO selected, send it to the camera
+        PacketWriter::writeISO(newISO, &cameraConnection);
+      }
+    }
+
+  }
+
+  window.fillSprite(TFT_BLACK);
+
+  Screen_Common(TFT_GREEN); // Common elements
+
+  // Get the current ISO value
+  int currentISO = 0;
+  if(camera->hasSensorGainISOValue())
+    currentISO = camera->getSensorGainISOValue();
+
+  // ISO label
+  window.setTextSize(2);
+  window.textcolor = TFT_WHITE;
+  window.textbgcolor = TFT_BLACK;
+  window.drawString("ISO", 30, 9);
+
+  window.textbgcolor = TFT_DARKGREY;
+
+  // 200
+  int labelISO = 200;
+  window.setTextSize(2);
+  window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString(String(labelISO).c_str(), 65, 41, tft.textfont);
+
+  // 400
+  labelISO = 400;
+  window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString(String(labelISO).c_str(), 160, 36, tft.textfont);
+  window.setTextSize(1);
+  window.drawCentreString("NATIVE", 160, 59, tft.textfont);
+  window.setTextSize(2);
+
+  // 8000
+  labelISO = 8000;
+  window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString(String(labelISO).c_str(), 260, 41, tft.textfont);
+
+  // 640
+  labelISO = 640;
+  window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString(String(labelISO).c_str(), 65, 87, tft.textfont);
+
+  // 800
+  labelISO = 800;
+  window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString(String(labelISO).c_str(), 160, 87, tft.textfont);
+
+  // 12800
+  labelISO = 12800;
+  window.fillSmoothRoundRect(210, 75, 100, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString(String(labelISO).c_str(), 260, 87, tft.textfont);
+
+  // 1250
+  labelISO = 1250;
+  window.fillSmoothRoundRect(20, 120, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString(String(labelISO).c_str(), 65, 131, tft.textfont);
+
+  // 3200
+  labelISO = 3200;
+  window.fillSmoothRoundRect(115, 120, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString(String(labelISO).c_str(), 160, 126, tft.textfont);
+  window.setTextSize(1);
+  window.drawCentreString("NATIVE", 160, 149, tft.textfont);
+  window.setTextSize(2);
+
+  // Custom ISO - show if ISO is not one of the above values
+  if(currentISO != 0)
+  {
+    // Only show the ISO value if it's not a standard one
+    if(currentISO != 200 && currentISO != 400 && currentISO != 640 && currentISO != 800 && currentISO != 1250 && currentISO != 3200 && currentISO != 8000 && currentISO != 12800)
+    {
+      window.fillSmoothRoundRect(210, 120, 100, 40, 3, TFT_DARKGREEN, TFT_TRANSPARENT);
+      window.textbgcolor = TFT_DARKGREEN;
+      window.drawCentreString(String(currentISO).c_str(), 260, 126, tft.textfont);
+      window.setTextSize(1);
+      window.drawCentreString("CUSTOM", 260, 149, tft.textfont);
+    }
+  }
+
+  window.pushSprite(0, 0);
+}
+
+void Screen_ShutterAngle()
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = 3;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // Shutter Angle Values: 15, 60, 90, 120, 150, 180, 270, 360, CUSTOM
+  // Note that the protocol takes shutter angle times 100, so 180 = 180 x 100 = 18000. This is so it can accommodate decimal places, like 172.8 degrees = 17280 for the protocol.
+
+  // If we have a tap, we should determine if it is on anything
+  if(tapped_x != -1)
+  {
+    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 160)
+    {
+      // Tapped within the area
+      int newShutterAngle = 0;
+
+      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
+        newShutterAngle = 1500;
+      else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
+        newShutterAngle = 6000;
+      else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
+        newShutterAngle = 9000;
+
+      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 110 && tapped_y <= 115)
+        newShutterAngle = 12000;
+      else if(tapped_x >= 115 && tapped_y >= 75 && tapped_x <= 205 && tapped_y <= 115)
+        newShutterAngle = 15000;
+      else if(tapped_x >= 210 && tapped_y >= 75 && tapped_x <= 310 && tapped_y <= 115)
+        newShutterAngle = 18000;
+
+      else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 110 && tapped_y <= 160)
+        newShutterAngle = 27000;
+      else if(tapped_x >= 115 && tapped_y >= 120 && tapped_x <= 205 && tapped_y <= 160)
+        newShutterAngle = 36000;
+
+      if(newShutterAngle != 0)
+      {
+        // Shutter Angle selected, send it to the camera
+        PacketWriter::writeShutterAngle(newShutterAngle, &cameraConnection);
+      }
+    }
+  }
+
+  window.fillSprite(TFT_BLACK);
+
+  Screen_Common(TFT_GREEN); // Common elements
+
+  // Get the current Shutter Angle (comes through X100, so 180 degrees = 18000)
+  int currentShutterAngle = 0;
+  if(camera->hasShutterAngle())
+    currentShutterAngle = camera->getShutterAngle();
+
+  // Shutter Angle label
+  window.textcolor = TFT_WHITE;
+  window.textbgcolor = TFT_BLACK;
+  window.setTextSize(1);
+  window.drawString("DEGREES", 265, 9);
+  window.setTextSize(2);
+  window.drawString("SHUTTER ANGLE", 30, 9);
+
+  window.textbgcolor = TFT_DARKGREY;
+
+  // 15
+  int labelShutterAngle = 1500;
+  window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentShutterAngle == labelShutterAngle) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 65, 41, tft.textfont);
+
+  // 60
+  labelShutterAngle = 6000;
+  window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentShutterAngle == labelShutterAngle) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 160, 41, tft.textfont);
+
+  // 90
+  labelShutterAngle = 9000;
+  window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentShutterAngle == labelShutterAngle) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 260, 41, tft.textfont);
+
+  // 120
+  labelShutterAngle = 12000;
+  window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentShutterAngle == labelShutterAngle) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 65, 87, tft.textfont);
+
+  // 150
+  labelShutterAngle = 15000;
+  window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentShutterAngle == labelShutterAngle) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 160, 87, tft.textfont);
+
+  // 180 (with a border around it)
+  labelShutterAngle = 18000;
+  window.fillSmoothRoundRect(210, 75, 100, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  window.drawSmoothRoundRect(210, 75, 3, 5, 100, 40, TFT_WHITE, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(currentShutterAngle == labelShutterAngle) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 260, 87, tft.textfont);
+
+  // 270
+  labelShutterAngle = 27000;
+  window.fillSmoothRoundRect(20, 120, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentShutterAngle == labelShutterAngle) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 65, 131, tft.textfont);
+
+  // 360
+  labelShutterAngle = 36000;
+  window.fillSmoothRoundRect(115, 120, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(currentShutterAngle == labelShutterAngle) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 160, 131, tft.textfont);
+
+  // Custom ISO - show if ISO is not one of the above values
+  if(currentShutterAngle != 0)
+  {
+    // Only show the ISO value if it's not a standard one
+    if(currentShutterAngle != 1500 && currentShutterAngle != 6000 && currentShutterAngle != 9000 && currentShutterAngle != 12000 && currentShutterAngle != 15000 && currentShutterAngle != 18000 && currentShutterAngle != 27000 && currentShutterAngle != 36000)
+    {
+      float customShutterAngle = currentShutterAngle / 100.0;
+
+      window.fillSmoothRoundRect(210, 120, 100, 40, 3, TFT_DARKGREEN, TFT_TRANSPARENT);
+      window.textbgcolor = TFT_DARKGREEN;
+      window.drawCentreString(String(customShutterAngle, (currentShutterAngle % 100 == 0 ? 0 : 1)).c_str(), 260, 126, tft.textfont);
+      window.setTextSize(1);
+      window.drawCentreString("CUSTOM", 260, 149, tft.textfont);
+    }
   }
 
   window.pushSprite(0, 0);
@@ -489,6 +765,12 @@ void loop() {
         case 1:
           Screen_Recording();
           break;
+        case 2:
+          Screen_ISO();
+          break;
+        case 3:
+          Screen_ShutterAngle();
+          break;
       }
 
     }
@@ -532,18 +814,32 @@ void loop() {
       switch(touch.data.gestureID)
       {
         case CST816S::GESTURE::SWIPE_DOWN:
+          DEBUG_DEBUG("Swipe Right");
           // Swiping Right (sideways)
           switch(connectedScreenIndex)
           {
             case 0:
               Screen_Recording();
               break;
+            case 1:
+              Screen_ISO();
+              break;
+            case 2:
+              Screen_ShutterAngle();
+              break;
           }
           break;
         case CST816S::GESTURE::SWIPE_UP:
+        DEBUG_DEBUG("Swipe Left");
           // Swiping Left  (sideways)
           switch(connectedScreenIndex)
           {
+            case 3:
+              Screen_ISO();
+              break;
+            case 2:
+              Screen_Recording();
+              break;
             case 1:
               Screen_Dashboard();
               break;

@@ -54,7 +54,7 @@ void PacketWriter::writeShutterSpeed(int shutter, BMDCameraConnection* connectio
 
 void PacketWriter::writeShutterAngle(int shutterAngleX100, BMDCameraConnection* connection)
 {
-    CCUPacketTypes::Command command = CCUEncodingFunctions::CreateCommand(shutterAngleX100, CCUPacketTypes::Category::Video, (byte)CCUPacketTypes::VideoParameter::ShutterAngle);
+    CCUPacketTypes::Command command = CCUEncodingFunctions::CreateShutterAngleCommand(shutterAngleX100);
     validateAndSendCCUCommand(command, connection);
 }
 

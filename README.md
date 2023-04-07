@@ -7,11 +7,6 @@ Designed for the Pocket 4K, Pocket 6K/G2/Pro, USRA G2 4.6K, URSA 12K.
 
 :star: How about a Star?
 
-# Why?
-My primary objective was to convert a Windows-based application I had for controlling my cameras to a small portable device.
-
-I'm opening up to the community who may find this useful or would like to contribute to it. Any contribution you make will be appreciated!
-
 # What can it do?
 The key features are:
 - Connect to the cameras wirelessly over Bluetooth LE
@@ -23,10 +18,15 @@ The key features are:
     - Dashboard: View the ISO, Shutter Speed, White Balance/Tint, Codec, FPS, active media device, and resolution
     - Recording: Start and Stop recording, shows timecode and the remaining time left on the active media
     - ISO: Change ISO
-- Use many read and write settings of the camera (Record Start & Stop, ISO, Shutter Speed / Angle, White Balance, Tint, Codec, Resolution, FPS, Off-speed Recording, Media, Slate, Project Name, Lens Data)
+- Read and write the many settings of the camera (Record Start & Stop, ISO, Shutter Speed / Angle, White Balance, Tint, Codec, Resolution, FPS, Off-speed Recording, Media available and time remaining, Slate, Project Name, Lens Data)
 
 # What can you do?
 I hope you find the functionality useful and it would be great if you could contribute your improvements, suggestions, or general feedback to the project!
+
+# Why?
+My primary objective was to convert a Windows-based application I had for controlling my cameras to a small portable device.
+
+I'm opening up to the community who may find this useful or would like to contribute to it. Any contribution you make will be appreciated!
 
 # Why did I choose the LILYGO T-Display-S3 Touch version to program for?
 I found this device had all the necessary components needed to connect and interact with the cameras:
@@ -88,6 +88,11 @@ I converted a lot of the Swift (Mac) code from Blackmagic Design's Cameras Code 
 
 # How does the program work?
 [TBD]
+
+
+# Camera Settings
+Please note the following:
+- **Shutter Angle**. The code will receive both shutter speed and shutter angle, however the LILYGO T-Display-S3 demonstration code displays and uses Shutter Angle. If your camera's Shutter Measurement (in camera menu > Setup > Shutter Management) is Shutter Speed, changes to Shutter Angle won't change your shutter speed. Set it to Shutter Angle.
 
 # Thank you to...
 - Blackmagic Design: For making affordable cameras and having a public protocol so we can interact with them

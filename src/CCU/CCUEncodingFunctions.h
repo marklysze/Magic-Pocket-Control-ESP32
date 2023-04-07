@@ -18,6 +18,7 @@ class CCUEncodingFunctions
         static CCUPacketTypes::Command CreateCommand(T value, CCUPacketTypes::Category category, byte parameter);
         static CCUPacketTypes::Command CreateVideoSensorGainCommand(byte value);
         static CCUPacketTypes::Command CreateVideoISOCommand(int value);
+        static CCUPacketTypes::Command CreateShutterAngleCommand(int value);
         static CCUPacketTypes::Command CreateTransportInfoCommand(TransportInfo transportInfo);
 };
 

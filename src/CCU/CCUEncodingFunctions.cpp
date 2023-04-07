@@ -162,6 +162,12 @@ CCUPacketTypes::Command CCUEncodingFunctions::CreateVideoISOCommand(int value)
     return CreateCommand(value, CCUPacketTypes::Category::Video, static_cast<byte>(CCUPacketTypes::VideoParameter::ISO));
 }
 
+CCUPacketTypes::Command CCUEncodingFunctions::CreateShutterAngleCommand(int value)
+{
+    return CreateCommand(value, CCUPacketTypes::Category::Video, static_cast<byte>(CCUPacketTypes::VideoParameter::ShutterAngle));
+}
+
+
 CCUPacketTypes::Command CCUEncodingFunctions::CreateTransportInfoCommand(TransportInfo transportInfo)
 {
     std::vector<byte> data = transportInfo.toArray();
