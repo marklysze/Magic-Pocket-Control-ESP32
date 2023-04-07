@@ -90,10 +90,6 @@ I converted a lot of the Swift (Mac) code from Blackmagic Design's Cameras Code 
 [TBD]
 
 
-# Camera Settings
-Please note the following:
-- **Shutter Angle**. The code will receive both shutter speed and shutter angle, however the LILYGO T-Display-S3 demonstration code displays and uses Shutter Angle. If your camera's Shutter Measurement (in camera menu > Setup > Shutter Management) is Shutter Speed, changes to Shutter Angle won't change your shutter speed. Set it to Shutter Angle.
-
 # Thank you to...
 - Blackmagic Design: For making affordable cameras and having a public protocol so we can interact with them
 - BlueMagic32: A great project to control cameras with an ESP32. It provided a reference for the Bluetooth connection functionality. [https://github.com/schoolpost/BlueMagic32](https://github.com/schoolpost/BlueMagic32)

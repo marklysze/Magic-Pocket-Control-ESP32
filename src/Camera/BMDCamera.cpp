@@ -298,6 +298,8 @@ CCUPacketTypes::AutoExposureMode BMDCamera::getAutoExposureMode()
 
 void BMDCamera::onShutterAngleReceived(int32_t inShutterAngle)
 {
+    shutterValueIsAngle = true;
+
     if(shutterAngle)
         *shutterAngle = inShutterAngle;
     else
@@ -321,6 +323,8 @@ int32_t BMDCamera::getShutterAngle()
 
 void BMDCamera::onShutterSpeedReceived(int32_t inShutterSpeed)
 {
+    shutterValueIsAngle = false;
+    
     if(shutterSpeed)
         *shutterSpeed = inShutterSpeed;
     else

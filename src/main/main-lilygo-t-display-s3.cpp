@@ -113,7 +113,7 @@ void Screen_NoConnection()
 
   // Bluetooth Image
   spriteBluetooth.pushToSprite(&window, 26, 6);
-  
+
   window.setTextSize(2);
   window.textbgcolor = TFT_BLACK;
   switch(cameraConnection.status)
@@ -171,7 +171,7 @@ void Screen_NoConnection()
     // Highlight the camera to connect to
     if(connectToCameraIndex != -1 && connectToCameraIndex == count)
       window.drawSmoothRoundRect(25 + (count * 125) + (count * 10), 60, 5, 2, 125, 100, TFT_GREEN, TFT_DARKGREY);
-      
+
     spritePocket4k.pushToSprite(&window, 33 + (count * 125) + (count * 10), 69);
     window.setTextSize(1);
     window.textbgcolor = TFT_DARKGREY;
@@ -179,7 +179,7 @@ void Screen_NoConnection()
   }
 
   window.pushSprite(0, 0);
-  
+
   if(connectToCameraIndex != -1)
   {
     DEBUG_DEBUG("Camera status [0]: %i", cameraConnection.status);
@@ -222,7 +222,7 @@ void Screen_Dashboard()
     window.textbgcolor = TFT_DARKGREY;
 
     window.drawCentreString(String(camera->getSensorGainISOValue()), 58, 28, tft.textfont);
-    
+
     window.setTextSize(1);
     window.drawCentreString("ISO", 58, 59, tft.textfont);
   }
@@ -236,13 +236,24 @@ void Screen_Dashboard()
     window.textcolor = TFT_WHITE;
     window.textbgcolor = TFT_DARKGREY;
 
-    int currentShutterAngle = camera->getShutterAngle();
-    float ShutterAngleFloat = currentShutterAngle / 100.0;
-    
-    window.drawCentreString(String(ShutterAngleFloat, (currentShutterAngle % 100 == 0 ? 0 : 1)), 58 + xshift, 28, tft.textfont);
-    
+    if(camera->shutterValueIsAngle)
+    {
+      // Shutter Angle
+      int currentShutterAngle = camera->getShutterAngle();
+      float ShutterAngleFloat = currentShutterAngle / 100.0;
+
+      window.drawCentreString(String(ShutterAngleFloat, (currentShutterAngle % 100 == 0 ? 0 : 1)), 58 + xshift, 28, tft.textfont);
+    }
+    else
+    {
+      // Shutter Speed
+      int currentShutterSpeed = camera->getShutterSpeed();
+
+      window.drawCentreString("1/" + String(currentShutterSpeed), 58 + xshift, 28, tft.textfont);
+    }
+
     window.setTextSize(1);
-    window.drawCentreString("SHUTTER", 58 + xshift, 59, tft.textfont);
+    window.drawCentreString(camera->shutterValueIsAngle ? "DEGREES" : "SPEED", 58 + xshift, 59, tft.textfont); //  "SHUTTER"
   }
 
   // WhiteBalance and Tint
@@ -256,7 +267,7 @@ void Screen_Dashboard()
 
     if(camera->hasWhiteBalance())
       window.drawCentreString(String(camera->getWhiteBalance()), 58 + xshift, 28, tft.textfont);
-    
+
     window.setTextSize(1);
     window.drawCentreString("WB", 58 + xshift, 59, tft.textfont);
 
@@ -265,7 +276,7 @@ void Screen_Dashboard()
     window.setTextSize(2);
     if(camera->hasTint())
       window.drawCentreString(String(camera->getTint()), 58 + xshift, 28, tft.textfont);
-    
+
     window.setTextSize(1);
     window.drawCentreString("TINT", 58 + xshift, 59, tft.textfont);
   }
@@ -362,7 +373,7 @@ void Screen_Recording()
     {
       // Record button
       auto transportInfo = camera->getTransportMode();
-      
+
       if(camera->isRecording)
       {
         DEBUG_VERBOSE("Record Stop");
@@ -801,7 +812,7 @@ void loop() {
 
   // Is there a touch event available?
   if (touch.available()) {
-   
+
     // We only consider events when the finger has lifted up (rather than pressed down or held)
     if(touch.data.eventID == CST816S::TOUCHEVENT::UP)
     {

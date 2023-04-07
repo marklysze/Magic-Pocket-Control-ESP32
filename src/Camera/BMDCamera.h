@@ -37,6 +37,7 @@ public:
 
     // Quick access attributes
     bool isRecording = 0;
+    bool shutterValueIsAngle = true;
 
     // Lens Attributes
 
