@@ -233,9 +233,16 @@ public:
     void onTimecodeReceived(std::string inTimecode);
     std::string getTimecodeString();
 
+    // Last Modified
+    unsigned long getLastModified() const { return lastUpdated; }
+
 private:
     bool connected = false;
     int activeMediaSlotIndex = -1; // The index of the active media slot, used for quick access to info on it.
+    unsigned long lastUpdated = millis(); // Keeps track of when it was last changed
+
+    // Last Modified
+    void modified() { lastUpdated = millis(); }
 
     // Custom Attributes
     std::vector<MediaSlot> mediaSlots;

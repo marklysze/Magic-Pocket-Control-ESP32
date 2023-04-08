@@ -45,6 +45,8 @@ void BMDCamera::onApertureUnitsReceived(LensConfig::ApertureUnits inApertureUnit
         *apertureUnits = inApertureUnits;
     else
         apertureUnits = std::make_shared<LensConfig::ApertureUnits>(inApertureUnits);
+
+    modified();
 }
 bool BMDCamera::hasApertureUnits()
 {
@@ -71,6 +73,8 @@ void BMDCamera::onApertureFStopStringReceived(std::string inApertureFStopString)
         aperturefStopString->assign(inApertureFStopString);
     else
         aperturefStopString = std::make_shared<std::string>(inApertureFStopString);
+
+    modified();
 }
 bool BMDCamera::hasApertureFStopString()
 {
@@ -90,6 +94,8 @@ void BMDCamera::onApertureNormalisedReceived(int inApertureNormalised)
         *apertureNormalised = inApertureNormalised;
     else
         apertureNormalised = std::make_shared<int>(inApertureNormalised);
+
+    modified();
 }
 bool BMDCamera::hasApertureNormalised()
 {
@@ -109,6 +115,8 @@ void BMDCamera::onFocalLengthMMReceived(ccu_fixed_t inFocalLengthMM)
         *focalLengthMM = inFocalLengthMM;
     else
         focalLengthMM = std::make_shared<ccu_fixed_t>(inFocalLengthMM);
+    
+    modified();
 }
 bool BMDCamera::hasFocalLengthMM()
 {
@@ -174,6 +182,8 @@ void BMDCamera::onSensorGainISOReceived(int inSensorGainISO)
         *sensorGainISO = inSensorGainISO;
     else
         sensorGainISO = std::make_shared<int>(inSensorGainISO);
+
+    modified();
 }
 
 bool BMDCamera::hasSensorGainISO()
@@ -196,7 +206,9 @@ void BMDCamera::onWhiteBalanceReceived(short inWhiteBalance)
     else
         whiteBalance = std::make_shared<short>(inWhiteBalance);
 
-    DEBUG_DEBUG("White Balance: %i", inWhiteBalance);
+    DEBUG_DEBUG("On White Balance Received: %i", inWhiteBalance);
+
+    modified();
 }
 
 bool BMDCamera::hasWhiteBalance()
@@ -219,7 +231,9 @@ void BMDCamera::onTintReceived(short inTint)
     else
         tint = std::make_shared<short>(inTint);
 
-    DEBUG_DEBUG("Tint: %i", inTint);
+    DEBUG_DEBUG("On Tint Received: %i", inTint);
+
+    modified();
 }
 
 bool BMDCamera::hasTint()
@@ -243,6 +257,8 @@ void BMDCamera::onShutterSpeedMSReceived(int32_t inShutterSpeedMS)
         shutterSpeedMS = std::make_shared<int32_t>(inShutterSpeedMS);
 
     DEBUG_DEBUG("Shutter Speed MS: %i", inShutterSpeedMS);
+
+    modified();
 }
 
 bool BMDCamera::hasShutterSpeedMS()
@@ -264,6 +280,8 @@ void BMDCamera::onRecordingFormatReceived(CCUPacketTypes::RecordingFormatData in
         *recordingFormat = inModelName;
     else
         recordingFormat = std::make_shared<CCUPacketTypes::RecordingFormatData>(inModelName);
+
+    modified();
 }
 
 bool BMDCamera::hasRecordingFormat()
@@ -285,6 +303,8 @@ void BMDCamera::onAutoExposureModeReceived(CCUPacketTypes::AutoExposureMode inAu
         *autoExposureMode = inAutoExposureMode;
     else
         autoExposureMode = std::make_shared<CCUPacketTypes::AutoExposureMode>(inAutoExposureMode);
+    
+    modified();
 }
 
 bool BMDCamera::hasAutoExposureMode()
@@ -310,6 +330,8 @@ void BMDCamera::onShutterAngleReceived(int32_t inShutterAngle)
         shutterAngle = std::make_shared<int32_t>(inShutterAngle);
 
     DEBUG_DEBUG("Shutter Angle: %i", inShutterAngle);
+
+    modified();
 }
 
 bool BMDCamera::hasShutterAngle()
@@ -335,6 +357,8 @@ void BMDCamera::onShutterSpeedReceived(int32_t inShutterSpeed)
         shutterSpeed = std::make_shared<int32_t>(inShutterSpeed);
         
     DEBUG_DEBUG("Shutter Speed: %i", inShutterSpeed);
+
+    modified();
 }
 
 bool BMDCamera::hasShutterSpeed()
@@ -356,6 +380,8 @@ void BMDCamera::onSensorGainDBReceived(byte inSensorGainDB)
         *sensorGainDB = inSensorGainDB;
     else
         sensorGainDB = std::make_shared<byte>(inSensorGainDB);
+    
+    modified();
 }
 
 bool BMDCamera::hasSensorGainDB()
@@ -377,6 +403,8 @@ void BMDCamera::onSensorGainISOValueReceived(int32_t inSensorGainISOValue)
         *sensorGainISOValue = inSensorGainISOValue;
     else
         sensorGainISOValue = std::make_shared<int32_t>(inSensorGainISOValue);
+    
+    modified();
 }
 
 bool BMDCamera::hasSensorGainISOValue()
@@ -398,6 +426,8 @@ void BMDCamera::onSelectedLUTReceived(CCUPacketTypes::SelectedLUT inSelectedLUT)
         *selectedLUT = inSelectedLUT;
     else
         selectedLUT = std::make_shared<CCUPacketTypes::SelectedLUT>(inSelectedLUT);
+    
+    modified();
 }
 
 bool BMDCamera::hasSelectedLUT()
@@ -414,11 +444,12 @@ CCUPacketTypes::SelectedLUT BMDCamera::getSelectedLUT()
 }
 
 void BMDCamera::onSelectedLUTEnabledReceived(bool inSelectedLUTEnabled) {
-    if (selectedLUTEnabled) {
+    if (selectedLUTEnabled)
         *selectedLUTEnabled = inSelectedLUTEnabled;
-    } else {
+    else
         selectedLUTEnabled = std::make_shared<bool>(inSelectedLUTEnabled);
-    }
+
+    modified();
 }
 bool BMDCamera::hasSelectedLUTEnabled() {
     return static_cast<bool>(selectedLUTEnabled);
@@ -441,6 +472,10 @@ void BMDCamera::onBatteryReceived(CCUPacketTypes::BatteryStatusData inBattery)
         *batteryStatus = inBattery;
     else
         batteryStatus = std::make_shared<CCUPacketTypes::BatteryStatusData>(inBattery);
+    
+    // Not updated modified at this stage for this as we're not using it and the battery gets updated often.
+    // If you are using the battery value, reinstate this next line.
+    // modified();
 }
 bool BMDCamera::hasBattery()
 {
@@ -461,6 +496,8 @@ void BMDCamera::onModelNameReceived(std::string inModelName)
         modelName->assign(inModelName);
     else
         modelName = std::make_shared<std::string>(inModelName);
+
+    modified();
 }
 bool BMDCamera::hasModelName()
 {
@@ -480,6 +517,8 @@ void BMDCamera::onIsPocketReceived(bool inIsPocket)
         *isPocketCamera = inIsPocket;
     else
         isPocketCamera = std::make_shared<bool>(inIsPocket);
+    
+    modified();
 }
 bool BMDCamera::hasIsPocket()
 {
@@ -511,6 +550,8 @@ void BMDCamera::onMediaStatusReceived(std::vector<CCUPacketTypes::MediaStatus> i
             mediaSlots[i].status = inMediaStatuses[i];
         }
     }
+
+    modified();
 }
 
 void BMDCamera::onRemainingRecordTimeMinsReceived(std::vector<ccu_fixed_t> inRecordTimeMins)
@@ -531,6 +572,8 @@ void BMDCamera::onRemainingRecordTimeMinsReceived(std::vector<ccu_fixed_t> inRec
             mediaSlots[i].remainingRecordTimeMinutes = inRecordTimeMins[i];
         }
     }
+
+    modified();
 }
 
 void BMDCamera::onRemainingRecordTimeStringReceived(std::vector<std::string> inRecordTimeStrings)
@@ -551,6 +594,8 @@ void BMDCamera::onRemainingRecordTimeStringReceived(std::vector<std::string> inR
             mediaSlots[i].remainingRecordTimeString = inRecordTimeStrings[i];
         }
     }
+
+    modified();
 }
 
 
@@ -564,6 +609,8 @@ void BMDCamera::onCodecReceived(CodecInfo inCodec)
         *codec = inCodec;
     else
         codec = std::make_shared<CodecInfo>(inCodec);
+    
+    modified();
 }
 bool BMDCamera::hasCodec()
 {
@@ -609,6 +656,8 @@ void BMDCamera::onTransportModeReceived(TransportInfo inTransportMode)
 
     isRecording = transportMode->mode == CCUPacketTypes::MediaTransportMode::Record;
     DEBUG_VERBOSE("isRecording: %s", (isRecording ? "Yes" : "No"));
+
+    modified();
 }
 bool BMDCamera::hasTransportMode()
 {
@@ -635,6 +684,8 @@ void BMDCamera::onReelNumberReceived(short inReelNumber)
         *reelNumber = inReelNumber;
     else
         reelNumber = std::make_shared<short>(inReelNumber);
+    
+    modified();
 }
 bool BMDCamera::hasReelNumber()
 {
@@ -654,6 +705,8 @@ void BMDCamera::onSceneNameReceived(std::string inSceneName)
         sceneName->assign(inSceneName);
     else
         sceneName = std::make_shared<std::string>(inSceneName);
+    
+    modified();
 }
 bool BMDCamera::hasSceneName()
 {
@@ -673,6 +726,8 @@ void BMDCamera::onSceneTagReceived(CCUPacketTypes::MetadataSceneTag inSceneTag)
         *sceneTag = inSceneTag;
     else
         sceneTag = std::make_shared<CCUPacketTypes::MetadataSceneTag>(inSceneTag);
+    
+    modified();
 }
 bool BMDCamera::hasSceneTag()
 {
@@ -692,6 +747,8 @@ void BMDCamera::onLocationTypeReceived(CCUPacketTypes::MetadataLocationTypeTag i
         *locationType = inLocationType;
     else
         locationType = std::make_shared<CCUPacketTypes::MetadataLocationTypeTag>(inLocationType);
+    
+    modified();
 }
 bool BMDCamera::hasLocationType()
 {
@@ -711,6 +768,8 @@ void BMDCamera::onDayOrNightReceived(CCUPacketTypes::MetadataDayNightTag inDayOr
         *dayOrNight = inDayOrNight;
     else
         dayOrNight = std::make_shared<CCUPacketTypes::MetadataDayNightTag>(inDayOrNight);
+    
+    modified();
 }
 bool BMDCamera::hasDayOrNight()
 {
@@ -730,6 +789,8 @@ void BMDCamera::onTakeTagReceived(CCUPacketTypes::MetadataTakeTag inTakeTag)
         *takeTag = inTakeTag;
     else
         takeTag = std::make_shared<CCUPacketTypes::MetadataTakeTag>(inTakeTag);
+    
+    modified();
 }
 bool BMDCamera::hasTakeTag()
 {
@@ -749,6 +810,8 @@ void BMDCamera::onTakeNumberReceived(sbyte inTakeNumber)
         *takeNumber = inTakeNumber;
     else
         takeNumber = std::make_shared<sbyte>(inTakeNumber);
+    
+    modified();
 }
 bool BMDCamera::hasTakeNumber()
 {
@@ -768,6 +831,8 @@ void BMDCamera::onGoodTakeReceived(sbyte inGoodTake)
         *goodTake = inGoodTake;
     else
         goodTake = std::make_shared<sbyte>(inGoodTake);
+    
+    modified();
 }
 bool BMDCamera::hasGoodTake()
 {
@@ -788,6 +853,8 @@ void BMDCamera::onCameraIdReceived(std::string incameraId)
         cameraId->assign(incameraId);
     else
         cameraId = std::make_shared<std::string>(incameraId);
+    
+    modified();
 }
 bool BMDCamera::hasCameraId()
 {
@@ -808,6 +875,8 @@ void BMDCamera::onCameraOperatorReceived(std::string incameraOperator)
         cameraOperator->assign(incameraOperator);
     else
         cameraOperator = std::make_shared<std::string>(incameraOperator);
+    
+    modified();
 }
 bool BMDCamera::hasCameraOperator()
 {
@@ -828,6 +897,8 @@ void BMDCamera::onDirectorReceived(std::string inDirector)
         director->assign(inDirector);
     else
         director = std::make_shared<std::string>(inDirector);
+    
+    modified();
 }
 bool BMDCamera::hasDirector()
 {
@@ -848,6 +919,8 @@ void BMDCamera::onProjectNameReceived(std::string inProjectName)
         projectName->assign(inProjectName);
     else
         projectName = std::make_shared<std::string>(inProjectName);
+    
+    modified();
 }
 bool BMDCamera::hasProjectName()
 {
@@ -868,6 +941,8 @@ void BMDCamera::onSlateTypeReceived(CCUPacketTypes::MetadataSlateForType inslate
         *slateType = inslateType;
     else
         slateType = std::make_shared<CCUPacketTypes::MetadataSlateForType>(inslateType);
+    
+    modified();
 }
 bool BMDCamera::hasSlateType()
 {
@@ -888,6 +963,8 @@ void BMDCamera::onSlateNameReceived(std::string inSlateName)
         slateName->assign(inSlateName);
     else
         slateName = std::make_shared<std::string>(inSlateName);
+    
+    modified();
 }
 bool BMDCamera::hasSlateName()
 {
@@ -908,6 +985,8 @@ void BMDCamera::onLensFocalLengthReceived(std::string inLensFocalLength)
         lensFocalLength->assign(inLensFocalLength);
     else
         lensFocalLength = std::make_shared<std::string>(inLensFocalLength);
+    
+    modified();
 }
 bool BMDCamera::hasLensFocalLength()
 {
@@ -928,6 +1007,8 @@ void BMDCamera::onLensDistanceReceived(std::string inLensDistance)
         lensDistance->assign(inLensDistance);
     else
         lensDistance = std::make_shared<std::string>(inLensDistance);
+    
+    modified();
 }
 bool BMDCamera::hasLensDistance()
 {
@@ -948,6 +1029,8 @@ void BMDCamera::onLensTypeReceived(std::string inLensType)
         lensType->assign(inLensType);
     else
         lensType = std::make_shared<std::string>(inLensType);
+    
+    modified();
 }
 bool BMDCamera::hasLensType()
 {
@@ -967,6 +1050,8 @@ void BMDCamera::onLensIrisReceived(std::string inLensIris)
         lensIris->assign(inLensIris);
     else
         lensIris = std::make_shared<std::string>(inLensIris);
+    
+    modified();
 }
 bool BMDCamera::hasLensIris()
 {
@@ -988,6 +1073,8 @@ void BMDCamera::onTimecodeSourceReceived(CCUPacketTypes::DisplayTimecodeSource i
         *timecodeSource = inTimecodeSource;
     else
         timecodeSource = std::make_shared<CCUPacketTypes::DisplayTimecodeSource>(inTimecodeSource);
+    
+    modified();
 }
 bool BMDCamera::hasTimecodeSource()
 {
@@ -1007,6 +1094,8 @@ void BMDCamera::onTimecodeReceived(std::string inTimecode)
         *timecode = inTimecode;
     else
         timecode = std::make_shared<std::string>(inTimecode);
+    
+    modified();
 }
 std::string BMDCamera::getTimecodeString()
 {

@@ -12,6 +12,8 @@ void PacketWriter::validateAndSendCCUCommand(CCUPacketTypes::Command command, BM
 
 void PacketWriter::writeWhiteBalance(short whiteBalance, short tint, BMDCameraConnection* connection)
 {
+    // DEBUG_DEBUG("Writing White Balance. White Balance: %i, Tint: %i", whiteBalance, tint);
+
     CCUPacketTypes::Command command = CCUEncodingFunctions::CreateVideoWhiteBalanceCommand(whiteBalance, tint);
     validateAndSendCCUCommand(command, connection);
 }

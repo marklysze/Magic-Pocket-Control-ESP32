@@ -90,6 +90,9 @@ int connectedScreenIndex = 0; // The index of the screen we're on:
 // 8 is Media
 // 9 is Lens
 
+// Keep track of the last camera modified time that we refreshed a screen so we don't keep refreshing a screen when the camera object remains unchanged.
+static unsigned long lastRefreshedScreen = 0;
+
 int tapped_x = -1;
 int tapped_y = -1;
 
@@ -221,7 +224,7 @@ void Screen_PassKey()
 }
 
 // Default screen for connected state
-void Screen_Dashboard()
+void Screen_Dashboard(bool forceRefresh = false)
 {
   if(!BMDControlSystem::getInstance()->hasCamera())
     return;
@@ -230,6 +233,14 @@ void Screen_Dashboard()
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
   int xshift = 0;
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+  
+  DEBUG_DEBUG("Screen Dashboard Refreshed.");
 
   window.fillSprite(TFT_BLACK);
 
@@ -374,7 +385,7 @@ void Screen_Dashboard()
   window.pushSprite(0, 0);
 }
 
-void Screen_Recording()
+void Screen_Recording(bool forceRefresh = false)
 {
   if(!BMDControlSystem::getInstance()->hasCamera())
     return;
@@ -384,6 +395,7 @@ void Screen_Recording()
   auto camera = BMDControlSystem::getInstance()->getCamera();
 
   // If we have a tap, we should determine if it is on anything
+  bool tappedAction = false;
   if(tapped_x != -1)
   {
     // Serial.print("Screen_Recording tapped at: ");
@@ -408,8 +420,18 @@ void Screen_Recording()
       }
 
       PacketWriter::writeTransportPacket(transportInfo, &cameraConnection);
+
+      tappedAction = true;
     }
   }
+
+    // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+
+  DEBUG_DEBUG("Screen Recording Refreshed.");
 
   window.fillSprite(TFT_BLACK);
 
@@ -439,7 +461,7 @@ void Screen_Recording()
   window.pushSprite(0, 0);
 }
 
-void Screen_ISO()
+void Screen_ISO(bool forceRefresh = false)
 {
   if(!BMDControlSystem::getInstance()->hasCamera())
     return;
@@ -451,6 +473,7 @@ void Screen_ISO()
   // ISO Values, 200 / 400 / 1250 / 3200 / 8000
 
   // If we have a tap, we should determine if it is on anything
+  bool tappedAction = false;
   if(tapped_x != -1)
   {
     // Serial.print("Screen_Recording tapped at: ");
@@ -486,10 +509,20 @@ void Screen_ISO()
       {
         // ISO selected, send it to the camera
         PacketWriter::writeISO(newISO, &cameraConnection);
+
+        tappedAction = true;
       }
     }
 
   }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+  
+  DEBUG_DEBUG("Screen ISO Refreshed.");
 
   window.fillSprite(TFT_BLACK);
 
@@ -580,7 +613,7 @@ void Screen_ISO()
   window.pushSprite(0, 0);
 }
 
-void Screen_ShutterAngle()
+void Screen_ShutterAngle(bool forceRefresh = false)
 {
   if(!BMDControlSystem::getInstance()->hasCamera())
     return;
@@ -593,6 +626,7 @@ void Screen_ShutterAngle()
   // Note that the protocol takes shutter angle times 100, so 180 = 180 x 100 = 18000. This is so it can accommodate decimal places, like 172.8 degrees = 17280 for the protocol.
 
   // If we have a tap, we should determine if it is on anything
+  bool tappedAction = false;
   if(tapped_x != -1)
   {
     if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 160)
@@ -623,9 +657,19 @@ void Screen_ShutterAngle()
       {
         // Shutter Angle selected, send it to the camera
         PacketWriter::writeShutterAngle(newShutterAngle, &cameraConnection);
+
+        tappedAction = true;
       }
     }
   }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+  
+  DEBUG_DEBUG("Screen Shutter Angle Refreshed.");
 
   window.fillSprite(TFT_BLACK);
 
@@ -714,7 +758,7 @@ void Screen_ShutterAngle()
   window.pushSprite(0, 0);
 }
 
-void Screen_ShutterSpeed()
+void Screen_ShutterSpeed(bool forceRefresh = false)
 {
   if(!BMDControlSystem::getInstance()->hasCamera())
     return;
@@ -727,6 +771,7 @@ void Screen_ShutterSpeed()
   // Note that the protocol takes the denominator as its parameter value. So for 1/60 we'll pass 60.
 
   // If we have a tap, we should determine if it is on anything
+  bool tappedAction = false;
   if(tapped_x != -1)
   {
     if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 160)
@@ -757,9 +802,20 @@ void Screen_ShutterSpeed()
       {
         // Shutter Speed selected, send it to the camera
         PacketWriter::writeShutterSpeed(newShutterSpeed, &cameraConnection);
+
+        tappedAction = true;
       }
     }
   }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+  
+  DEBUG_DEBUG("Screen Shutter Speed Refreshed.");
+
 
   window.fillSprite(TFT_BLACK);
 
@@ -852,7 +908,7 @@ void Screen_ShutterSpeed()
   window.pushSprite(0, 0);
 }
 
-void Screen_WBTint()
+void Screen_WBTint(bool forceRefresh = false)
 {
   if(!BMDControlSystem::getInstance()->hasCamera())
     return;
@@ -875,6 +931,7 @@ void Screen_WBTint()
     currentTint = camera->getTint();
 
   // If we have a tap, we should determine if it is on anything
+  bool tappedAction = false;
   if(tapped_x != -1)
   {
     if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 160)
@@ -911,7 +968,7 @@ void Screen_WBTint()
       else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 90 && tapped_y <= 115)
       {
         // Cloud
-        newWB = 5600;
+        newWB = 6500;
         newTint = 10;
       }
 
@@ -920,46 +977,65 @@ void Screen_WBTint()
       {
         // Send preset to camera
         PacketWriter::writeWhiteBalance(newWB, newTint, &cameraConnection);
+
+        tappedAction = true;
       }
       else
       {
         // Not a preset
 
-        DEBUG_DEBUG("Screen_WBTint, not a present tapped, checking for left/right WB Tint");
+        // DEBUG_DEBUG("Screen_WBTint, not a present tapped, checking for left/right WB Tint");
+
+        // DEBUG_DEBUG("Current WB: %i, current Tint: %i", currentWB, currentTint);
 
         // WB Left
         if(currentWB != 0 && currentWB >= 2550 && tapped_x >= 95 && tapped_y >= 75 && tapped_x <= 155 && tapped_y <= 115)
         {
-          DEBUG_DEBUG("Left WB");
+          // DEBUG_DEBUG("Left WB");
 
           // Adjust down by 50
           PacketWriter::writeWhiteBalance(currentWB - 50, currentTint, &cameraConnection);
+
+          tappedAction = true;
         }
         else if(currentWB != 0 && currentWB <= 9950 && tapped_x >= 255 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
         {
-          DEBUG_DEBUG("Right WB");
+          // DEBUG_DEBUG("Right WB");
 
           // Adjust up by 50
           PacketWriter::writeWhiteBalance(currentWB + 50, currentTint, &cameraConnection);
+
+          tappedAction = true;
         }
         else if(currentWB != 0 && currentTint > -50 && tapped_x >= 95 && tapped_y >= 120 && tapped_x <= 155 && tapped_y <= 160)
         {
-          DEBUG_DEBUG("Left Tint");
+          // DEBUG_DEBUG("Left Tint");
 
           // Adjust down by 1
           PacketWriter::writeWhiteBalance(currentWB, currentTint - 1, &cameraConnection);
+
+          tappedAction = true;
         }
         else if(currentWB != 0 && currentWB <= 9950 && tapped_x >= 255 && tapped_y >= 120 && tapped_x <= 315 && tapped_y <= 160)
         {
-          DEBUG_DEBUG("Right Tint");
+          // DEBUG_DEBUG("Right Tint");
           
           // Adjust up by 1
           PacketWriter::writeWhiteBalance(currentWB, currentTint + 1, &cameraConnection);
+
+          tappedAction = true;
         }
       }
     }
-
   }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+  
+  DEBUG_DEBUG("Screen WB Tint Refreshed.");
 
   window.fillSprite(TFT_BLACK);
 
@@ -1196,7 +1272,7 @@ void loop() {
 
     }
     else
-      Screen_Dashboard(); // Was on disconnected screen, now we're connected go to the dashboard
+      Screen_Dashboard(true); // Was on disconnected screen, now we're connected go to the dashboard
 
     lastConnectedTime = currentTime;
   }
@@ -1235,46 +1311,46 @@ void loop() {
       switch(touch.data.gestureID)
       {
         case CST816S::GESTURE::SWIPE_DOWN:
-          DEBUG_DEBUG("Swipe Right");
+          DEBUG_INFO("Swipe Right");
           // Swiping Right (sideways)
           switch(connectedScreenIndex)
           {
             case 0:
-              Screen_Recording();
+              Screen_Recording(true);
               break;
             case 1:
-              Screen_ISO();
+              Screen_ISO(true);
               break;
             case 2:
               if(BMDControlSystem::getInstance()->getCamera()->shutterValueIsAngle)
-                Screen_ShutterAngle();
+                Screen_ShutterAngle(true);
               else
-                Screen_ShutterSpeed();
+                Screen_ShutterSpeed(true);
               break;
             case 3:
-              Screen_WBTint();
+              Screen_WBTint(true);
               break;
           }
           break;
         case CST816S::GESTURE::SWIPE_UP:
-        DEBUG_DEBUG("Swipe Left");
+        DEBUG_INFO("Swipe Left");
           // Swiping Left  (sideways)
           switch(connectedScreenIndex)
           {
             case 4:
               if(BMDControlSystem::getInstance()->getCamera()->shutterValueIsAngle)
-                Screen_ShutterAngle();
+                Screen_ShutterAngle(true);
               else
-                Screen_ShutterSpeed();
+                Screen_ShutterSpeed(true);
               break;
             case 3:
-              Screen_ISO();
+              Screen_ISO(true);
               break;
             case 2:
-              Screen_Recording();
+              Screen_Recording(true);
               break;
             case 1:
-              Screen_Dashboard();
+              Screen_Dashboard(true);
               break;
           }
           break;
