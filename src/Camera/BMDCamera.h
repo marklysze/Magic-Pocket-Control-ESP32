@@ -39,6 +39,9 @@ public:
     bool isRecording = 0;
     bool shutterValueIsAngle = true;
 
+    // Quick access functions
+    bool hasRecordError();
+
     // Lens Attributes
 
     void onHasLens(bool inHasLens);

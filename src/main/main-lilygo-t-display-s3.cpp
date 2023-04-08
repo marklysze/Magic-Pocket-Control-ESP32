@@ -359,6 +359,10 @@ void Screen_Dashboard(bool forceRefresh = false)
 
       window.setTextSize(2);
       window.drawCentreString(slotString.c_str(), 70, 133, tft.textfont);
+
+      // Show recording error
+      if(camera->hasRecordError())
+        window.drawSmoothRoundRect(20, 120, 3, 5, 100, 40, TFT_RED, TFT_DARKGREY);
     }
   }
 
@@ -448,7 +452,7 @@ void Screen_Recording(bool forceRefresh = false)
   window.textbgcolor = TFT_BLACK;
   window.drawString(camera->getTimecodeString().c_str(), 30, 57);
 
-  // Remaining time
+  // Remaining time and any errors
   if(camera->getMediaSlots().size() != 0)
   {
     window.textcolor = TFT_LIGHTGREY;
@@ -456,6 +460,14 @@ void Screen_Recording(bool forceRefresh = false)
 
     window.setTextSize(1);
     window.drawString("REMAINING TIME", 30, 120);
+
+    // Show any media record errors
+    if(camera->hasRecordError())
+    {
+      window.setTextSize(2);
+      window.textcolor = TFT_RED;
+      window.drawString("RECORD ERROR", 30, 20);
+    }
   }
 
   window.pushSprite(0, 0);

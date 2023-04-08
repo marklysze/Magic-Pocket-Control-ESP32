@@ -17,6 +17,20 @@ void BMDCamera::setAsDisconnected()
 }
 
 //
+// Quick Access Functions
+//
+bool BMDCamera::hasRecordError()
+{
+    for(int i = 0; i < mediaSlots.size(); i++)
+    {
+      if(mediaSlots[i].status == CCUPacketTypes::MediaStatus::RecordError)
+        return true;
+    }
+
+    return false;
+}
+
+//
 // LENS Attributes
 //
 
