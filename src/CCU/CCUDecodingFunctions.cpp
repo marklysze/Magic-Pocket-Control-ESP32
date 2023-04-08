@@ -1,7 +1,7 @@
 #include "CCUDecodingFunctions.h"
 #include <stdexcept>
 
-void CCUDecodingFunctions::DecodeCCUPacket(std::vector<byte> byteArray) // const byte* byteArray, int length)
+void CCUDecodingFunctions::DecodeCCUPacket(std::vector<byte> byteArray)
 {
     bool isValid = CCUValidationFunctions::ValidateCCUPacket(byteArray);
 
@@ -28,33 +28,33 @@ void CCUDecodingFunctions::DecodeCCUPacket(std::vector<byte> byteArray) // const
 }
 
 // implementation of DecodePayloadData function
-void CCUDecodingFunctions::DecodePayloadData(CCUPacketTypes::Category category, byte parameter, std::vector<byte> payloadData) //, byte* payloadData, int payloadDataLength)
+void CCUDecodingFunctions::DecodePayloadData(CCUPacketTypes::Category category, byte parameter, std::vector<byte> payloadData)
 {
     switch (category) {
         case CCUPacketTypes::Category::Lens:
-            DecodeLensCategory(parameter, payloadData.data(), payloadData.size()); // payloadDataLength);
+            DecodeLensCategory(parameter, payloadData);
             break;
         case CCUPacketTypes::Category::Video:
-            DecodeVideoCategory(parameter, payloadData.data(), payloadData.size());
+            DecodeVideoCategory(parameter, payloadData);
             break;
         case CCUPacketTypes::Category::Status:
-            DecodeStatusCategory(parameter, payloadData.data(), payloadData.size());
+            DecodeStatusCategory(parameter, payloadData);
             break;
         case CCUPacketTypes::Category::Media:
-            DecodeMediaCategory(parameter, payloadData.data(), payloadData.size());
+            DecodeMediaCategory(parameter, payloadData);
             break;
         case CCUPacketTypes::Category::Metadata:
-            DecodeMetadataCategory(parameter, payloadData.data(), payloadData.size());
+            DecodeMetadataCategory(parameter, payloadData);
             break;
         case CCUPacketTypes::Category::Display:
-            DecodeDisplayCategory(parameter, payloadData.data(), payloadData.size());
+            DecodeDisplayCategory(parameter, payloadData);
         default:
             break;
     }
 }
 
 // implementation of member functions
-void CCUDecodingFunctions::DecodeLensCategory(byte parameter, byte* payloadData, int payloadLength)
+void CCUDecodingFunctions::DecodeLensCategory(byte parameter, std::vector<byte> payloadData)
 {
     if(CCUUtility::byteValueExistsInArray(CCUPacketTypes::LensParameterValues, sizeof(CCUPacketTypes::LensParameterValues) / sizeof(CCUPacketTypes::LensParameterValues[0]), parameter))
     {
@@ -65,10 +65,10 @@ void CCUDecodingFunctions::DecodeLensCategory(byte parameter, byte* payloadData,
         switch (parameterType)
         {
         case CCUPacketTypes::LensParameter::ApertureFstop:
-            DecodeApertureFStop(payloadData, payloadLength);
+            DecodeApertureFStop(payloadData);
             break;
         case CCUPacketTypes::LensParameter::ApertureNormalised:
-            DecodeApertureNormalised(payloadData, payloadLength);
+            DecodeApertureNormalised(payloadData);
             break;
         case CCUPacketTypes::LensParameter::ApertureOrdinal:
             // Not catered for
@@ -79,7 +79,7 @@ void CCUDecodingFunctions::DecodeLensCategory(byte parameter, byte* payloadData,
             DEBUG_VERBOSE("DecodeLensCategory, ParameterType AutoAperture not catered for: %i", static_cast<byte>(parameterType));
             break;
         case CCUPacketTypes::LensParameter::AutoFocus:
-            DecodeAutoFocus(payloadData, payloadLength);
+            DecodeAutoFocus(payloadData);
             break;
         case CCUPacketTypes::LensParameter::ContinuousZoom:
             // Not catered for
@@ -94,7 +94,7 @@ void CCUDecodingFunctions::DecodeLensCategory(byte parameter, byte* payloadData,
             DEBUG_VERBOSE("DecodeLensCategory, ParameterType ImageStabilisation not catered for: %i", static_cast<byte>(parameterType));
             break;
         case CCUPacketTypes::LensParameter::Zoom:
-            DecodeZoom(payloadData, payloadLength);
+            DecodeZoom(payloadData);
             break;
         case CCUPacketTypes::LensParameter::ZoomNormalised:
             // Not catered for
@@ -109,6 +109,26 @@ void CCUDecodingFunctions::DecodeLensCategory(byte parameter, byte* payloadData,
 }
 
 template<typename T>
+std::vector<T> CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount(std::vector<byte> data, int expectedCount) {
+    int typeSize = sizeof(T);
+    int byteCount = data.size();
+    if (typeSize > byteCount) {
+        DEBUG_ERROR("Payload type size (%i) is smaller than data size (%i)", typeSize, byteCount);
+        throw "Payload type size (" + std::to_string(typeSize) + ") is smaller than data size (" + std::to_string(byteCount) + ")";
+    }
+
+    int convertedCount = byteCount / typeSize;
+    if (expectedCount != convertedCount) {
+        DEBUG_ERROR("Payload expected count (%i) not equal to converted count (%i)", expectedCount, convertedCount);
+        throw "Payload expected count (" + std::to_string(expectedCount) + ") not equal to converted count (" + std::to_string(convertedCount) + ")";
+    }
+
+    std::vector<T> payload(convertedCount);
+    memcpy(payload.data(), data.data(), byteCount);
+
+    return payload;
+}
+/*
 std::vector<T> CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount(byte* data, int byteCount, int expectedCount) {
     int typeSize = sizeof(T);
     if (typeSize > byteCount) {
@@ -127,12 +147,18 @@ std::vector<T> CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount(byte* d
 
     return payload;
 }
+*/
 
+std::string CCUDecodingFunctions::ConvertPayloadDataToString(std::vector<byte> data) {
+    return std::string(reinterpret_cast<const char*>(data.data()), data.size());
+}
+
+/*
 std::string CCUDecodingFunctions::ConvertPayloadDataToString(byte* data, int byteCount)
 {
     return std::string(reinterpret_cast<const char*>(data), byteCount);
 }
-
+*/
 // For DecodeApertureFStop
 float CCUDecodingFunctions::ConvertCCUApertureToFstop(int16_t ccuAperture)
 {
@@ -148,28 +174,26 @@ float CCUDecodingFunctions::CCUFloatFromFixed(ccu_fixed_t f) {
     return static_cast<float>(f) / 2048.0;
 }
 
-void CCUDecodingFunctions::DecodeApertureFStop(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeApertureFStop(std::vector<byte> inData)
 {
     std::vector<ccu_fixed_t> data;
     LensConfig::ApertureUnits apertureUnits = LensConfig::ApertureUnits::Fstops;
     
-    if(inDataLength == 4)
+    if(inData.size() == 4)
     {
-        data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<ccu_fixed_t>(inData, inDataLength, 2); // First two bytes are the aperture value and the last two are the aperture units (FStop = 0, TStop = 1)
+        data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<ccu_fixed_t>(inData, 2); // First two bytes are the aperture value and the last two are the aperture units (FStop = 0, TStop = 1)
         apertureUnits = static_cast<LensConfig::ApertureUnits>(data[1]);
     }
     else
     {
         // We may only get the fstops not the F stops vs T stops component.
-        data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<ccu_fixed_t>(inData, inDataLength, 1); // Two bytes are the aperture value
+        data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<ccu_fixed_t>(inData, 1); // Two bytes are the aperture value
     }
 
     ccu_fixed_t apertureNumber = data[0];
 
     if(apertureNumber != CCUPacketTypes::kLensAperture_NoLens)
     {
-        // Serial.print("Decoded fStopIndex Aperture is "); Serial.println(LensConfig::GetFStopString(ConvertCCUApertureToFstop(apertureNumber), apertureUnits).c_str());
-
         BMDControlSystem::getInstance()->getCamera()->onHasLens(true); // A lens is attached
 
         BMDControlSystem::getInstance()->getCamera()->onApertureUnitsReceived(apertureUnits);
@@ -177,15 +201,13 @@ void CCUDecodingFunctions::DecodeApertureFStop(byte* inData, int inDataLength)
     }
     else
     {
-        // Serial.println("Decoded fStopIndex: No Lens Information");
-
         BMDControlSystem::getInstance()->getCamera()->onHasLens(false); // No Lens
     }
 }
 
-void CCUDecodingFunctions::DecodeApertureNormalised(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeApertureNormalised(std::vector<byte> inData)
 {
-    std::vector<short> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 1); // Receiving a fixed16 number, as a short it will be 0-2,048 representing 0.0-1.0
+    std::vector<short> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, 1); // Receiving a fixed16 number, as a short it will be 0-2,048 representing 0.0-1.0
     short apertureNormalisedNumber = data[0];
 
     if(apertureNormalisedNumber != CCUPacketTypes::kLensAperture_NoLens)
@@ -203,16 +225,16 @@ void CCUDecodingFunctions::DecodeApertureNormalised(byte* inData, int inDataLeng
     }
 }
 
-void CCUDecodingFunctions::DecodeAutoFocus(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeAutoFocus(std::vector<byte> inData)
 {
     bool instantaneousAutoFocusPressed = true;
 
     BMDControlSystem::getInstance()->getCamera()->onAutoFocusPressed();
 }
 
-void CCUDecodingFunctions::DecodeZoom(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeZoom(std::vector<byte> inData)
 {
-    std::vector<ccu_fixed_t> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 1);
+    std::vector<ccu_fixed_t> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, 1);
     ccu_fixed_t focalLengthMM = data[0];
 
     if(focalLengthMM != 0)
@@ -230,7 +252,7 @@ void CCUDecodingFunctions::DecodeZoom(byte* inData, int inDataLength)
 }
 
 
-void CCUDecodingFunctions::DecodeVideoCategory(byte parameter, byte* payloadData, int payloadLength)
+void CCUDecodingFunctions::DecodeVideoCategory(byte parameter, std::vector<byte> payloadData)
 {
     if(CCUUtility::byteValueExistsInArray(CCUPacketTypes::VideoParameterValues, sizeof(CCUPacketTypes::VideoParameterValues) / sizeof(CCUPacketTypes::VideoParameterValues[0]), parameter))
     {
@@ -241,34 +263,34 @@ void CCUDecodingFunctions::DecodeVideoCategory(byte parameter, byte* payloadData
         switch (parameterType)
         {
             case CCUPacketTypes::VideoParameter::SensorGain:
-                DecodeSensorGainISO(payloadData, payloadLength);
+                DecodeSensorGainISO(payloadData);
                 break;
             case CCUPacketTypes::VideoParameter::ManualWB:
-                DecodeManualWB(payloadData, payloadLength);
+                DecodeManualWB(payloadData);
                 break;
             case CCUPacketTypes::VideoParameter::Exposure:
-                DecodeExposure(payloadData, payloadLength);
+                DecodeExposure(payloadData);
                 break;
             case CCUPacketTypes::VideoParameter::RecordingFormat:
-                DecodeRecordingFormat(payloadData, payloadLength);
+                DecodeRecordingFormat(payloadData);
                 break;
             case CCUPacketTypes::VideoParameter::AutoExposureMode:
-                DecodeAutoExposureMode(payloadData, payloadLength);
+                DecodeAutoExposureMode(payloadData);
                 break;
             case CCUPacketTypes::VideoParameter::ShutterAngle:
-                DecodeShutterAngle(payloadData, payloadLength);
+                DecodeShutterAngle(payloadData);
                 break;
             case CCUPacketTypes::VideoParameter::ShutterSpeed:
-                DecodeShutterSpeed(payloadData, payloadLength);
+                DecodeShutterSpeed(payloadData);
                 break;
             case CCUPacketTypes::VideoParameter::Gain:
-                DecodeGain(payloadData, payloadLength);
+                DecodeGain(payloadData);
                 break;
             case CCUPacketTypes::VideoParameter::ISO:
-                DecodeISO(payloadData, payloadLength);
+                DecodeISO(payloadData);
                 break;
             case CCUPacketTypes::VideoParameter::DisplayLUT:
-                DecodeDisplayLUT(payloadData, payloadLength);
+                DecodeDisplayLUT(payloadData);
                 break;
         default:
             break;
@@ -278,9 +300,9 @@ void CCUDecodingFunctions::DecodeVideoCategory(byte parameter, byte* payloadData
         throw "Invalid value for Video Parameter.";
 }
 
-void CCUDecodingFunctions::DecodeSensorGainISO(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeSensorGainISO(std::vector<byte> inData)
 {
-    std::vector<short> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 1);
+    std::vector<short> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, 1);
     short sensorGainValue = data[0];
     int sensorGain = sensorGainValue * static_cast<int>(VideoConfig::kReceivedSensorGainBase);
     
@@ -289,9 +311,9 @@ void CCUDecodingFunctions::DecodeSensorGainISO(byte* inData, int inDataLength)
     BMDControlSystem::getInstance()->getCamera()->onSensorGainISOReceived(sensorGain);
 }
 
-void CCUDecodingFunctions::DecodeManualWB(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeManualWB(std::vector<byte> inData)
 {
-    std::vector<short> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 2);
+    std::vector<short> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, 2);
     short whiteBalance = data[0];
     short tint = data[1];
 
@@ -301,9 +323,9 @@ void CCUDecodingFunctions::DecodeManualWB(byte* inData, int inDataLength)
     BMDControlSystem::getInstance()->getCamera()->onTintReceived(tint);
 }
 
-void CCUDecodingFunctions::DecodeExposure(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeExposure(std::vector<byte> inData)
 {
-    std::vector<int32_t> data = ConvertPayloadDataWithExpectedCount<int32_t>(inData, inDataLength, 1);
+    std::vector<int32_t> data = ConvertPayloadDataWithExpectedCount<int32_t>(inData, 1);
     int32_t shutterSpeedMS = data[0]; // Time in microseconds: us
 
     // Serial.print("Decoded Exposure (Shutter Speed): "); Serial.println(shutterSpeed);
@@ -311,9 +333,9 @@ void CCUDecodingFunctions::DecodeExposure(byte* inData, int inDataLength)
     BMDControlSystem::getInstance()->getCamera()->onShutterSpeedMSReceived(shutterSpeedMS);
 }
 
-void CCUDecodingFunctions::DecodeRecordingFormat(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeRecordingFormat(std::vector<byte> inData)
 {
-    std::vector<short> data = ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 5);
+    std::vector<short> data = ConvertPayloadDataWithExpectedCount<short>(inData, 5);
 
     CCUPacketTypes::RecordingFormatData recordingFormatData;
     recordingFormatData.frameRate = data[0];
@@ -346,49 +368,49 @@ void CCUDecodingFunctions::DecodeRecordingFormat(byte* inData, int inDataLength)
    BMDControlSystem::getInstance()->getCamera()->onRecordingFormatReceived(recordingFormatData);
 }
 
-void CCUDecodingFunctions::DecodeAutoExposureMode(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeAutoExposureMode(std::vector<byte> inData)
 {
-    std::vector<sbyte> data = ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, 1);
+    std::vector<sbyte> data = ConvertPayloadDataWithExpectedCount<sbyte>(inData, 1);
     CCUPacketTypes::AutoExposureMode autoExposureMode = static_cast<CCUPacketTypes::AutoExposureMode>(data[0]);
    
    BMDControlSystem::getInstance()->getCamera()->onAutoExposureModeReceived(autoExposureMode);
 }
 
-void CCUDecodingFunctions::DecodeShutterAngle(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeShutterAngle(std::vector<byte> inData)
 {
-    std::vector<int32_t> data = ConvertPayloadDataWithExpectedCount<int32_t>(inData, inDataLength, 1);
+    std::vector<int32_t> data = ConvertPayloadDataWithExpectedCount<int32_t>(inData, 1);
     int32_t shutterAngleX100 = data[0];
 
     BMDControlSystem::getInstance()->getCamera()->onShutterAngleReceived(shutterAngleX100);
 }
 
-void CCUDecodingFunctions::DecodeShutterSpeed(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeShutterSpeed(std::vector<byte> inData)
 {
-    std::vector<int32_t> data = ConvertPayloadDataWithExpectedCount<int32_t>(inData, inDataLength, 1);
+    std::vector<int32_t> data = ConvertPayloadDataWithExpectedCount<int32_t>(inData, 1);
     int32_t shutterSpeed = data[0]; // Result is the denominator in 1/X, e.g. shutterSpeed = 24 is a shutter speed of 1/24
 
     BMDControlSystem::getInstance()->getCamera()->onShutterSpeedReceived(shutterSpeed);
 }
 
-void CCUDecodingFunctions::DecodeGain(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeGain(std::vector<byte> inData)
 {
-    std::vector<byte> data = ConvertPayloadDataWithExpectedCount<byte>(inData, inDataLength, 1);
+    std::vector<byte> data = ConvertPayloadDataWithExpectedCount<byte>(inData, 1);
     byte gain = data[0];
 
     BMDControlSystem::getInstance()->getCamera()->onSensorGainDBReceived(gain);
 }
 
-void CCUDecodingFunctions::DecodeISO(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeISO(std::vector<byte> inData)
 {
-    std::vector<int32_t> data = ConvertPayloadDataWithExpectedCount<int32_t>(inData, inDataLength, 1);
+    std::vector<int32_t> data = ConvertPayloadDataWithExpectedCount<int32_t>(inData, 1);
     int32_t iso = data[0];
 
     BMDControlSystem::getInstance()->getCamera()->onSensorGainISOValueReceived(iso);
 }
 
-void CCUDecodingFunctions::DecodeDisplayLUT(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeDisplayLUT(std::vector<byte> inData)
 {
-    std::vector<byte> data = ConvertPayloadDataWithExpectedCount<byte>(inData, inDataLength, 2);
+    std::vector<byte> data = ConvertPayloadDataWithExpectedCount<byte>(inData, 2);
     CCUPacketTypes::SelectedLUT selectedLut = static_cast<CCUPacketTypes::SelectedLUT>(data[0]);
     bool enabled = data[1] == 1;
 
@@ -396,7 +418,7 @@ void CCUDecodingFunctions::DecodeDisplayLUT(byte* inData, int inDataLength)
    BMDControlSystem::getInstance()->getCamera()->onSelectedLUTEnabledReceived(enabled);
 }
 
-void CCUDecodingFunctions::DecodeStatusCategory(byte parameter, byte* payloadData, int payloadDataLength)
+void CCUDecodingFunctions::DecodeStatusCategory(byte parameter, std::vector<byte> payloadData)
 {
     if(CCUUtility::byteValueExistsInArray(CCUPacketTypes::StatusParameterValues, sizeof(CCUPacketTypes::StatusParameterValues) / sizeof(CCUPacketTypes::StatusParameterValues[0]), parameter))
     {
@@ -407,11 +429,11 @@ void CCUDecodingFunctions::DecodeStatusCategory(byte parameter, byte* payloadDat
             case CCUPacketTypes::StatusParameter::Battery:
                 // Not catered for
                 // Attempting to cater for it
-                DecodeBattery(payloadData, payloadDataLength);
+                DecodeBattery(payloadData);
                 break;
             case CCUPacketTypes::StatusParameter::CameraSpec:
                 // Not catered for
-                DecodeCameraSpec(payloadData, payloadDataLength);
+                DecodeCameraSpec(payloadData);
                 break;
             case CCUPacketTypes::StatusParameter::DisplayParameters:
                 // Not catered for
@@ -426,10 +448,10 @@ void CCUDecodingFunctions::DecodeStatusCategory(byte parameter, byte* payloadDat
                 DEBUG_VERBOSE("DecodeStatusCategory, ParameterType DisplayTimecode not catered for: %i", static_cast<byte>(parameterType));
                 break;
             case CCUPacketTypes::StatusParameter::MediaStatus:
-                DecodeMediaStatus(payloadData, payloadDataLength);
+                DecodeMediaStatus(payloadData);
                 break;
             case CCUPacketTypes::StatusParameter::RemainingRecordTime:
-                DecodeRemainingRecordTime(payloadData, payloadDataLength);
+                DecodeRemainingRecordTime(payloadData);
                 break;
             case CCUPacketTypes::StatusParameter::SwitcherStatus:
                 // Not catered for
@@ -443,9 +465,9 @@ void CCUDecodingFunctions::DecodeStatusCategory(byte parameter, byte* payloadDat
         throw "Invalid value for Status Parameter.";
 }
 
-void CCUDecodingFunctions::DecodeBattery(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeBattery(std::vector<byte> inData)
 {
-    std::vector<short> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 3);
+    std::vector<short> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<short>(inData, 3);
 
     CCUPacketTypes::BatteryStatusData batteryStatusData;
     batteryStatusData.batteryLevelX1000 = data[0];
@@ -472,9 +494,9 @@ void CCUDecodingFunctions::DecodeBattery(byte* inData, int inDataLength)
    BMDControlSystem::getInstance()->getCamera()->onBatteryReceived(batteryStatusData);
 }
 
-void CCUDecodingFunctions::DecodeCameraSpec(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeCameraSpec(std::vector<byte> inData)
 {
-    std::vector<byte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<byte>(inData, inDataLength, 4);
+    std::vector<byte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<byte>(inData, 4);
 
     if(data[1] < CameraModels::NumberOfCameraModels)
     {
@@ -494,9 +516,9 @@ void CCUDecodingFunctions::DecodeCameraSpec(byte* inData, int inDataLength)
     }
 }
 
-void CCUDecodingFunctions::DecodeMediaStatus(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeMediaStatus(std::vector<byte> inData)
 {
-    std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, inDataLength); // We convert all the bytes to sbyte
+    std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, inData.size()); // We convert all the bytes to sbyte
     int slotCount = data.size();
 
     std::vector<CCUPacketTypes::MediaStatus> mediaStatuses;
@@ -565,9 +587,9 @@ std::string CCUDecodingFunctions::makeTimeLabel(SecondsWithOverflow time) {
     return label;
 }
 
-void CCUDecodingFunctions::DecodeRemainingRecordTime(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeRemainingRecordTime(std::vector<byte> inData)
 {
-    std::vector<ccu_fixed_t> payload = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<ccu_fixed_t>(inData, inDataLength, inDataLength / 2);
+    std::vector<ccu_fixed_t> payload = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<ccu_fixed_t>(inData, inData.size() / 2);
 
     int slotCount = payload.size();
     std::vector<std::string> labels(slotCount, "");
@@ -585,7 +607,7 @@ void CCUDecodingFunctions::DecodeRemainingRecordTime(byte* inData, int inDataLen
 }
 
 
-void CCUDecodingFunctions::DecodeMediaCategory(byte parameter, byte* payloadData, int payloadDataLength)
+void CCUDecodingFunctions::DecodeMediaCategory(byte parameter, std::vector<byte> payloadData)
 {
     if(CCUUtility::byteValueExistsInArray(CCUPacketTypes::MediaParameterValues, sizeof(CCUPacketTypes::MediaParameterValues) / sizeof(CCUPacketTypes::MediaParameterValues[0]), parameter))
     {
@@ -594,10 +616,10 @@ void CCUDecodingFunctions::DecodeMediaCategory(byte parameter, byte* payloadData
         switch (parameterType)
         {
             case CCUPacketTypes::MediaParameter::Codec:
-                DecodeCodec(payloadData, payloadDataLength);
+                DecodeCodec(payloadData);
                 break;
             case CCUPacketTypes::MediaParameter::TransportMode:
-                DecodeTransportMode(payloadData, payloadDataLength);
+                DecodeTransportMode(payloadData);
                 break;
         default:
             break;
@@ -607,9 +629,9 @@ void CCUDecodingFunctions::DecodeMediaCategory(byte parameter, byte* payloadData
         throw "Invalid value for Media Category Parameter.";
 }
 
-void CCUDecodingFunctions::DecodeCodec(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeCodec(std::vector<byte> inData)
 {
-    std::vector<byte> data = ConvertPayloadDataWithExpectedCount<byte>(inData, inDataLength, 2);
+    std::vector<byte> data = ConvertPayloadDataWithExpectedCount<byte>(inData, 2);
 
     CodecInfo codecInfo;
     codecInfo.basicCodec = static_cast<CCUPacketTypes::BasicCodec>(data[0]);
@@ -708,9 +730,9 @@ void CCUDecodingFunctions::DecodeCodec(byte* inData, int inDataLength)
     BMDControlSystem::getInstance()->getCamera()->onCodecReceived(codecInfo);
 }
 
-void CCUDecodingFunctions::DecodeTransportMode(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeTransportMode(std::vector<byte> inData)
 {
-    std::vector<sbyte> data = ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, inDataLength);
+    std::vector<sbyte> data = ConvertPayloadDataWithExpectedCount<sbyte>(inData, inData.size());
 
     TransportInfo transportInfo;
 
@@ -751,7 +773,7 @@ void CCUDecodingFunctions::DecodeTransportMode(byte* inData, int inDataLength)
     BMDControlSystem::getInstance()->getCamera()->onTransportModeReceived(transportInfo);
 }
 
-void CCUDecodingFunctions::DecodeMetadataCategory(byte parameter, byte* payloadData, int payloadLength)
+void CCUDecodingFunctions::DecodeMetadataCategory(byte parameter, std::vector<byte> payloadData)
 {
     if(CCUUtility::byteValueExistsInArray(CCUPacketTypes::MetadataParameterValues, sizeof(CCUPacketTypes::MetadataParameterValues) / sizeof(CCUPacketTypes::MetadataParameterValues[0]), parameter))
     {
@@ -760,49 +782,49 @@ void CCUDecodingFunctions::DecodeMetadataCategory(byte parameter, byte* payloadD
         switch (parameterType)
         {
             case CCUPacketTypes::MetadataParameter::Reel:
-                DecodeReel(payloadData, payloadLength);
+                DecodeReel(payloadData);
                 break;
             case CCUPacketTypes::MetadataParameter::SceneTags:
-                DecodeSceneTags(payloadData, payloadLength);
+                DecodeSceneTags(payloadData);
                 break;
             case CCUPacketTypes::MetadataParameter::Scene:
-                DecodeScene(payloadData, payloadLength);
+                DecodeScene(payloadData);
                 break;
             case CCUPacketTypes::MetadataParameter::Take:
-                DecodeTake(payloadData, payloadLength);
+                DecodeTake(payloadData);
                 break;
             case CCUPacketTypes::MetadataParameter::GoodTake:
-                DecodeGoodTake(payloadData, payloadLength);
+                DecodeGoodTake(payloadData);
                 break;
             case CCUPacketTypes::MetadataParameter::CameraId:
-                DecodeCameraId(payloadData, payloadLength);
+                DecodeCameraId(payloadData);
                 break;
             case CCUPacketTypes::MetadataParameter::CameraOperator:
-                DecodeCameraOperator(payloadData, payloadLength);
+                DecodeCameraOperator(payloadData);
                 break;
             case CCUPacketTypes::MetadataParameter::Director:
-                DecodeDirector(payloadData, payloadLength);
+                DecodeDirector(payloadData);
                 break;
             case CCUPacketTypes::MetadataParameter::ProjectName:
-                DecodeProjectName(payloadData, payloadLength);
+                DecodeProjectName(payloadData);
                 break;
             case CCUPacketTypes::MetadataParameter::SlateForType:
-                DecodeSlateForType(payloadData, payloadLength);
+                DecodeSlateForType(payloadData);
                 break;
             case CCUPacketTypes::MetadataParameter::SlateForName:
-                DecodeSlateForName(payloadData, payloadLength);
+                DecodeSlateForName(payloadData);
                 break;
             case CCUPacketTypes::MetadataParameter::LensFocalLength:
-                DecodeLensFocalLength(payloadData, payloadLength);
+                DecodeLensFocalLength(payloadData);
                 break;
             case CCUPacketTypes::MetadataParameter::LensDistance:
-                DecodeLensDistance(payloadData, payloadLength);
+                DecodeLensDistance(payloadData);
                 break;
             case CCUPacketTypes::MetadataParameter::LensType:
-                DecodeLensType(payloadData, payloadLength);
+                DecodeLensType(payloadData);
                 break;
             case CCUPacketTypes::MetadataParameter::LensIris:
-                DecodeLensIris(payloadData, payloadLength);
+                DecodeLensIris(payloadData);
                 break;
         default:
             DEBUG_WARNING("DecodeMetadataCategory, ParameterType not known: %i", static_cast<byte>(parameterType));
@@ -813,24 +835,24 @@ void CCUDecodingFunctions::DecodeMetadataCategory(byte parameter, byte* payloadD
         throw "Invalid value for Metadata Parameter.";
 }
 
-void CCUDecodingFunctions::DecodeReel(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeReel(std::vector<byte> inData)
 {
-    std::vector<short> data = ConvertPayloadDataWithExpectedCount<short>(inData, inDataLength, 1);
+    std::vector<short> data = ConvertPayloadDataWithExpectedCount<short>(inData, 1);
     short reelNumber = data[0];
 
     BMDControlSystem::getInstance()->getCamera()->onReelNumberReceived(reelNumber);
 }
 
-void CCUDecodingFunctions::DecodeScene(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeScene(std::vector<byte> inData)
 {
-    std::string sceneString = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
+    std::string sceneString = CCUDecodingFunctions::ConvertPayloadDataToString(inData);
 
     BMDControlSystem::getInstance()->getCamera()->onSceneNameReceived(sceneString);
 }
 
-void CCUDecodingFunctions::DecodeSceneTags(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeSceneTags(std::vector<byte> inData)
 {
-    std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, 3);
+    std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, 3);
     CCUPacketTypes::MetadataSceneTag sceneTag = static_cast<CCUPacketTypes::MetadataSceneTag>(data[0]);
     CCUPacketTypes::MetadataLocationTypeTag locationType = static_cast<CCUPacketTypes::MetadataLocationTypeTag>(data[1]);
     CCUPacketTypes::MetadataDayNightTag dayOrNight = static_cast<CCUPacketTypes::MetadataDayNightTag>(data[2]);
@@ -840,9 +862,9 @@ void CCUDecodingFunctions::DecodeSceneTags(byte* inData, int inDataLength)
     BMDControlSystem::getInstance()->getCamera()->onDayOrNightReceived(dayOrNight);
 }
 
-void CCUDecodingFunctions::DecodeTake(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeTake(std::vector<byte> inData)
 {
-    std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, 2);
+    std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, 2);
     sbyte takeNumber = data[0];
     CCUPacketTypes::MetadataTakeTag takeTag = static_cast<CCUPacketTypes::MetadataTakeTag>(data[1]);
 
@@ -850,54 +872,54 @@ void CCUDecodingFunctions::DecodeTake(byte* inData, int inDataLength)
     BMDControlSystem::getInstance()->getCamera()->onTakeNumberReceived(takeNumber);
 }
 
-void CCUDecodingFunctions::DecodeGoodTake(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeGoodTake(std::vector<byte> inData)
 {
-    std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, 1);
+    std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, 1);
     sbyte goodTake = data[0];
 
     BMDControlSystem::getInstance()->getCamera()->onGoodTakeReceived(goodTake);
 }
 
-void CCUDecodingFunctions::DecodeCameraId(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeCameraId(std::vector<byte> inData)
 {
-    std::string cameraId = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
+    std::string cameraId = CCUDecodingFunctions::ConvertPayloadDataToString(inData);
 
     BMDControlSystem::getInstance()->getCamera()->onCameraIdReceived(cameraId);
 }
 
-void CCUDecodingFunctions::DecodeCameraOperator(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeCameraOperator(std::vector<byte> inData)
 {
-    std::string cameraOperator = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
+    std::string cameraOperator = CCUDecodingFunctions::ConvertPayloadDataToString(inData);
 
     BMDControlSystem::getInstance()->getCamera()->onCameraOperatorReceived(cameraOperator);
 }
 
-void CCUDecodingFunctions::DecodeDirector(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeDirector(std::vector<byte> inData)
 {
-    std::string director = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
+    std::string director = CCUDecodingFunctions::ConvertPayloadDataToString(inData);
 
     BMDControlSystem::getInstance()->getCamera()->onDirectorReceived(director);
 }
 
-void CCUDecodingFunctions::DecodeProjectName(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeProjectName(std::vector<byte> inData)
 {
-    std::string projectName = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
+    std::string projectName = CCUDecodingFunctions::ConvertPayloadDataToString(inData);
 
     BMDControlSystem::getInstance()->getCamera()->onProjectNameReceived(projectName);
 }
 
 
-void CCUDecodingFunctions::DecodeSlateForType(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeSlateForType(std::vector<byte> inData)
 {
-    std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, 1);
+    std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, 1);
     CCUPacketTypes::MetadataSlateForType slateForType = static_cast<CCUPacketTypes::MetadataSlateForType>(data[0]);
 
     BMDControlSystem::getInstance()->getCamera()->onSlateTypeReceived(slateForType);
 }
 
-void CCUDecodingFunctions::DecodeSlateForName(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeSlateForName(std::vector<byte> inData)
 {
-    std::string name = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
+    std::string name = CCUDecodingFunctions::ConvertPayloadDataToString(inData);
 
     // NOTE: Camera software versions between 7.5 and 7.7.x send the full path of
     // the clip file name. When this is detected, strip the system folders, first
@@ -911,18 +933,18 @@ void CCUDecodingFunctions::DecodeSlateForName(byte* inData, int inDataLength)
     BMDControlSystem::getInstance()->getCamera()->onSlateNameReceived(name);
 }
 
-void CCUDecodingFunctions::DecodeLensFocalLength(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeLensFocalLength(std::vector<byte> inData)
 {
-    std::string lensFocalLength = CCUDecodingFunctions::ConvertPayloadDataToString(inData, inDataLength);
+    std::string lensFocalLength = CCUDecodingFunctions::ConvertPayloadDataToString(inData);
 
     // DecodeLensFocalLength Lens Focal Length: 65mm
 
     BMDControlSystem::getInstance()->getCamera()->onLensFocalLengthReceived(lensFocalLength);
 }
 
-void CCUDecodingFunctions::DecodeLensDistance(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeLensDistance(std::vector<byte> inData)
 {
-    std::string lensDistance = ConvertPayloadDataToString(inData, inDataLength);
+    std::string lensDistance = ConvertPayloadDataToString(inData);
 
     // DecodeLensFocalDistance Lens Distance: Inf
     // DecodeLensFocalDistance Lens Distance: 26100mm to 41310mm
@@ -930,9 +952,9 @@ void CCUDecodingFunctions::DecodeLensDistance(byte* inData, int inDataLength)
     BMDControlSystem::getInstance()->getCamera()->onLensDistanceReceived(lensDistance);
 }
 
-void CCUDecodingFunctions::DecodeLensType(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeLensType(std::vector<byte> inData)
 {
-    std::string lensType = ConvertPayloadDataToString(inData, inDataLength);
+    std::string lensType = ConvertPayloadDataToString(inData);
 
     // DecodeLensType Lens Type: Canon EF-S 55-250mm f/4-5.6 IS
     // "DecodeLensType Lens Type:" <-- this shows when there's no info between camera and lens.
@@ -940,9 +962,9 @@ void CCUDecodingFunctions::DecodeLensType(byte* inData, int inDataLength)
     BMDControlSystem::getInstance()->getCamera()->onLensTypeReceived(lensType);
 }
 
-void CCUDecodingFunctions::DecodeLensIris(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeLensIris(std::vector<byte> inData)
 {
-    std::string lensIris = ConvertPayloadDataToString(inData, inDataLength);
+    std::string lensIris = ConvertPayloadDataToString(inData);
 
     // DecodeLensType Lens Type: Canon EF-S 55-250mm f/4-5.6 IS
     // "DecodeLensType Lens Type:" <-- this shows when there's no info between camera and lens.
@@ -952,7 +974,7 @@ void CCUDecodingFunctions::DecodeLensIris(byte* inData, int inDataLength)
 
 // DISPLAY CATEGORY
 
-void CCUDecodingFunctions::DecodeDisplayCategory(byte parameter, byte* payloadData, int payloadLength)
+void CCUDecodingFunctions::DecodeDisplayCategory(byte parameter, std::vector<byte> payloadData)
 {
     if(CCUUtility::byteValueExistsInArray(CCUPacketTypes::DisplayParameterValues, sizeof(CCUPacketTypes::DisplayParameterValues) / sizeof(CCUPacketTypes::MetadataParameterValues[0]), parameter))
     {
@@ -961,7 +983,7 @@ void CCUDecodingFunctions::DecodeDisplayCategory(byte parameter, byte* payloadDa
         switch (parameterType)
         {
             case CCUPacketTypes::DisplayParameter::TimecodeSource:
-                DecodeTimecodeSource(payloadData, payloadLength);
+                DecodeTimecodeSource(payloadData);
                 break;
             case CCUPacketTypes::DisplayParameter::Overlays:
                 // Not handled.
@@ -987,9 +1009,9 @@ void CCUDecodingFunctions::DecodeDisplayCategory(byte parameter, byte* payloadDa
         throw "Invalid value for Display Parameter.";
 }
 
-void CCUDecodingFunctions::DecodeTimecodeSource(byte* inData, int inDataLength)
+void CCUDecodingFunctions::DecodeTimecodeSource(std::vector<byte> inData)
 {
-    std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, inDataLength, 1);
+    std::vector<sbyte> data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<sbyte>(inData, 1);
     CCUPacketTypes::DisplayTimecodeSource timecodeSource = static_cast<CCUPacketTypes::DisplayTimecodeSource>(data[0]);
 
     BMDControlSystem::getInstance()->getCamera()->onTimecodeSourceReceived(timecodeSource);

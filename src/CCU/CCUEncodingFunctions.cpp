@@ -2,11 +2,8 @@
 
 CCUPacketTypes::Command CCUEncodingFunctions::CreateVideoWhiteBalanceCommand(short whiteBalance, short tint)
 {
-    Serial.println(whiteBalance);
-    Serial.println(tint);
-
     short dataArray[] = { whiteBalance, tint };
-    byte* payloadData = CCUUtility::ToByteArrayFromArray(dataArray, sizeof(dataArray));
+    std::vector<byte> payloadData = CCUUtility::ToByteArrayFromArray(dataArray, sizeof(dataArray));
 
     CCUPacketTypes::Command command(
         CCUPacketTypes::kBroadcastTarget,
@@ -16,15 +13,12 @@ CCUPacketTypes::Command CCUEncodingFunctions::CreateVideoWhiteBalanceCommand(sho
         CCUPacketTypes::OperationType::AssignValue,
         static_cast<byte>(CCUPacketTypes::DataTypes::kInt16),
         payloadData);
-        // ,sizeof(dataArray));
-
-    delete[] payloadData; // CHECK IF THIS SHOULD BE HERE
 
     return command;
 }
 
 CCUPacketTypes::Command CCUEncodingFunctions::CreateVoidCommand(CCUPacketTypes::Category category, byte parameter) {
-    byte data[] = { };
+    std::vector<byte> data;
     CCUPacketTypes::Command command(
         CCUPacketTypes::kBroadcastTarget,
         CCUPacketTypes::CommandID::ChangeConfiguration,
@@ -61,8 +55,8 @@ CCUPacketTypes::Command CCUEncodingFunctions::CreateRecordingFormatCommand(CCUPa
     }
 
     short data[] = { recordingFormatData.frameRate, recordingFormatData.offSpeedFrameRate, recordingFormatData.width, recordingFormatData.height, flags };
-    byte payloadData[sizeof(data)];
-    memcpy(payloadData, data, sizeof(data));
+
+    std::vector<byte> payloadData = CCUUtility::ToByteArrayFromArray(data, sizeof(data));
 
     CCUPacketTypes::Command command(
         CCUPacketTypes::kBroadcastTarget,
@@ -99,27 +93,9 @@ CCUPacketTypes::DataTypes getCCUDataType(T value)
     throw std::runtime_error("Have not handled type in CCUEncodingFunction::getCCUDataType");
 }
 
-CCUPacketTypes::Command CCUEncodingFunctions::CreateRecordingFormatStatusCommand()
-{
-    byte* data = CCUUtility::ToByteArray(400);
-    CCUPacketTypes::Command command(
-        CCUPacketTypes::kBroadcastTarget,
-        CCUPacketTypes::CommandID::ChangeConfiguration,
-        CCUPacketTypes::Category::Video,
-        static_cast<byte>(CCUPacketTypes::VideoParameter::ISO),
-        CCUPacketTypes::OperationType::OffsetValue,
-        static_cast<byte>(getCCUDataType(static_cast<int>(0))),
-        data);
-
-    delete[] data; // CHECK IF THIS SHOULD BE HERE
-
-    return command;
-}
-
 CCUPacketTypes::Command CCUEncodingFunctions::CreateFixed16Command(short value, CCUPacketTypes::Category category, byte parameter) {
-    // byte data[sizeof(short)];
-    // CCUUtility:: ::GetBytes(value, data, sizeof(data));
-    byte* data = CCUUtility::ToByteArray(value);
+
+    std::vector<byte> data = CCUUtility::ToByteArray(value);
     CCUPacketTypes::Command command(
         CCUPacketTypes::kBroadcastTarget,
         CCUPacketTypes::CommandID::ChangeConfiguration,
@@ -129,15 +105,13 @@ CCUPacketTypes::Command CCUEncodingFunctions::CreateFixed16Command(short value, 
         static_cast<byte>(CCUPacketTypes::DataTypes::kFixed16),
         data);
 
-    delete[] data; // CHECK IF THIS SHOULD BE HERE
-
     return command;
 }
 
 template <typename T>
 CCUPacketTypes::Command CCUEncodingFunctions::CreateCommand(T value, CCUPacketTypes::Category category, byte parameter) {
-    // byte* data = UtilityFunctions::GetBytes(value);
-    byte* data = CCUUtility::ToByteArray(value);
+
+    std::vector<byte> data = CCUUtility::ToByteArray(value);
     CCUPacketTypes::Command command(
         CCUPacketTypes::kBroadcastTarget,
         CCUPacketTypes::CommandID::ChangeConfiguration,
@@ -146,8 +120,6 @@ CCUPacketTypes::Command CCUEncodingFunctions::CreateCommand(T value, CCUPacketTy
         CCUPacketTypes::OperationType::AssignValue,
         static_cast<byte>(getCCUDataType(value)),
         data);
-
-    delete[] data; // CHECK IF THIS SHOULD BE HERE
 
     return command;
 }
@@ -178,14 +150,29 @@ CCUPacketTypes::Command CCUEncodingFunctions::CreateTransportInfoCommand(Transpo
         static_cast<byte>(CCUPacketTypes::MediaParameter::TransportMode),
         CCUPacketTypes::OperationType::AssignValue,
         static_cast<byte>(CCUPacketTypes::DataTypes::kInt8),
-        data.data());
-
-    // delete[] data;
+        data);
 
     return command;
 }
 
 /* FUNCTIONS NOT USED AND CONVERTED FROM C# VERSON.
+
+CCUPacketTypes::Command CCUEncodingFunctions::CreateRecordingFormatStatusCommand()
+{
+    byte* data = CCUUtility::ToByteArray(400);
+    CCUPacketTypes::Command command(
+        CCUPacketTypes::kBroadcastTarget,
+        CCUPacketTypes::CommandID::ChangeConfiguration,
+        CCUPacketTypes::Category::Video,
+        static_cast<byte>(CCUPacketTypes::VideoParameter::ISO),
+        CCUPacketTypes::OperationType::OffsetValue,
+        static_cast<byte>(getCCUDataType(static_cast<int>(0))),
+        data);
+
+    delete[] data; // CHECK IF THIS SHOULD BE HERE
+
+    return command;
+}
 
 public static func CreateVideoExposureCommand(value: Int32) -> (CCUPacketTypes.Command?) {
     return CreateCommand(value, CCUPacketTypes.Category.Video, CCUPacketTypes.VideoParameter.Exposure.rawValue)

@@ -24,11 +24,13 @@ void PacketWriter::writeAutoWhiteBalance(BMDCameraConnection* connection)
     validateAndSendCCUCommand(command, connection);
 }
 
+/*
 void PacketWriter::writeRecordingFormatStatus(BMDCameraConnection* connection)
 {
     CCUPacketTypes::Command command = CCUEncodingFunctions::CreateRecordingFormatStatusCommand();
     validateAndSendCCUCommand(command, connection);
 }
+*/
 
 void PacketWriter::writeRecordingFormat(CCUPacketTypes::RecordingFormatData recordingFormatData, BMDCameraConnection* connection)
 {

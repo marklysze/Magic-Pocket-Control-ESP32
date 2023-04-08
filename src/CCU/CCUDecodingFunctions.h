@@ -19,64 +19,64 @@
 class CCUDecodingFunctions
 {
 public:
-    static void DecodeCCUPacket(std::vector<byte> byteArray); // const byte* byteArray, int length);
+    static void DecodeCCUPacket(std::vector<byte> byteArray);
 
-    static void DecodePayloadData(CCUPacketTypes::Category category, byte parameter, std::vector<byte> payloadData); //, byte* payloadData, int payloadDataLength);
+    static void DecodePayloadData(CCUPacketTypes::Category category, byte parameter, std::vector<byte> payloadData);
 
     template<typename T>
-    static std::vector<T> ConvertPayloadDataWithExpectedCount(byte* data, int byteCount, int expectedCount);
-    static std::string ConvertPayloadDataToString(byte* data, int byteCount);
+    static std::vector<T> ConvertPayloadDataWithExpectedCount(std::vector<byte> data, int expectedCount);
+    static std::string ConvertPayloadDataToString(std::vector<byte> data);
 
 
-    static void DecodeLensCategory(byte parameter, byte* payloadData, int payloadLength);
+    static void DecodeLensCategory(byte parameter, std::vector<byte> payloadData);
     static float ConvertCCUApertureToFstop(int16_t ccuAperture);
     static float CCUFloatFromFixed(ccu_fixed_t f);
-    static void DecodeApertureFStop(byte* inData, int inDataLength);
-    static void DecodeApertureNormalised(byte* inData, int inDataLength);
-    static void DecodeAutoFocus(byte* inData, int inDataLength);
-    static void DecodeZoom(byte* inData, int inDataLength);
+    static void DecodeApertureFStop(std::vector<byte> inData);
+    static void DecodeApertureNormalised(std::vector<byte> inData);
+    static void DecodeAutoFocus(std::vector<byte> inData);
+    static void DecodeZoom(std::vector<byte> inData);
 
-    static void DecodeVideoCategory(byte parameter, byte* payloadData, int payloadDataLength);
-    static void DecodeSensorGainISO(byte* inData, int inDataLength);
-    static void DecodeManualWB(byte* inData, int inDataLength);
-    static void DecodeExposure(byte* inData, int inDataLength);
-    static void DecodeRecordingFormat(byte* inData, int inDataLength);
-    static void DecodeAutoExposureMode(byte* inData, int inDataLength);
-    static void DecodeShutterAngle(byte* inData, int inDataLength);
-    static void DecodeShutterSpeed(byte* inData, int inDataLength);
-    static void DecodeGain(byte* inData, int inDataLength);
-    static void DecodeISO(byte* inData, int inDataLength);
-    static void DecodeDisplayLUT(byte* inData, int inDataLength);
+    static void DecodeVideoCategory(byte parameter, std::vector<byte> payloadData);
+    static void DecodeSensorGainISO(std::vector<byte> inData);
+    static void DecodeManualWB(std::vector<byte> inData);
+    static void DecodeExposure(std::vector<byte> inData);
+    static void DecodeRecordingFormat(std::vector<byte> inData);
+    static void DecodeAutoExposureMode(std::vector<byte> inData);
+    static void DecodeShutterAngle(std::vector<byte> inData);
+    static void DecodeShutterSpeed(std::vector<byte> inData);
+    static void DecodeGain(std::vector<byte> inData);
+    static void DecodeISO(std::vector<byte> inData);
+    static void DecodeDisplayLUT(std::vector<byte> inData);
 
-    static void DecodeStatusCategory(byte parameter, byte* payloadData, int payloadDataLength);
-    static void DecodeBattery(byte* inData, int inDataLength);
-    static void DecodeCameraSpec(byte* inData, int inDataLength);
-    static void DecodeMediaStatus(byte* inData, int inDataLength);
-    static void DecodeRemainingRecordTime(byte* inData, int inDataLength);
+    static void DecodeStatusCategory(byte parameter, std::vector<byte> payloadData);
+    static void DecodeBattery(std::vector<byte> inData);
+    static void DecodeCameraSpec(std::vector<byte> inData);
+    static void DecodeMediaStatus(std::vector<byte> inData);
+    static void DecodeRemainingRecordTime(std::vector<byte> inData);
 
-    static void DecodeMediaCategory(byte parameter, byte* payloadData, int payloadDataLength);
-    static void DecodeCodec(byte* inData, int inDataLength);
-    static void DecodeTransportMode(byte* inData, int inDataLength);
+    static void DecodeMediaCategory(byte parameter, std::vector<byte> payloadData);
+    static void DecodeCodec(std::vector<byte> inData);
+    static void DecodeTransportMode(std::vector<byte> inData);
 
-    static void DecodeMetadataCategory(byte parameter, byte* payloadData, int payloadDataLength);
-    static void DecodeReel(byte* inData, int inDataLength);
-    static void DecodeScene(byte* inData, int inDataLength);
-    static void DecodeSceneTags(byte* inData, int inDataLength);
-    static void DecodeTake(byte* inData, int inDataLength);
-    static void DecodeGoodTake(byte* inData, int inDataLength);
-    static void DecodeCameraId(byte* inData, int inDataLength);
-    static void DecodeCameraOperator(byte* inData, int inDataLength);
-    static void DecodeDirector(byte* inData, int inDataLength);
-    static void DecodeProjectName(byte* inData, int inDataLength);
-    static void DecodeSlateForType(byte* inData, int inDataLength);
-    static void DecodeSlateForName(byte* inData, int inDataLength);
-    static void DecodeLensFocalLength(byte* inData, int inDataLength);
-    static void DecodeLensDistance(byte* inData, int inDataLength);
-    static void DecodeLensType(byte* inData, int inDataLength);
-    static void DecodeLensIris(byte* inData, int inDataLength);
+    static void DecodeMetadataCategory(byte parameter, std::vector<byte> payloadData);
+    static void DecodeReel(std::vector<byte> inData);
+    static void DecodeScene(std::vector<byte> inData);
+    static void DecodeSceneTags(std::vector<byte> inData);
+    static void DecodeTake(std::vector<byte> inData);
+    static void DecodeGoodTake(std::vector<byte> inData);
+    static void DecodeCameraId(std::vector<byte> inData);
+    static void DecodeCameraOperator(std::vector<byte> inData);
+    static void DecodeDirector(std::vector<byte> inData);
+    static void DecodeProjectName(std::vector<byte> inData);
+    static void DecodeSlateForType(std::vector<byte> inData);
+    static void DecodeSlateForName(std::vector<byte> inData);
+    static void DecodeLensFocalLength(std::vector<byte> inData);
+    static void DecodeLensDistance(std::vector<byte> inData);
+    static void DecodeLensType(std::vector<byte> inData);
+    static void DecodeLensIris(std::vector<byte> inData);
 
-    static void DecodeDisplayCategory(byte parameter, byte* payloadData, int payloadLength);
-    static void DecodeTimecodeSource(byte* inData, int inDataLength);
+    static void DecodeDisplayCategory(byte parameter, std::vector<byte> payloadData);
+    static void DecodeTimecodeSource(std::vector<byte> inData);
 
     // For DecodeRemainingRecordTime function
     struct SecondsWithOverflow {

@@ -658,11 +658,12 @@ class CCUPacketTypes
             byte parameter;
             byte dataType;
             OperationType operationType;
-            byte* data;
+            // byte* data;
+            std::vector<byte> data; // Changed from pointer to vector for simpler memory management
 
-            Command(byte target, CommandID commandID, Category category, byte parameter, OperationType operationType, byte dataType, byte* data)
+            Command(byte target, CommandID commandID, Category category, byte parameter, OperationType operationType, byte dataType, std::vector<byte> inData)
             {
-                byte commandLength = (byte)(CCUPacketTypes::kCCUCommandHeaderSize + sizeof(data));
+                byte commandLength = (byte)(CCUPacketTypes::kCCUCommandHeaderSize + inData.size());
                 int packetSize = commandLength + CCUPacketTypes::kCCUPacketHeaderSize;
                 if(packetSize > CCUPacketTypes::kPacketSizeMax)
                 {
@@ -678,13 +679,13 @@ class CCUPacketTypes
                 this->parameter = parameter;
                 this->operationType = operationType;
                 this->dataType = dataType;
-                this->data = data;
+                this->data = inData;
             }
 
            std::vector<byte> serialize()
             {
                 const byte headersSize = static_cast<byte>(CCUPacketTypes::kCCUPacketHeaderSize + CCUPacketTypes::kCCUCommandHeaderSize);
-                const byte payloadSize = sizeof(data);
+                const byte payloadSize = data.size();
                 const byte padBytes = static_cast<byte>(((length + 3) & ~3) - length);
                 std::vector<byte> buffer(headersSize + payloadSize + padBytes, 0);
 
@@ -698,7 +699,7 @@ class CCUPacketTypes
                 buffer[PacketFormatIndex::DataType] = dataType;
                 buffer[PacketFormatIndex::OperationType] = static_cast<byte>(operationType);
 
-                for(int payloadIndex = 0; payloadIndex < sizeof(data); payloadIndex++)
+                for(int payloadIndex = 0; payloadIndex < data.size(); payloadIndex++)
                 {
                     int packetIndex = PacketFormatIndex::PayloadStart + payloadIndex;
                     buffer[packetIndex] = data[payloadIndex];
