@@ -423,7 +423,7 @@ void Screen_Recording(bool forceRefresh = false)
         transportInfo.mode = CCUPacketTypes::MediaTransportMode::Record;
       }
 
-      PacketWriter::writeTransportPacket(transportInfo, &cameraConnection);
+      PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
 
       tappedAction = true;
     }
@@ -1143,6 +1143,342 @@ void Screen_WBTint(bool forceRefresh = false)
   window.pushSprite(0, 0);
 }
 
+// Codec Screen for Pocket 4K and 6K + Variants
+void Screen_Codec4K6K(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = 5;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // Get the current Codec values
+  CodecInfo currentCodec = camera->getCodec();
+
+  // Codec: BRAW and ProRes
+
+  // If we have a tap, we should determine if it is on anything
+  bool tappedAction = false;
+  if(tapped_x != -1 && camera->hasCodec())
+  {
+    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 160)
+    {
+      // Switching between BRAW and ProRes
+      if(currentCodec.basicCodec != CCUPacketTypes::BasicCodec::BRAW && tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 165 && tapped_y <= 70)
+      {
+        // Switch to BRAW (using the last known setting)
+        DEBUG_DEBUG("Changing to last unknown BRAW");
+        PacketWriter::writeCodec(camera->lastKnownBRAWIsBitrate ? camera->lastKnownBRAWBitrate : camera->lastKnownBRAWQuality, &cameraConnection);
+
+        tappedAction = true;
+      }
+      else if(currentCodec.basicCodec != CCUPacketTypes::BasicCodec::ProRes && tapped_x >= 170 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 70)
+      {
+        // Switch to ProRes (using the last known setting)
+        DEBUG_DEBUG("Changing to last unknown ProRes");
+        PacketWriter::writeCodec(camera->lastKnownProRes, &cameraConnection);
+
+        tappedAction = true;
+      }
+      else if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
+      {
+        // BRAW
+
+        // Are we Constant Bitrate or Constant Quality
+        std::string currentCodecString = currentCodec.to_string();
+        auto pos = std::find(currentCodecString.begin(), currentCodecString.end(), ':');
+        bool isConstantBitrate = pos != currentCodecString.end(); // Is there a colon, :, in the string? If so, it's Constant Bitrate
+
+        // Constant Bitrate and Constant Quality
+        if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 165 && tapped_y <= 115)
+        {
+          // Change to Constant Bitrate if we're not already on Constant Bitrate. If it is we do nothing
+          if(!isConstantBitrate)
+          {
+            PacketWriter::writeCodec(camera->lastKnownBRAWBitrate, &cameraConnection);
+
+            tappedAction = true;
+          }
+        } 
+        else if(tapped_x >= 170 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
+        {
+          // Change to Constant Quality if we're not already on Constant Quality. If it is we do nothing
+          if(isConstantBitrate)
+          {
+            PacketWriter::writeCodec(camera->lastKnownBRAWQuality, &cameraConnection);
+
+            tappedAction = true;
+          }
+        } 
+        else
+        {
+          // Setting
+
+          if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 90 && tapped_y <= 160)
+          {
+            // 3:1 / Q0
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, isConstantBitrate ? CCUPacketTypes::CodecVariants::kBRAW3_1 : CCUPacketTypes::CodecVariants::kBRAWQ0), &cameraConnection);
+
+            tappedAction = true;
+          }
+          else if(tapped_x >= 95 && tapped_y >= 120 && tapped_x <= 165 && tapped_y <= 160)
+          {
+            // 5:1 / Q1
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, isConstantBitrate ? CCUPacketTypes::CodecVariants::kBRAW5_1 : CCUPacketTypes::CodecVariants::kBRAWQ1), &cameraConnection);
+
+            tappedAction = true;
+          }
+          else if(tapped_x >= 170 && tapped_y >= 120 && tapped_x <= 240 && tapped_y <= 160)
+          {
+            // 8:1 / Q3
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, isConstantBitrate ? CCUPacketTypes::CodecVariants::kBRAW8_1 : CCUPacketTypes::CodecVariants::kBRAWQ3), &cameraConnection);
+
+            tappedAction = true;
+          }
+          else if(tapped_x >= 245 && tapped_y >= 120 && tapped_x <= 315 && tapped_y <= 160)
+          {
+            // 12:1 / Q5
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, isConstantBitrate ? CCUPacketTypes::CodecVariants::kBRAW12_1 : CCUPacketTypes::CodecVariants::kBRAWQ5), &cameraConnection);
+
+            tappedAction = true;
+          }
+        }
+      }
+      else
+      {
+        // ProRes
+
+        if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 165 && tapped_y <= 115)
+          {
+            // HQ
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProResHQ), &cameraConnection);
+
+            tappedAction = true;
+          }
+          else if(tapped_x >= 170 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
+          {
+            // 422
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProRes422), &cameraConnection);
+
+            tappedAction = true;
+          }
+          else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 165 && tapped_y <= 160)
+          {
+            // LT
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProResLT), &cameraConnection);
+
+            tappedAction = true;
+          }
+          else if(tapped_x >= 170 && tapped_y >= 120 && tapped_x <= 315 && tapped_y <= 160)
+          {
+            // PXY
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProResProxy), &cameraConnection);
+
+            tappedAction = true;
+          }
+      }
+    }
+
+  }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+  
+  DEBUG_DEBUG("Screen Codec 4K/6K Refreshed.");
+
+  window.fillSprite(TFT_BLACK);
+
+  Screen_Common(TFT_GREEN); // Common elements
+
+  // We need to have the Codec information to show the screen
+  if(!camera->hasCodec())
+  {
+    window.setTextSize(2);
+    window.textcolor = TFT_WHITE;
+    window.textbgcolor = TFT_BLACK;
+    window.drawString("NO CODEC INFO.", 30, 9);
+
+    window.pushSprite(0, 0);
+
+    return;
+  }
+
+  // Codec label
+  window.setTextSize(2);
+  window.textcolor = TFT_WHITE;
+  window.textbgcolor = TFT_BLACK;
+  window.drawString("CODEC", 30, 9);
+
+  window.textbgcolor = TFT_DARKGREY;
+
+  // BRAW and ProRes selector buttons
+
+  // BRAW
+  window.setTextSize(2);
+  window.fillSmoothRoundRect(20, 30, 145, 40, 5, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  window.drawSmoothRoundRect(20, 30, 3, 4, 145, 40, TFT_NAVY, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString("BRAW", 93, 41, tft.textfont);
+
+  // ProRes
+  window.fillSmoothRoundRect(170, 30, 145, 40, 5, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  window.drawSmoothRoundRect(170, 30, 3, 4, 145, 40, TFT_NAVY, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawCentreString("ProRes", 242, 41, tft.textfont);
+
+  if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
+  {
+    // BRAW
+
+    window.setTextSize(2);
+
+    // Are we Constant Bitrate or Constant Quality
+    std::string currentCodecString = currentCodec.to_string();
+    auto pos = std::find(currentCodecString.begin(), currentCodecString.end(), ':');
+    bool isConstantBitrate = pos != currentCodecString.end(); // Is there a colon, :, in the string? If so, it's Constant Bitrate
+
+    // Get the bitrate or quality setting
+    std::size_t spaceIndex = currentCodecString.find(" ");
+    std::string qualityBitrateSetting = currentCodecString.substr(spaceIndex + 1); // e.g. 3:1, Q3, etc.
+
+    // Constant Bitrate
+    window.fillSmoothRoundRect(20, 75, 145, 40, 3, (isConstantBitrate ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(isConstantBitrate) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.drawCentreString("BITRATE", 93, 83, tft.textfont);
+    window.setTextSize(1);
+    window.drawCentreString("CONSTANT", 93, 102, tft.textfont);
+
+    // Constant Quality
+    window.fillSmoothRoundRect(170, 75, 145, 40, 3, (!isConstantBitrate ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(!isConstantBitrate) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.setTextSize(2);
+    window.drawCentreString("QUALITY", 242, 83, tft.textfont);
+    window.setTextSize(1);
+    window.drawCentreString("CONSTANT", 242, 102, tft.textfont);
+
+    window.setTextSize(2);
+
+    // Setting 1 of 4
+    std::string optionString = (isConstantBitrate ? "3:1" : "Q0");
+    window.fillSmoothRoundRect(20, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(optionString == qualityBitrateSetting) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.drawCentreString(optionString.c_str(), 55, 131, tft.textfont);
+
+    // Setting 2 of 4
+    optionString = (isConstantBitrate ? "5:1" : "Q1");
+    window.fillSmoothRoundRect(95, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(optionString == qualityBitrateSetting) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.drawCentreString(optionString.c_str(), 130, 131, tft.textfont);
+
+  //   Setting 3 of 4
+    optionString = (isConstantBitrate ? "8:1" : "Q3");
+    window.fillSmoothRoundRect(170, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(optionString == qualityBitrateSetting) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.drawCentreString(optionString.c_str(), 205, 131, tft.textfont);
+
+    // Setting 4 of 4
+    optionString = (isConstantBitrate ? "12:1" : "Q5");
+    window.fillSmoothRoundRect(245, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(optionString == qualityBitrateSetting) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.drawCentreString(optionString.c_str(), 280, 131, tft.textfont);
+  }
+  else
+  {
+    // ProRes
+
+    window.setTextSize(2);
+
+    // Get the ProRes Setting
+    std::string currentCodecString = currentCodec.to_string();
+    std::size_t spaceIndex = currentCodecString.find(" ");
+    std::string currentProResSetting = currentCodecString.substr(spaceIndex + 1); // e.g. HQ, 422, LT, PXY
+
+    // HQ
+    std::string proResLabel = "HQ";
+    window.fillSmoothRoundRect(20, 75, 145, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(currentProResSetting == proResLabel) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.drawCentreString(proResLabel.c_str(), 93, 87, tft.textfont);
+
+    // 422
+    proResLabel = "422";
+    window.fillSmoothRoundRect(170, 75, 145, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(currentProResSetting == proResLabel) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.drawCentreString(proResLabel.c_str(), 242, 87, tft.textfont);
+
+    // LT
+    proResLabel = "LT";
+    window.fillSmoothRoundRect(20, 120, 145, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(currentProResSetting == proResLabel) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.drawCentreString(proResLabel.c_str(), 93, 131, tft.textfont);
+
+    // PXY
+    proResLabel = "PXY";
+    window.fillSmoothRoundRect(170, 120, 145, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(currentProResSetting == proResLabel) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.drawCentreString(proResLabel.c_str(), 242, 131, tft.textfont);
+
+    window.setTextSize(2);
+  }
+
+  window.pushSprite(0, 0);
+}
+
+// Codec Screen for URSA Mini Pro G2
+void Screen_CodecURSAMiniProG2(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = 5;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+  
+  // TO DO
+}
+
+// Codec Screen for URSA Mini Pro 12K
+void Screen_CodecURSAMiniPro12K(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = 5;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+  
+  // TO DO
+}
+
+// Codec screen - redirects to appropriate screen for camera
+void Screen_Codec(bool forceRefresh = false)
+{
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  if(camera->hasCodec())
+  {
+    if(camera->hasModelName())
+    {
+      if(camera->isPocket4K6K())
+        Screen_Codec4K6K(forceRefresh); // Pocket camera
+      else if(camera->isURSAMiniProG2())
+        Screen_CodecURSAMiniProG2(forceRefresh); // URSA Mini Pro G2
+      else if(camera->isURSAMiniPro12K())
+        Screen_CodecURSAMiniPro12K(forceRefresh); // URSA Mini Pro 12K
+      else
+        DEBUG_DEBUG("No Codec screen for this camera.");
+    } 
+    else
+      Screen_Codec4K6K(forceRefresh); // Handle no model name in 4K/6K screen
+  }
+  else
+    Screen_Codec4K6K(forceRefresh); // If we don't have any codec info, we show the 4K/6K screen that shows no codec
+
+}
+
 void setup() {
 
   // Power and Backlight settings for T-Display-S3
@@ -1165,10 +1501,8 @@ void setup() {
 
   // Landscape mode
   tft.setRotation(3);
-  // tft.fillScreen(TFT_BLACK);
 
   window.createSprite(IWIDTH, IHEIGHT);
-  // window.drawString("Blackmagic Camera Control", 20, 20);
 
   spriteMPCSplash.createSprite(IWIDTH, IHEIGHT);
   spriteMPCSplash.setSwapBytes(true);
@@ -1177,7 +1511,7 @@ void setup() {
   spriteMPCSplash.pushToSprite(&window, 0, 0);
   window.pushSprite(0, 0);
 
-  // Images
+  // Images, store them in sprites ready to be used when we need them
   spriteBluetooth.createSprite(30, 46);
   spriteBluetooth.setSwapBytes(true);
   spriteBluetooth.pushImage(0, 0, 30, 46, Wikipedia_Bluetooth_30x46);
@@ -1186,6 +1520,7 @@ void setup() {
   spritePocket4k.setSwapBytes(true);
   spritePocket4k.pushImage(0, 0, 110, 61, blackmagic_pocket_4k_110x61);
 
+  // White Balance images
   spriteWBBright.createSprite(30, 30);
   spriteWBBright.setSwapBytes(true);
   spriteWBBright.pushImage(0, 0, 30, 30, WBBright);
@@ -1260,6 +1595,8 @@ void loop() {
   {
     if(connectedScreenIndex >= 0)
     {
+      auto camera = BMDControlSystem::getInstance()->getCamera();
+
       switch(connectedScreenIndex)
       {
         case 0:
@@ -1272,13 +1609,16 @@ void loop() {
           Screen_ISO();
           break;
         case 3:
-          if(BMDControlSystem::getInstance()->getCamera()->shutterValueIsAngle)
+          if(camera->shutterValueIsAngle)
             Screen_ShutterAngle();
           else
             Screen_ShutterSpeed();
           break;
         case 4:
           Screen_WBTint();
+          break;
+        case 5:
+          Screen_Codec();
           break;
       }
 
@@ -1342,6 +1682,9 @@ void loop() {
             case 3:
               Screen_WBTint(true);
               break;
+            case 4:
+              Screen_Codec(true);
+              break;
           }
           break;
         case CST816S::GESTURE::SWIPE_UP:
@@ -1349,6 +1692,9 @@ void loop() {
           // Swiping Left  (sideways)
           switch(connectedScreenIndex)
           {
+            case 5:
+              Screen_WBTint(true);
+              break;
             case 4:
               if(BMDControlSystem::getInstance()->getCamera()->shutterValueIsAngle)
                 Screen_ShutterAngle(true);

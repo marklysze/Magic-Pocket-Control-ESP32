@@ -155,6 +155,22 @@ CCUPacketTypes::Command CCUEncodingFunctions::CreateTransportInfoCommand(Transpo
     return command;
 }
 
+CCUPacketTypes::Command CCUEncodingFunctions::CreateCodecCommand(CodecInfo codecInfo)
+{
+    std::vector<byte> data = { static_cast<byte>(codecInfo.basicCodec), codecInfo.codecVariant };
+    DEBUG_DEBUG("CreateCodecCommand byte 1: %i, byte 2: %i", codecInfo.basicCodec, codecInfo.codecVariant);
+    CCUPacketTypes::Command command(
+        CCUPacketTypes::kBroadcastTarget,
+        CCUPacketTypes::CommandID::ChangeConfiguration,
+        CCUPacketTypes::Category::Media,
+        static_cast<byte>(CCUPacketTypes::MediaParameter::Codec),
+        CCUPacketTypes::OperationType::AssignValue,
+        static_cast<byte>(CCUPacketTypes::DataTypes::kInt8),
+        data);
+
+    return command;
+}
+
 /* FUNCTIONS NOT USED AND CONVERTED FROM C# VERSON.
 
 CCUPacketTypes::Command CCUEncodingFunctions::CreateRecordingFormatStatusCommand()

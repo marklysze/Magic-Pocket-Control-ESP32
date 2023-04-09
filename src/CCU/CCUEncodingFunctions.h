@@ -4,6 +4,7 @@
 #include "CCUPacketTypes.h"
 #include "CCUUtility.h"
 #include "Camera\TransportInfo.h"
+#include "Camera\CodecInfo.h"
 
 class CCUEncodingFunctions
 {
@@ -19,6 +20,7 @@ class CCUEncodingFunctions
         static CCUPacketTypes::Command CreateVideoISOCommand(int value);
         static CCUPacketTypes::Command CreateShutterAngleCommand(int value);
         static CCUPacketTypes::Command CreateTransportInfoCommand(TransportInfo transportInfo);
+        static CCUPacketTypes::Command CreateCodecCommand(CodecInfo codecInfo);
 };
 
 #endif

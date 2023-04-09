@@ -633,9 +633,9 @@ void CCUDecodingFunctions::DecodeCodec(std::vector<byte> inData)
 {
     std::vector<byte> data = ConvertPayloadDataWithExpectedCount<byte>(inData, 2);
 
-    CodecInfo codecInfo;
-    codecInfo.basicCodec = static_cast<CCUPacketTypes::BasicCodec>(data[0]);
-    codecInfo.codecVariant = data[1];
+    DEBUG_DEBUG("DecodeCodec Byte 1: %i, Byte 2: %i", data[0], data[1]);
+
+    CodecInfo codecInfo(static_cast<CCUPacketTypes::BasicCodec>(data[0]), data[1]);
 
     /*
 

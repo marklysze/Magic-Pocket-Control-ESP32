@@ -9,6 +9,8 @@ class CodecInfo
         CCUPacketTypes::BasicCodec basicCodec = CCUPacketTypes::BasicCodec::BRAW;
         byte codecVariant = CCUPacketTypes::CodecVariants::kDefault;
 
+        CodecInfo(CCUPacketTypes::BasicCodec inBasicCodec, byte inCodecVariant) : basicCodec(inBasicCodec), codecVariant(inCodecVariant) {}
+
         std::string to_string() const {
 
             std::string returnString = "";

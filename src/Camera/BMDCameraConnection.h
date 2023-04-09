@@ -76,7 +76,6 @@ class BMDCameraConnection
         #endif
         
         bool scan();
-        // bool connect();
         void connect(BLEAddress cameraAddress);
         void disconnect();
         void sendCommandToOutgoing(CCUPacketTypes::Command command);

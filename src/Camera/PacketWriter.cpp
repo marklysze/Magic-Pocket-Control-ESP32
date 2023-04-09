@@ -12,8 +12,6 @@ void PacketWriter::validateAndSendCCUCommand(CCUPacketTypes::Command command, BM
 
 void PacketWriter::writeWhiteBalance(short whiteBalance, short tint, BMDCameraConnection* connection)
 {
-    // DEBUG_DEBUG("Writing White Balance. White Balance: %i, Tint: %i", whiteBalance, tint);
-
     CCUPacketTypes::Command command = CCUEncodingFunctions::CreateVideoWhiteBalanceCommand(whiteBalance, tint);
     validateAndSendCCUCommand(command, connection);
 }
@@ -75,8 +73,14 @@ void PacketWriter::writeISO(int iso, BMDCameraConnection* connection)
     validateAndSendCCUCommand(command, connection);
 }
 
-void PacketWriter::writeTransportPacket(TransportInfo transportInfo, BMDCameraConnection* connection)
+void PacketWriter::writeTransportInfo(TransportInfo transportInfo, BMDCameraConnection* connection)
 {
     CCUPacketTypes::Command command = CCUEncodingFunctions::CreateTransportInfoCommand(transportInfo);
+    validateAndSendCCUCommand(command, connection);
+}
+
+void PacketWriter::writeCodec(CodecInfo codecInfo, BMDCameraConnection* connection)
+{
+    CCUPacketTypes::Command command = CCUEncodingFunctions::CreateCodecCommand(codecInfo);
     validateAndSendCCUCommand(command, connection);
 }

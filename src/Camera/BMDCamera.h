@@ -11,6 +11,7 @@
 #include "Config\LensConfig.h"
 #include "Camera\CodecInfo.h"
 #include "Camera\TransportInfo.h"
+#include "Camera\CameraModels.h"
 
 class BMDCamera
 {
@@ -41,6 +42,9 @@ public:
 
     // Quick access functions
     bool hasRecordError();
+    bool isPocket4K6K();
+    bool isURSAMiniProG2();
+    bool isURSAMiniPro12K();
 
     // Lens Attributes
 
@@ -238,6 +242,14 @@ public:
 
     // Last Modified
     unsigned long getLastModified() const { return lastUpdated; }
+
+    // Last known BRAW Bitrate, BRAW Quality, and ProRes settings (for when we switch between options we know what to change it to)
+    // Default options for now, until we get settings from the camera coming through
+    bool lastKnownBRAWIsBitrate = false;
+    CodecInfo lastKnownBRAWBitrate = CodecInfo(CCUPacketTypes::BasicCodec::BRAW, static_cast<byte>(CCUPacketTypes::CodecVariants::kBRAW5_1));
+    CodecInfo lastKnownBRAWQuality = CodecInfo(CCUPacketTypes::BasicCodec::BRAW, static_cast<byte>(CCUPacketTypes::CodecVariants::kBRAWQ5));
+    CodecInfo lastKnownProRes = CodecInfo(CCUPacketTypes::BasicCodec::ProRes, static_cast<byte>(CCUPacketTypes::CodecVariants::kProRes422));
+
 
 private:
     bool connected = false;

@@ -456,6 +456,10 @@ class CCUPacketTypes
             static const byte kBRAW5_1 = 3;
             static const byte kBRAW8_1 = 4;
             static const byte kBRAW12_1 = 5;
+            static const byte kBRAW18_1 = 6;
+            static const byte kBRAWQ1 = 7;
+            static const byte kBRAWQ3 = 8;
+
         };
 
         // Media: Transport Mode: Mode
@@ -658,7 +662,6 @@ class CCUPacketTypes
             byte parameter;
             byte dataType;
             OperationType operationType;
-            // byte* data;
             std::vector<byte> data; // Changed from pointer to vector for simpler memory management
 
             Command(byte target, CommandID commandID, Category category, byte parameter, OperationType operationType, byte dataType, std::vector<byte> inData)
@@ -689,6 +692,8 @@ class CCUPacketTypes
                 const byte padBytes = static_cast<byte>(((length + 3) & ~3) - length);
                 std::vector<byte> buffer(headersSize + payloadSize + padBytes, 0);
 
+                // DEBUG_DEBUG("Command Serialize, Header Size is %i, Payload Size is %i, Pad Bytes is %i.", headersSize, payloadSize, padBytes);
+
                 buffer[PacketFormatIndex::Destination] = target;
                 buffer[PacketFormatIndex::CommandLength] = length;
                 buffer[PacketFormatIndex::CommandId] = static_cast<byte>(commandID);
@@ -705,6 +710,19 @@ class CCUPacketTypes
                     buffer[packetIndex] = data[payloadIndex];
                 }
 
+                // When sending commands, debug.
+                /*
+                if(buffer[PacketFormatIndex::OperationType] == static_cast<int>(CCUPacketTypes::OperationType::AssignValue))
+                {
+                    DEBUG_DEBUG("Command Serialize - Assign Value: ");
+                    for(int index = 0; index < buffer.size(); index++)
+                    {
+                        DEBUG_DEBUG("%i: %i", index, buffer[index]);
+                        
+                    }
+                }
+                */
+               
                 return buffer;
             }
 

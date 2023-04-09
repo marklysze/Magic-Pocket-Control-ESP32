@@ -30,6 +30,102 @@ bool BMDCamera::hasRecordError()
     return false;
 }
 
+bool BMDCamera::isPocket4K6K()
+{
+    if(hasModelName())
+    {
+        // Loop up the map, passing in the model name
+        auto cameraModel = CameraModels::nameToModel.find(getModelName());
+
+        if (cameraModel != CameraModels::nameToModel.end()) {
+            CameraModel model = cameraModel->second; // Enum Value part of map
+
+            switch(model)
+            {
+                case CameraModel::PocketCinemaCamera4K:
+                case CameraModel::PocketCinemaCamera6K:
+                case CameraModel::PocketCinemaCamera6KG2:
+                case CameraModel::PocketCinemaCamera6KPro:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+        else {
+            // the camera was not found in the map
+            DEBUG_ERROR("BMDCamera::isPocket4K6K - Could not map name to model");
+            return false;
+        }
+    }
+    else
+    {
+        DEBUG_ERROR("BMDCamera::isPocket4K6K - Called but do not have model name");
+        return false;
+    }
+}
+
+bool BMDCamera::isURSAMiniProG2()
+{
+    if(hasModelName())
+    {
+        // Loop up the map, passing in the model name
+        auto cameraModel = CameraModels::nameToModel.find(getModelName());
+
+        if (cameraModel != CameraModels::nameToModel.end()) {
+            CameraModel model = cameraModel->second; // Enum Value part of map
+
+            switch(model)
+            {
+                case CameraModel::URSAMiniProG2:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+        else {
+            // the camera was not found in the map
+            DEBUG_ERROR("BMDCamera::isURSAMiniProG2 - Could not map name to model");
+            return false;
+        }
+    }
+    else
+    {
+        DEBUG_ERROR("BMDCamera::isURSAMiniProG2 - Called but do not have model name");
+        return false;
+    }
+}
+
+bool BMDCamera::isURSAMiniPro12K()
+{
+    if(hasModelName())
+    {
+        // Loop up the map, passing in the model name
+        auto cameraModel = CameraModels::nameToModel.find(getModelName());
+
+        if (cameraModel != CameraModels::nameToModel.end()) {
+            CameraModel model = cameraModel->second; // Enum Value part of map
+
+            switch(model)
+            {
+                case CameraModel::URSAMiniPro12K:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+        else {
+            // the camera was not found in the map
+            DEBUG_ERROR("BMDCamera::URSAMiniPro12K - Could not map name to model");
+            return false;
+        }
+    }
+    else
+    {
+        DEBUG_ERROR("BMDCamera::URSAMiniPro12K - Called but do not have model name");
+        return false;
+    }
+}
+
 //
 // LENS Attributes
 //
@@ -623,6 +719,29 @@ void BMDCamera::onCodecReceived(CodecInfo inCodec)
         *codec = inCodec;
     else
         codec = std::make_shared<CodecInfo>(inCodec);
+
+    // Update the last known Codec value
+    switch(inCodec.basicCodec)
+    {
+        case CCUPacketTypes::BasicCodec::BRAW:
+            if(inCodec.codecVariant == CCUPacketTypes::CodecVariants::kBRAW3_1 || inCodec.codecVariant == CCUPacketTypes::CodecVariants::kBRAW5_1 || inCodec.codecVariant == CCUPacketTypes::CodecVariants::kBRAW8_1 ||
+                inCodec.codecVariant == CCUPacketTypes::CodecVariants::kBRAW12_1 || inCodec.codecVariant == CCUPacketTypes::CodecVariants::kBRAW18_1)
+            {
+                lastKnownBRAWBitrate = inCodec;
+                lastKnownBRAWIsBitrate = true;
+            }
+            else
+            {
+                lastKnownBRAWQuality = inCodec;
+                lastKnownBRAWIsBitrate = false;
+            }
+            break;
+        case CCUPacketTypes::BasicCodec::ProRes:
+            lastKnownProRes = inCodec;
+            break;
+    }
+
+    DEBUG_DEBUG("onCodecReceived");
     
     modified();
 }

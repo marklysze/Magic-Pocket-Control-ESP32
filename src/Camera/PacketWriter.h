@@ -22,7 +22,8 @@ class PacketWriter
         static void writeShutterAngle(int shutterAngleX100, BMDCameraConnection* connection);
         static void writeSensorGain(int sensorGain, BMDCameraConnection* connection);
         static void writeISO(int iso, BMDCameraConnection* connection);
-        static void writeTransportPacket(TransportInfo transportInfo, BMDCameraConnection* connection);
+        static void writeTransportInfo(TransportInfo transportInfo, BMDCameraConnection* connection);
+        static void writeCodec(CodecInfo codecInfo, BMDCameraConnection* connection);
 };
 
 #endif
