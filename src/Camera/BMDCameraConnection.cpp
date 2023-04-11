@@ -212,25 +212,13 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
             return;
         }
         else
-        {
             DEBUG_VERBOSE("Got Outgoing Camera Control Characteristic");
-
-            /* This demonstrates sending a record command using this outgoing characteristic. From BlueMagic32.
-            Serial.println("Trying to hit record.");
-            delay(1000);
-            uint8_t data[12] = {255, 5, 0, 0, 10, 1, 1, 0, 0, 0, 0, 0};
-            data[8] = 2;
-            bleChar_OutgoingCameraControl->writeValue(data, 12, true);
-            */
-        }
 
         // Subscribe to Incoming Camera Control messages (messages from the camera)
         bleChar_Timecode = bleRemoteService->getCharacteristic(Constants::UUID_BMD_BCS_TIMECODE);
         if (bleChar_Timecode == nullptr)
         {
-            // bleClient->disconnect();
             disconnect();
-            // status = ConnectionStatus::Disconnected;
             return;
         }
         else
@@ -269,21 +257,11 @@ void BMDCameraConnection::disconnect()
     status = ConnectionStatus::Disconnected;
 }
 
-void BMDCameraConnection::sendCommandToOutgoing(CCUPacketTypes::Command command)
+void BMDCameraConnection::sendCommandToOutgoing(CCUPacketTypes::Command command, bool response = true)
 {
     std::vector<byte> data = command.serialize();
 
-    /*
-    for(int i = 0; i < data.size(); i++)
-    {
-        Serial.print(data[i]);
-        Serial.print(" ");
-    }
-    */
-   
-    Serial.println("");
-
-    bleChar_OutgoingCameraControl->writeValue(data.data(), data.size(), true);
+    bleChar_OutgoingCameraControl->writeValue(data.data(), data.size(), response);
 }
 
 // Incoming Control Notifications
@@ -296,7 +274,6 @@ void BMDCameraConnection::IncomingCameraControlNotify(BLERemoteCharacteristic *p
         std::vector<byte> data(pData, pData + length);
 
         // Decode the packet
-        // CCUDecodingFunctions::DecodeCCUPacket(pData, length);
         CCUDecodingFunctions::DecodeCCUPacket(data);
     }
     else

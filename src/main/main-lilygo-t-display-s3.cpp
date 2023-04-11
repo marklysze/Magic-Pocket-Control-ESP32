@@ -76,9 +76,27 @@ TFT_eSprite spriteWBMixedLightBG = TFT_eSprite(&tft);
 #define IWIDTH 320
 #define IHEIGHT 170
 
-int connectedScreenIndex = 0; // The index of the screen we're on:
-// -2 is Pass Key
-// -1 is No Connection
+enum class Screens : byte
+{
+  PassKey = 9,
+  NoConnection = 10,
+  Dashboard = 100,
+  Recording = 101,
+  ISO = 102,
+  ShutterAngleSpeed = 103,
+  WhiteBalanceTint = 104,
+  Codec = 105,
+  Framerate = 106,
+  Resolution = 107,
+  Media = 108,
+  Lens = 109,
+  Slate = 110,
+  Project = 111
+};
+
+Screens connectedScreenIndex = Screens::NoConnection; // The index of the screen we're on:
+// -2 is Pass Key (now 9)
+// -1 is No Connection (now 10)
 // 0 is Dashboard
 // 1 is Recording
 // 2 is ISO
@@ -121,7 +139,7 @@ void Screen_NoConnection()
   // The camera to connect to.
   int connectToCameraIndex = -1;
 
-  connectedScreenIndex = -1;
+  connectedScreenIndex = Screens::NoConnection;
 
   // window.fillSprite(TFT_BLACK);
   spriteMPCSplash.pushToSprite(&window, 0, 0);
@@ -216,7 +234,7 @@ void Screen_NoConnection()
 
 void Screen_PassKey()
 {
-  connectedScreenIndex = -2;
+  connectedScreenIndex = Screens::PassKey;
 
   // Don't do anything here, it will be handled by the security handler
   // Wait for the screen security handler to do its work to get the pass key.
@@ -229,13 +247,66 @@ void Screen_Dashboard(bool forceRefresh = false)
   if(!BMDControlSystem::getInstance()->hasCamera())
     return;
 
-  connectedScreenIndex = 0;
+  connectedScreenIndex = Screens::Dashboard;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
   int xshift = 0;
 
+  // If we have a tap, we should determine if it is on anything
+  bool tappedAction = false;
+  if(tapped_x != -1)
+  {
+
+    if(tapped_x >= 20 && tapped_y >= 5 && tapped_x <= 315 && tapped_y <= 160)
+    {
+      if(tapped_x >= 20 && tapped_y >= 5 && tapped_x <= 95 && tapped_y <= 70)
+      {
+        // ISO
+        connectedScreenIndex = Screens::ISO;
+        lastRefreshedScreen = 0; // Forces a refresh
+        return;
+      }
+      else if(tapped_x >= 100 && tapped_y >= 5 && tapped_x <= 175 && tapped_y <= 70)
+      {
+        // Shutter Speed / Angle
+        connectedScreenIndex = Screens::ShutterAngleSpeed;
+        lastRefreshedScreen = 0; // Forces a refresh
+        return;
+      }
+      else if(tapped_x >= 180 && tapped_y >= 5 && tapped_x <= 315 && tapped_y <= 70)
+      {
+        // White Balance & Tint
+        connectedScreenIndex = Screens::WhiteBalanceTint;
+        lastRefreshedScreen = 0; // Forces a refresh
+        return;
+      }
+      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 175 && tapped_y <= 115)
+      {
+        // Codec
+        connectedScreenIndex = Screens::Codec;
+        lastRefreshedScreen = 0; // Forces a refresh
+        return;
+      }
+      else if(tapped_x >= 180 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
+      {
+        // Frame Rate
+        DEBUG_INFO("No Frame Rate Created Yet");
+      }
+      else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 120 && tapped_y <= 160)
+      {
+        // Media
+        DEBUG_INFO("No Media Page Created Yet");
+      }
+      else if(tapped_x >= 125 && tapped_y >= 120 && tapped_x <= 315 && tapped_y <= 160)
+      {
+        // Media
+        DEBUG_INFO("No Resolution Created Yet");
+      }
+    }
+  }
+
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
@@ -394,7 +465,7 @@ void Screen_Recording(bool forceRefresh = false)
   if(!BMDControlSystem::getInstance()->hasCamera())
     return;
 
-  connectedScreenIndex = 1;
+  connectedScreenIndex = Screens::Recording;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
 
@@ -478,7 +549,7 @@ void Screen_ISO(bool forceRefresh = false)
   if(!BMDControlSystem::getInstance()->hasCamera())
     return;
 
-  connectedScreenIndex = 2;
+  connectedScreenIndex = Screens::ISO;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
 
@@ -630,7 +701,7 @@ void Screen_ShutterAngle(bool forceRefresh = false)
   if(!BMDControlSystem::getInstance()->hasCamera())
     return;
 
-  connectedScreenIndex = 3;
+  connectedScreenIndex = Screens::ShutterAngleSpeed;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
 
@@ -775,7 +846,7 @@ void Screen_ShutterSpeed(bool forceRefresh = false)
   if(!BMDControlSystem::getInstance()->hasCamera())
     return;
 
-  connectedScreenIndex = 3;
+  connectedScreenIndex = Screens::ShutterAngleSpeed;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
 
@@ -925,7 +996,7 @@ void Screen_WBTint(bool forceRefresh = false)
   if(!BMDControlSystem::getInstance()->hasCamera())
     return;
 
-  connectedScreenIndex = 4;
+  connectedScreenIndex = Screens::WhiteBalanceTint;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
 
@@ -1149,7 +1220,7 @@ void Screen_Codec4K6K(bool forceRefresh = false)
   if(!BMDControlSystem::getInstance()->hasCamera())
     return;
 
-  connectedScreenIndex = 5;
+  connectedScreenIndex = Screens::Codec;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
 
@@ -1433,7 +1504,7 @@ void Screen_CodecURSAMiniProG2(bool forceRefresh = false)
   if(!BMDControlSystem::getInstance()->hasCamera())
     return;
 
-  connectedScreenIndex = 5;
+  connectedScreenIndex = Screens::Codec;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
   
@@ -1446,7 +1517,7 @@ void Screen_CodecURSAMiniPro12K(bool forceRefresh = false)
   if(!BMDControlSystem::getInstance()->hasCamera())
     return;
 
-  connectedScreenIndex = 5;
+  connectedScreenIndex = Screens::Codec;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
   
@@ -1588,36 +1659,36 @@ void loop() {
 
     cameraConnection.scan();
 
-    if(connectedScreenIndex != -1) // Move to the No Connection screen if we're not on it
+    if(connectedScreenIndex != Screens::NoConnection) // Move to the No Connection screen if we're not on it
       Screen_NoConnection();
   }
   else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::Connected)
   {
-    if(connectedScreenIndex >= 0)
+    if(static_cast<byte>(connectedScreenIndex) >= 100)
     {
       auto camera = BMDControlSystem::getInstance()->getCamera();
 
       switch(connectedScreenIndex)
       {
-        case 0:
+        case Screens::Dashboard:
           Screen_Dashboard();
           break;
-        case 1:
+        case Screens::Recording:
           Screen_Recording();
           break;
-        case 2:
+        case Screens::ISO:
           Screen_ISO();
           break;
-        case 3:
+        case Screens::ShutterAngleSpeed:
           if(camera->shutterValueIsAngle)
             Screen_ShutterAngle();
           else
             Screen_ShutterSpeed();
           break;
-        case 4:
+        case Screens::WhiteBalanceTint:
           Screen_WBTint();
           break;
-        case 5:
+        case Screens::Codec:
           Screen_Codec();
           break;
       }
@@ -1667,22 +1738,22 @@ void loop() {
           // Swiping Right (sideways)
           switch(connectedScreenIndex)
           {
-            case 0:
+            case Screens::Dashboard:
               Screen_Recording(true);
               break;
-            case 1:
+            case Screens::Recording:
               Screen_ISO(true);
               break;
-            case 2:
+            case Screens::ISO:
               if(BMDControlSystem::getInstance()->getCamera()->shutterValueIsAngle)
                 Screen_ShutterAngle(true);
               else
                 Screen_ShutterSpeed(true);
               break;
-            case 3:
+            case Screens::ShutterAngleSpeed:
               Screen_WBTint(true);
               break;
-            case 4:
+            case Screens::WhiteBalanceTint:
               Screen_Codec(true);
               break;
           }
@@ -1692,28 +1763,31 @@ void loop() {
           // Swiping Left  (sideways)
           switch(connectedScreenIndex)
           {
-            case 5:
+            case Screens::Codec:
               Screen_WBTint(true);
               break;
-            case 4:
+            case Screens::WhiteBalanceTint:
               if(BMDControlSystem::getInstance()->getCamera()->shutterValueIsAngle)
                 Screen_ShutterAngle(true);
               else
                 Screen_ShutterSpeed(true);
               break;
-            case 3:
+            case Screens::ShutterAngleSpeed:
               Screen_ISO(true);
               break;
-            case 2:
+            case Screens::ISO:
               Screen_Recording(true);
               break;
-            case 1:
+            case Screens::Recording:
               Screen_Dashboard(true);
               break;
           }
           break;
         case CST816S::GESTURE::SWIPE_LEFT:
+          break;
         case CST816S::GESTURE::SWIPE_RIGHT:
+          if(connectedScreenIndex != Screens::Dashboard)
+            Screen_Dashboard(true);
           break;
         case CST816S::GESTURE::NONE:
           DEBUG_VERBOSE("Tap");

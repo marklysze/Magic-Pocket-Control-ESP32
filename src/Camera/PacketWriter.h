@@ -11,7 +11,7 @@
 class PacketWriter
 {
     public:
-        static void validateAndSendCCUCommand(CCUPacketTypes::Command command, BMDCameraConnection* connection);
+        static void validateAndSendCCUCommand(CCUPacketTypes::Command command, BMDCameraConnection* connection, bool response);
         static void writeWhiteBalance(short whiteBalance, short tint, BMDCameraConnection* connection);
         static void writeAutoWhiteBalance(BMDCameraConnection* connection);
         static void writeRecordingFormatStatus(BMDCameraConnection* connection);

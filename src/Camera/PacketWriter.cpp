@@ -1,11 +1,10 @@
 #include "PacketWriter.h"
 
-void PacketWriter::validateAndSendCCUCommand(CCUPacketTypes::Command command, BMDCameraConnection* connection)
+void PacketWriter::validateAndSendCCUCommand(CCUPacketTypes::Command command, BMDCameraConnection* connection, bool response = true)
 {
     bool packetIsValid = CCUValidationFunctions::ValidateCCUPacket(command.serialize());
-    if(packetIsValid) {
-        connection->sendCommandToOutgoing(command);
-    }
+    if(packetIsValid)
+        connection->sendCommandToOutgoing(command, response);
     else
         DEBUG_ERROR("PacketWriter::validateAndSendCCUCommand: Invalid Packet");
 }

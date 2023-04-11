@@ -78,7 +78,7 @@ class BMDCameraConnection
         bool scan();
         void connect(BLEAddress cameraAddress);
         void disconnect();
-        void sendCommandToOutgoing(CCUPacketTypes::Command command);
+        void sendCommandToOutgoing(CCUPacketTypes::Command command, bool response);
 
         ConnectionStatus status;
         std::vector<BLEAddress> cameraAddresses;
