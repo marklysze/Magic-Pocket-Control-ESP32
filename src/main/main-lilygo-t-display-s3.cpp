@@ -1240,6 +1240,8 @@ void Screen_Codec4K6K(bool forceRefresh = false)
       {
         // Switch to BRAW (using the last known setting)
         DEBUG_DEBUG("Changing to last unknown BRAW");
+        DEBUG_DEBUG("Changing Codecs through Bluetooth is a known bug from Blackmagic Design as of April 2023");
+
         PacketWriter::writeCodec(camera->lastKnownBRAWIsBitrate ? camera->lastKnownBRAWBitrate : camera->lastKnownBRAWQuality, &cameraConnection);
 
         tappedAction = true;
@@ -1248,6 +1250,8 @@ void Screen_Codec4K6K(bool forceRefresh = false)
       {
         // Switch to ProRes (using the last known setting)
         DEBUG_DEBUG("Changing to last unknown ProRes");
+        DEBUG_DEBUG("Changing Codecs through Bluetooth is a known bug from Blackmagic Design as of April 2023");
+
         PacketWriter::writeCodec(camera->lastKnownProRes, &cameraConnection);
 
         tappedAction = true;
