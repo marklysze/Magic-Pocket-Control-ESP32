@@ -441,6 +441,13 @@ void Screen_Dashboard(bool forceRefresh = false)
       if(camera->hasRecordError())
         window.drawSmoothRoundRect(20, 120, 3, 5, 100, 40, TFT_RED, TFT_DARKGREY);
     }
+    else
+    {
+      // Show no Media
+      window.fillSmoothRoundRect(20, 120, 100, 40, 3, TFT_DARKGREY, TFT_TRANSPARENT);
+      window.setTextSize(1);
+      window.drawCentreString("NO MEDIA", 70, 135, tft.textfont);
+    }
   }
 
   // Recording Format - Frame Rate and Resolution
@@ -1583,40 +1590,110 @@ void Screen_Resolution4K(bool forceRefresh = false)
   bool tappedAction = false;
   if(tapped_x != -1)
   {
-    /*
-    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 160)
+    if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
     {
-      // Tapped within the area
-      int newISO = 0;
+      int width = 0;
+      int height = 0;
+      bool window = false;
 
       if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
-        newISO = 200;
+      {
+        // 4K DCI
+        width = 4096; height = 2160;
+      }
       else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
-        newISO = 400;
+      {
+        // 4K 2.4:1
+        width = 4096; height = 1720;
+        window = true;
+      }
       else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
-        newISO = 8000;
+      {
+        // 4K UHD
+        width = 3840; height = 2160;
+        window = true;
+      }
 
       else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 110 && tapped_y <= 115)
-        newISO = 640;
-      else if(tapped_x >= 115 && tapped_y >= 75 && tapped_x <= 205 && tapped_y <= 115)
-        newISO = 800;
-      else if(tapped_x >= 210 && tapped_y >= 75 && tapped_x <= 310 && tapped_y <= 115)
-        newISO = 12800;
-
-      else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 110 && tapped_y <= 160)
-        newISO = 1250;
-      else if(tapped_x >= 115 && tapped_y >= 120 && tapped_x <= 205 && tapped_y <= 160)
-        newISO = 3200;
-
-      if(newISO != 0)
       {
-        // ISO selected, send it to the camera
-        PacketWriter::writeISO(newISO, &cameraConnection);
+        // 2.8K Ana
+        width = 2880; height = 2160;
+        window = true;
+      }
+      else if(tapped_x >= 115 && tapped_y >= 75 && tapped_x <= 205 && tapped_y <= 115)
+      {
+        // 2.6K 16:9
+        width = 2688; height = 1512;
+        window = true;
+      }
+      else if(tapped_x >= 210 && tapped_y >= 75 && tapped_x <= 310 && tapped_y <= 115)
+      {
+        // HD
+        width = 1920; height = 1080;
+        window = true;
+      }
+
+      if(width != 0)
+      {
+        // Resolution selected, write to camera
+        CCUPacketTypes::RecordingFormatData newRecordingFormat = currentRecordingFormat;
+        newRecordingFormat.width = width;
+        newRecordingFormat.height = height;
+        newRecordingFormat.windowedModeEnabled = window;
+        PacketWriter::writeRecordingFormat(newRecordingFormat, &cameraConnection);
 
         tappedAction = true;
       }
     }
-    */
+    else
+    {
+      // ProRes
+
+      int width = 0;
+      int height = 0;
+      bool window = false;
+
+      String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "4K DCI", "4K UHD", "HD"
+
+      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
+      {
+        // 4K
+        width = 4096; height = 2160;
+        window = true;
+      }
+      else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
+      {
+        // 4K UHD
+        width = 3840; height = 2160;
+        window = currentRecordingFormat.windowedModeEnabled;
+      }
+      else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
+      {
+        // HD
+        width = 1920; height = 1080;
+        window = currentRecordingFormat.windowedModeEnabled;
+      }
+
+      // Windowed options
+      else if(currentRes == "HD" && tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 310 && tapped_y <= 160)
+      {
+        // HD - Scaled from Full sensor, 2.6K, or Windowed, can't distinguish
+        width = currentRecordingFormat.width; height = currentRecordingFormat.height;
+        window = true;
+      }
+
+      if(width != 0)
+      {
+        // Resolution or Sensor Area selected, write to camera
+        CCUPacketTypes::RecordingFormatData newRecordingFormat = currentRecordingFormat;
+        newRecordingFormat.width = width;
+        newRecordingFormat.height = height;
+        newRecordingFormat.windowedModeEnabled = window;
+        PacketWriter::writeRecordingFormat(newRecordingFormat, &cameraConnection);
+
+        tappedAction = true;
+      }
+    }
   }
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
@@ -1633,79 +1710,151 @@ void Screen_Resolution4K(bool forceRefresh = false)
 
   if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
   {
+    // Main label
+    window.setTextSize(2);
+    window.textcolor = TFT_WHITE;
+    window.textbgcolor = TFT_BLACK;
+    window.drawString("BRAW RESOLUTION", 30, 9);
 
+    window.textbgcolor = TFT_DARKGREY;
+
+    String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "4K DCI", "4K 2.4:1", "4K UHD", "2.8K Ana", "2.6K 16:9", "HD"
+
+    // 4K DCI
+    String labelRes = "4K DCI";
+    window.setTextSize(2);
+    window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(currentRes == labelRes) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.drawCentreString("4K", 65, 36, tft.textfont);
+    window.setTextSize(1);
+    window.drawCentreString("DCI", 65, 58, tft.textfont);
+    window.setTextSize(2);
+
+    // 4K 2.4:1
+    labelRes = "4K 2.4:1";
+    window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(currentRes == labelRes) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.drawCentreString("4K", 160, 36, tft.textfont);
+    window.setTextSize(1);
+    window.drawCentreString("2.4:1", 160, 58, tft.textfont);
+    window.setTextSize(2);
+
+    // 4K UHD
+    labelRes = "4K UHD";
+    window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(currentRes == labelRes) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.drawCentreString("4K", 260, 36, tft.textfont);
+    window.setTextSize(1);
+    window.drawCentreString("UHD", 260, 58, tft.textfont);
+    window.setTextSize(2);
+
+    // 2.8K Ana
+    labelRes = "2.8K Ana";
+    window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(currentRes == labelRes) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.drawCentreString("2.8K", 65, 82, tft.textfont);
+    window.setTextSize(1);
+    window.drawCentreString("ANAMORPHIC", 65, 104, tft.textfont);
+    window.setTextSize(2);
+
+    // 2.6K 16:9
+    labelRes = "2.6K 16:9";
+    window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(currentRes == labelRes) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.drawCentreString("2.6K", 160, 82, tft.textfont);
+    window.setTextSize(1);
+    window.drawCentreString("16:9", 160, 104, tft.textfont);
+    window.setTextSize(2);
+
+    // HD
+    labelRes = "HD";
+    window.fillSmoothRoundRect(210, 75, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(currentRes == labelRes) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.drawCentreString("HD", 260, 87, tft.textfont);
+
+    // Sensor Area
+
+    // Pocket 4K all are Windowed except 4K
+    // window.drawSmoothRoundRect(20, 120, 5, 3, 290, 40, TFT_DARKGREY, TFT_TRANSPARENT); // Optionally draw a rectangle around this info.
+    window.textbgcolor = TFT_BLACK;
+    window.drawCentreString(currentRes == "4K" ? "FULL SENSOR" :"SENSOR WINDOWED", 165, 129, tft.textfont);
+    window.setTextSize(1);
+    window.drawCentreString(currentRecordingFormat.frameWidthHeight_string().c_str(), 165, 148, tft.textfont);
+    window.setTextSize(2);
   }
   else if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes)
   {
+    // Main label
+    window.setTextSize(2);
+    window.textcolor = TFT_WHITE;
+    window.textbgcolor = TFT_BLACK;
+    window.drawString("ProRes RESOLUTION", 30, 9);
 
+    window.textbgcolor = TFT_DARKGREY;
+
+    String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "4K DCI", "4K UHD", "HD"
+
+    // 4K
+    String labelRes = "4K DCI";
+    window.setTextSize(2);
+    window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(currentRes == labelRes) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.drawCentreString("4K", 65, 36, tft.textfont);
+    window.setTextSize(1);
+    window.drawCentreString("DCI", 65, 58, tft.textfont);
+    window.setTextSize(2);
+
+    // 4K UHD
+    labelRes = "4K UHD";
+    window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(currentRes == labelRes) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.drawCentreString("UHD", 160, 41, tft.textfont);
+
+    // HD
+    labelRes = "HD";
+    window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+    if(currentRes == labelRes) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+    window.drawCentreString("HD", 260, 41, tft.textfont);
+
+    // Sensor Area
+
+    // 4K DCI is Scaled from 5.7K, Ultra HD is Scaled from Full or 5.7K, HD is Scaled from Full, 5.7K, or 2.8K (however we can't change the 5.7K or 2.8K)
+
+    window.setTextSize(1);
+    window.textbgcolor = TFT_BLACK;
+    window.drawString(currentRecordingFormat.frameWidthHeight_string().c_str(), 30, 90, tft.textfont);
+    window.drawString("SCALED FROM SENSOR AREA", 30, 105, tft.textfont);
+    window.setTextSize(2);
+
+    if(currentRes == "4K DCI")
+    {
+      // Full sensor area only]
+      window.fillSmoothRoundRect(20, 120, 90, 40, 3, TFT_DARKGREEN, TFT_TRANSPARENT);
+      window.textbgcolor = TFT_DARKGREEN;
+      window.drawCentreString("FULL", 65, 131, tft.textfont);
+    }
+    else if(currentRes == "4K UHD")
+    {
+      // Full sensor area only]
+      window.fillSmoothRoundRect(20, 120, 90, 40, 3, TFT_DARKGREEN, TFT_TRANSPARENT);
+      window.textbgcolor = TFT_DARKGREEN;
+      window.drawCentreString("WINDOW", 65, 131, tft.textfont);
+    }
+    else
+    {
+      // HD
+
+      // Scaled from Full, 2.6K or Windowed (however we can't tell which)
+      window.fillSmoothRoundRect(20, 120, 290, 40, 3, TFT_DARKGREEN, TFT_TRANSPARENT);
+      window.textbgcolor = TFT_DARKGREEN;
+      window.drawCentreString("FULL / 2.6K / WINDOW", 165, 129, tft.textfont);
+      window.setTextSize(1);
+      window.drawCentreString("CHECK/SET ON CAMERA", 165, 146, tft.textfont);
+      window.setTextSize(2);
+    }
   }
   else
     DEBUG_ERROR("Resolution Pocket 4K - Codec not catered for.");
-
-  /*
-  // ISO label
-  window.setTextSize(2);
-  window.textcolor = TFT_WHITE;
-  window.textbgcolor = TFT_BLACK;
-  window.drawString("ISO", 30, 9);
-
-  window.textbgcolor = TFT_DARKGREY;
-
-  // 200
-  int labelISO = 200;
-  window.setTextSize(2);
-  window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
-  if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
-  window.drawCentreString(String(labelISO).c_str(), 65, 41, tft.textfont);
-
-  // 400
-  labelISO = 400;
-  window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
-  if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
-  window.drawCentreString(String(labelISO).c_str(), 160, 36, tft.textfont);
-  window.setTextSize(1);
-  window.drawCentreString("NATIVE", 160, 59, tft.textfont);
-  window.setTextSize(2);
-
-  // 8000
-  labelISO = 8000;
-  window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
-  if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
-  window.drawCentreString(String(labelISO).c_str(), 260, 41, tft.textfont);
-
-  // 640
-  labelISO = 640;
-  window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
-  if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
-  window.drawCentreString(String(labelISO).c_str(), 65, 87, tft.textfont);
-
-  // 800
-  labelISO = 800;
-  window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
-  if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
-  window.drawCentreString(String(labelISO).c_str(), 160, 87, tft.textfont);
-
-  // 12800
-  labelISO = 12800;
-  window.fillSmoothRoundRect(210, 75, 100, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
-  if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
-  window.drawCentreString(String(labelISO).c_str(), 260, 87, tft.textfont);
-
-  // 1250
-  labelISO = 1250;
-  window.fillSmoothRoundRect(20, 120, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
-  if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
-  window.drawCentreString(String(labelISO).c_str(), 65, 131, tft.textfont);
-
-  // 3200
-  labelISO = 3200;
-  window.fillSmoothRoundRect(115, 120, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
-  if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
-  window.drawCentreString(String(labelISO).c_str(), 160, 126, tft.textfont);
-  window.setTextSize(1);
-  window.drawCentreString("NATIVE", 160, 149, tft.textfont);
-  window.setTextSize(2);
-  */
 
   window.pushSprite(0, 0);
 }
@@ -2026,19 +2175,6 @@ void Screen_Resolution6K(bool forceRefresh = false)
   }
   else
     DEBUG_ERROR("Resolution Pocket 6K - Codec not catered for.");
-
-  /*
-
-
-  // 3200
-  labelISO = 3200;
-  window.fillSmoothRoundRect(115, 120, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
-  if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
-  window.drawCentreString(String(labelISO).c_str(), 160, 126, tft.textfont);
-  window.setTextSize(1);
-  window.drawCentreString("NATIVE", 160, 149, tft.textfont);
-  window.setTextSize(2);
-  */
 
   window.pushSprite(0, 0);
 }

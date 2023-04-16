@@ -375,8 +375,6 @@ void BMDCamera::onWhiteBalanceReceived(short inWhiteBalance)
     else
         whiteBalance = std::make_shared<short>(inWhiteBalance);
 
-    DEBUG_DEBUG("On White Balance Received: %i", inWhiteBalance);
-
     modified();
 }
 
@@ -400,8 +398,6 @@ void BMDCamera::onTintReceived(short inTint)
     else
         tint = std::make_shared<short>(inTint);
 
-    DEBUG_DEBUG("On Tint Received: %i", inTint);
-
     modified();
 }
 
@@ -424,8 +420,6 @@ void BMDCamera::onShutterSpeedMSReceived(int32_t inShutterSpeedMS)
         *shutterSpeedMS = inShutterSpeedMS;
     else
         shutterSpeedMS = std::make_shared<int32_t>(inShutterSpeedMS);
-
-    DEBUG_DEBUG("Shutter Speed MS: %i", inShutterSpeedMS);
 
     modified();
 }
@@ -498,8 +492,6 @@ void BMDCamera::onShutterAngleReceived(int32_t inShutterAngle)
     else
         shutterAngle = std::make_shared<int32_t>(inShutterAngle);
 
-    DEBUG_DEBUG("Shutter Angle: %i", inShutterAngle);
-
     modified();
 }
 
@@ -524,8 +516,6 @@ void BMDCamera::onShutterSpeedReceived(int32_t inShutterSpeed)
         *shutterSpeed = inShutterSpeed;
     else
         shutterSpeed = std::make_shared<int32_t>(inShutterSpeed);
-        
-    DEBUG_DEBUG("Shutter Speed: %i", inShutterSpeed);
 
     modified();
 }
@@ -800,8 +790,6 @@ void BMDCamera::onCodecReceived(CodecInfo inCodec)
             break;
     }
 
-    DEBUG_DEBUG("onCodecReceived");
-    
     modified();
 }
 bool BMDCamera::hasCodec()
