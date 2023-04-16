@@ -348,6 +348,7 @@ void CCUDecodingFunctions::DecodeRecordingFormat(std::vector<byte> inData)
     recordingFormatData.offSpeedEnabled = (((int)flags & (int)CCUPacketTypes::VideoRecordingFormat::SensorOffSpeed) > 0);
     recordingFormatData.interlacedEnabled = (((int)flags & (int)CCUPacketTypes::VideoRecordingFormat::Interlaced) > 0);
     recordingFormatData.windowedModeEnabled = (((int)flags & (int)CCUPacketTypes::VideoRecordingFormat::WindowedMode) > 0);
+    recordingFormatData.sensorMRateEnabled = (((int)flags & (int)CCUPacketTypes::VideoRecordingFormat::SensorMRate) > 0);
 
     /*
     Serial.print("Decoded Recording Format, Frame Rate is "); Serial.print(recordingFormatData.frameRate);
@@ -364,6 +365,17 @@ void CCUDecodingFunctions::DecodeRecordingFormat(std::vector<byte> inData)
     else if(recordingFormatData.mRateEnabled && recordingFormatData.frameRate == 30 && !recordingFormatData.offSpeedEnabled)
         Serial.println("Frame Rate will be 29.97");
     */
+
+    DEBUG_DEBUG("Recording Format, Width x Height [Windowed] [interlaced] [mrate] [sensor mrate] [offspeed]: %i x %i [%s] [%s] [%s] [%s] [%s]", recordingFormatData.width, recordingFormatData.height, recordingFormatData.windowedModeEnabled ? "Yes" : "No", recordingFormatData.interlacedEnabled ? "Yes" : "No", recordingFormatData.mRateEnabled ? "Yes" : "No", recordingFormatData.sensorMRateEnabled ? "Yes" : "No", recordingFormatData.offSpeedEnabled ? "Yes" : "No");
+
+    // When sending commands, debug.
+    DEBUG_DEBUG("DecodeRecordingFormat (flags at index 4): ");
+    for(int index = 0; index < data.size(); index++)
+    {
+        DEBUG_DEBUG("%i: %i", index, data[index]);
+        
+    }
+
 
    BMDControlSystem::getInstance()->getCamera()->onRecordingFormatReceived(recordingFormatData);
 }

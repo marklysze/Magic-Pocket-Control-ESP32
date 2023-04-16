@@ -39,20 +39,29 @@ CCUPacketTypes::Command CCUEncodingFunctions::CreateRecordingFormatCommand(CCUPa
     short flags = 0;
 
     if (recordingFormatData.mRateEnabled) {
-        flags |= static_cast<short>(CCUPacketTypes::VideoRecordingFormat::FileMRate);
+        flags |= static_cast<int16_t>(CCUPacketTypes::VideoRecordingFormat::FileMRate);
     }
 
+    // MS this doesn't seem to be part of the command, though it's in the manual
+    /*
+    if (recordingFormatData.sensorMRateEnabled) {
+        flags |= static_cast<short>(CCUPacketTypes::VideoRecordingFormat::SensorMRate);
+    }
+    */
+
     if (recordingFormatData.offSpeedEnabled) {
-        flags |= static_cast<short>(CCUPacketTypes::VideoRecordingFormat::SensorOffSpeed);
+        flags |= static_cast<int16_t>(CCUPacketTypes::VideoRecordingFormat::SensorOffSpeed);
     }
 
     if (recordingFormatData.interlacedEnabled) {
-        flags |= static_cast<short>(CCUPacketTypes::VideoRecordingFormat::Interlaced);
+        flags |= static_cast<int16_t>(CCUPacketTypes::VideoRecordingFormat::Interlaced);
     }
 
     if (recordingFormatData.windowedModeEnabled) {
-        flags |= static_cast<short>(CCUPacketTypes::VideoRecordingFormat::WindowedMode);
+        flags |= static_cast<int16_t>(CCUPacketTypes::VideoRecordingFormat::WindowedMode);
     }
+
+    DEBUG_DEBUG("CreateRecordingFormatCommand - flags: %i", flags);
 
     short data[] = { recordingFormatData.frameRate, recordingFormatData.offSpeedFrameRate, recordingFormatData.width, recordingFormatData.height, flags };
 

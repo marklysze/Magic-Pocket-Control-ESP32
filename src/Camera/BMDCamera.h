@@ -43,6 +43,8 @@ public:
     // Quick access functions
     bool hasRecordError();
     bool isPocket4K6K();
+    bool isPocket4K();
+    bool isPocket6K();
     bool isURSAMiniProG2();
     bool isURSAMiniPro12K();
 

@@ -64,6 +64,65 @@ bool BMDCamera::isPocket4K6K()
     }
 }
 
+bool BMDCamera::isPocket4K()
+{
+    if(hasModelName())
+    {
+        // Loop up the map, passing in the model name
+        auto cameraModel = CameraModels::nameToModel.find(getModelName());
+
+        if (cameraModel != CameraModels::nameToModel.end()) {
+            CameraModel model = cameraModel->second; // Enum Value part of map
+
+            return model == CameraModel::PocketCinemaCamera4K;
+        }
+        else {
+            // the camera was not found in the map
+            DEBUG_ERROR("BMDCamera::isPocket4K - Could not map name to model");
+            return false;
+        }
+    }
+    else
+    {
+        DEBUG_ERROR("BMDCamera::isPocket4K - Called but do not have model name");
+        return false;
+    }
+}
+
+bool BMDCamera::isPocket6K()
+{
+    if(hasModelName())
+    {
+        // Loop up the map, passing in the model name
+        auto cameraModel = CameraModels::nameToModel.find(getModelName());
+
+        if (cameraModel != CameraModels::nameToModel.end()) {
+            CameraModel model = cameraModel->second; // Enum Value part of map
+
+            switch(model)
+            {
+                case CameraModel::PocketCinemaCamera6K:
+                case CameraModel::PocketCinemaCamera6KG2:
+                case CameraModel::PocketCinemaCamera6KPro:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+        else {
+            // the camera was not found in the map
+            DEBUG_ERROR("BMDCamera::isPocket6K - Could not map name to model");
+            return false;
+        }
+    }
+    else
+    {
+        DEBUG_ERROR("BMDCamera::isPocket6K - Called but do not have model name");
+        return false;
+    }
+}
+
+
 bool BMDCamera::isURSAMiniProG2()
 {
     if(hasModelName())

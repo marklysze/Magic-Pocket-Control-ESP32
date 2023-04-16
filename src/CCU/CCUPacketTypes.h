@@ -59,8 +59,7 @@ class CCUPacketTypes
 
         enum class CommandID : byte
         {
-            ChangeConfiguration = 0,
-            MSTest_GetStatus = 1 // Absolute guess on this one, attempting to see if we can just request information rather than make a change
+            ChangeConfiguration = 0
         };
 
         // Command Category
@@ -553,6 +552,7 @@ class CCUPacketTypes
             bool offSpeedEnabled;
             bool interlacedEnabled;
             bool windowedModeEnabled;
+            bool sensorMRateEnabled;
 
             std::string frameRate_string()
             {
@@ -567,6 +567,11 @@ class CCUPacketTypes
                 else
                     return std::to_string(frameRate);
 
+            }
+
+            std::string frameWidthHeight_string()
+            {
+                return std::to_string(width) + " x " + std::to_string(height);
             }
 
             std::string frameDimensionsShort_string()
@@ -664,6 +669,8 @@ class CCUPacketTypes
             OperationType operationType;
             std::vector<byte> data; // Changed from pointer to vector for simpler memory management
 
+            std::vector<byte> serialisedCommand;
+
             Command(byte target, CommandID commandID, Category category, byte parameter, OperationType operationType, byte dataType, std::vector<byte> inData)
             {
                 byte commandLength = (byte)(CCUPacketTypes::kCCUCommandHeaderSize + inData.size());
@@ -683,9 +690,11 @@ class CCUPacketTypes
                 this->operationType = operationType;
                 this->dataType = dataType;
                 this->data = inData;
+
+                serialisedCommand = convertToVector();
             }
 
-           std::vector<byte> serialize()
+            std::vector<byte> convertToVector()
             {
                 const byte headersSize = static_cast<byte>(CCUPacketTypes::kCCUPacketHeaderSize + CCUPacketTypes::kCCUCommandHeaderSize);
                 const byte payloadSize = data.size();
@@ -724,6 +733,10 @@ class CCUPacketTypes
                 return buffer;
             }
 
+            std::vector<byte> serialize()
+            {
+                return serialisedCommand;
+            }
         };
 };
 
