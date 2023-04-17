@@ -100,18 +100,18 @@ enum class Screens : byte
 };
 
 Screens connectedScreenIndex = Screens::NoConnection; // The index of the screen we're on:
-// -2 is Pass Key (now 9)
-// -1 is No Connection (now 10)
-// 0 is Dashboard
-// 1 is Recording
-// 2 is ISO
-// 3 is Shutter Angle & Shutter Speed
-// 4 is WB / Tint
-// 5 is Codec
-// 6 is Framerate
-// 7 is Resolution (one for each camera group, 4K, 6K/G2/Pro, Mini Pro G2, Mini Pro 12K)
-// 8 is Media
-// 9 is Lens
+// 9 is Pass Key
+// 10 is No Connection
+// 100 is Dashboard
+// 101 is Recording
+// 102 is ISO
+// 103 is Shutter Angle & Shutter Speed
+// 104 is WB / Tint
+// 105 is Codec
+// 106 is Framerate
+// 107 is Resolution (one for each camera group, 4K, 6K/G2/Pro, Mini Pro G2, Mini Pro 12K)
+// 108 is Media
+// 109 is Lens
 
 // Keep track of the last camera modified time that we refreshed a screen so we don't keep refreshing a screen when the camera object remains unchanged.
 static unsigned long lastRefreshedScreen = 0;
@@ -123,8 +123,8 @@ int tapped_y = -1;
 void Screen_Common(int sideBarColour)
 {
     // Sidebar colour
-    window.fillRect(0, 0, 13, 170, sideBarColour);
-    window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
+    window.fillRect(0, 0, 13, IHEIGHT, sideBarColour);
+    window.fillRect(13, 0, 2, IHEIGHT, TFT_DARKGREY);
 
   if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::Connected && BMDControlSystem::getInstance()->hasCamera())
   {
