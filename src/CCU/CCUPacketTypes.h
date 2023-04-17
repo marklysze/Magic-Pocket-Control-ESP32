@@ -487,7 +487,7 @@ class CCUPacketTypes
         {
             CFastCard = 0,
             SDCard = 1,
-            SSD = 2,
+            SSDRecorder = 2,
             USB = 3
         };
 

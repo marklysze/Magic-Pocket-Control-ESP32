@@ -229,9 +229,7 @@ void Screen_NoConnection()
 
   if(connectToCameraIndex != -1)
   {
-    DEBUG_DEBUG("Camera status [0]: %i", cameraConnection.status);
     cameraConnection.connect(cameraConnection.cameraAddresses[connectToCameraIndex]);
-    DEBUG_DEBUG("Camera status [2]: %i", cameraConnection.status);
     connectToCameraIndex = -1;
   }
 }
@@ -298,8 +296,9 @@ void Screen_Dashboard(bool forceRefresh = false)
       }
       else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 120 && tapped_y <= 160)
       {
-        // Media
-        DEBUG_INFO("No Media Page Created Yet");
+        connectedScreenIndex = Screens::Media;
+        lastRefreshedScreen = 0; // Forces a refresh
+        return;
       }
       else if(tapped_x >= 125 && tapped_y >= 120 && tapped_x <= 315 && tapped_y <= 160)
       {
@@ -417,7 +416,7 @@ void Screen_Dashboard(bool forceRefresh = false)
           case CCUPacketTypes::ActiveStorageMedium::SDCard:
             slotString = "SD";
             break;
-          case CCUPacketTypes::ActiveStorageMedium::SSD:
+          case CCUPacketTypes::ActiveStorageMedium::SSDRecorder:
             slotString = "SSD";
             break;
           case CCUPacketTypes::ActiveStorageMedium::USB:
@@ -1080,15 +1079,9 @@ void Screen_WBTint(bool forceRefresh = false)
       {
         // Not a preset
 
-        // DEBUG_DEBUG("Screen_WBTint, not a present tapped, checking for left/right WB Tint");
-
-        // DEBUG_DEBUG("Current WB: %i, current Tint: %i", currentWB, currentTint);
-
         // WB Left
         if(currentWB != 0 && currentWB >= 2550 && tapped_x >= 95 && tapped_y >= 75 && tapped_x <= 155 && tapped_y <= 115)
         {
-          // DEBUG_DEBUG("Left WB");
-
           // Adjust down by 50
           PacketWriter::writeWhiteBalance(currentWB - 50, currentTint, &cameraConnection);
 
@@ -1096,8 +1089,6 @@ void Screen_WBTint(bool forceRefresh = false)
         }
         else if(currentWB != 0 && currentWB <= 9950 && tapped_x >= 255 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
         {
-          // DEBUG_DEBUG("Right WB");
-
           // Adjust up by 50
           PacketWriter::writeWhiteBalance(currentWB + 50, currentTint, &cameraConnection);
 
@@ -1105,8 +1096,6 @@ void Screen_WBTint(bool forceRefresh = false)
         }
         else if(currentWB != 0 && currentTint > -50 && tapped_x >= 95 && tapped_y >= 120 && tapped_x <= 155 && tapped_y <= 160)
         {
-          // DEBUG_DEBUG("Left Tint");
-
           // Adjust down by 1
           PacketWriter::writeWhiteBalance(currentWB, currentTint - 1, &cameraConnection);
 
@@ -1114,8 +1103,6 @@ void Screen_WBTint(bool forceRefresh = false)
         }
         else if(currentWB != 0 && currentWB <= 9950 && tapped_x >= 255 && tapped_y >= 120 && tapped_x <= 315 && tapped_y <= 160)
         {
-          // DEBUG_DEBUG("Right Tint");
-          
           // Adjust up by 1
           PacketWriter::writeWhiteBalance(currentWB, currentTint + 1, &cameraConnection);
 
@@ -1567,6 +1554,7 @@ void Screen_Codec(bool forceRefresh = false)
 
 }
 
+// Resolution screen for Pocket 4K
 void Screen_Resolution4K(bool forceRefresh = false)
 {
   if(!BMDControlSystem::getInstance()->hasCamera())
@@ -1859,6 +1847,7 @@ void Screen_Resolution4K(bool forceRefresh = false)
   window.pushSprite(0, 0);
 }
 
+// Resolution screen for Pocket 6K
 void Screen_Resolution6K(bool forceRefresh = false)
 {
   if(!BMDControlSystem::getInstance()->hasCamera())
@@ -2232,6 +2221,194 @@ void Screen_Resolution(bool forceRefresh = false)
     Screen_Resolution4K(forceRefresh); // If we don't have any codec info, we show the 4K screen that shows no codec
 }
 
+// Media screen for Pocket 4K
+void Screen_Media4K6K(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Media;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // 3 Media Slots - CFAST, SD, USB
+
+  // If we have a tap, we should determine if it is on anything
+  bool tappedAction = false;
+  if(tapped_x != -1 && camera->getMediaSlots().size() != 0)
+  {
+    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 160)
+    {
+      // Tapped within the area
+      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 70)
+      {
+        // CFAST
+        if(camera->getMediaSlots()[0].status != CCUPacketTypes::MediaStatus::None && !camera->getMediaSlots()[0].active)
+        {
+          TransportInfo transportInfo = camera->getTransportMode();
+          transportInfo.slots[0].active = true;
+          transportInfo.slots[1].active = false;
+          transportInfo.slots[2].active = false;
+          PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
+
+          tappedAction = true;
+        }
+      }
+      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
+      {
+          // Change to SD
+        if(camera->getMediaSlots()[1].status != CCUPacketTypes::MediaStatus::None && !camera->getMediaSlots()[1].active)
+        {
+          TransportInfo transportInfo = camera->getTransportMode();
+          transportInfo.slots[0].active = false;
+          transportInfo.slots[1].active = true;
+          transportInfo.slots[2].active = false;
+          PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
+
+          tappedAction = true;
+        }
+      }
+      else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 315 && tapped_y <= 160)
+      {
+          // Change to USB
+        if(camera->getMediaSlots()[2].status != CCUPacketTypes::MediaStatus::None && !camera->getMediaSlots()[2].active)
+        {
+          TransportInfo transportInfo = camera->getTransportMode();
+          transportInfo.slots[0].active = false;
+          transportInfo.slots[1].active = false;
+          transportInfo.slots[2].active = true;
+          PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
+
+          tappedAction = true;
+        }
+      }
+    }
+  }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+  
+  DEBUG_DEBUG("Screen Media Pocket 4K/6K Refreshed.");
+
+  window.fillSprite(TFT_BLACK);
+
+  Screen_Common(TFT_GREEN); // Common elements
+
+    // Media label
+  window.setTextSize(2);
+  window.textcolor = TFT_WHITE;
+  window.textbgcolor = TFT_BLACK;
+  window.drawString("MEDIA", 30, 9);
+
+  window.textbgcolor = TFT_DARKGREY;
+
+  // CFAST
+  BMDCamera::MediaSlot cfast = camera->getMediaSlots()[0];
+  window.fillSmoothRoundRect(20, 30, 295, 40, 3, (cfast.active ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(cfast.StatusIsError()) window.drawSmoothRoundRect(20, 30, 4, 3, 295, 40, TFT_RED, (cfast.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(cfast.active) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawString("CFAST", 28, 50, tft.textfont);
+  if(cfast.status != CCUPacketTypes::MediaStatus::None) window.drawString(cfast.remainingRecordTimeString.c_str(), 155, 50, tft.textfont);
+
+  window.setTextSize(1);
+  
+  if(cfast.status != CCUPacketTypes::MediaStatus::None) window.drawString("REMAINING TIME", 155, 35);
+  window.drawString("1", 300, 35);
+  window.drawString(cfast.GetStatusString().c_str(), 28, 35);
+
+  window.setTextSize(2);
+
+  // SD
+  BMDCamera::MediaSlot sd = camera->getMediaSlots()[1];
+  window.fillSmoothRoundRect(20, 75, 295, 40, 3, (sd.active ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(sd.StatusIsError()) window.drawSmoothRoundRect(20, 75, 4, 3, 295, 40, TFT_RED, (sd.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(sd.active) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawString("SD", 28, 95, tft.textfont);
+  if(sd.status != CCUPacketTypes::MediaStatus::None) window.drawString(sd.remainingRecordTimeString.c_str(), 155, 95, tft.textfont);
+
+  window.setTextSize(1);
+  
+  if(sd.status != CCUPacketTypes::MediaStatus::None) window.drawString("REMAINING TIME", 155, 80);
+  window.drawString("2", 300, 80);
+  window.drawString(sd.GetStatusString().c_str(), 28, 80);
+  if(sd.StatusIsError()) window.textcolor = TFT_WHITE;
+
+  window.setTextSize(2);
+
+  // USB
+  BMDCamera::MediaSlot usb = camera->getMediaSlots()[2];
+  window.fillSmoothRoundRect(20, 120, 295, 40, 3, (usb.active ? TFT_DARKGREEN : TFT_DARKGREY), TFT_TRANSPARENT);
+  if(usb.StatusIsError()) window.drawSmoothRoundRect(20, 120, 4, 3, 295, 40, TFT_RED, (usb.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(usb.active) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
+  window.drawString("USB", 28, 140, tft.textfont);
+  if(usb.status != CCUPacketTypes::MediaStatus::None) window.drawString(usb.remainingRecordTimeString.c_str(), 155, 140, tft.textfont);
+
+  window.setTextSize(1);
+  
+  if(usb.status != CCUPacketTypes::MediaStatus::None) window.drawString("REMAINING TIME", 155, 125);
+  window.drawString("3", 300, 125);
+  window.drawString(usb.GetStatusString().c_str(), 28, 125);
+  if(usb.StatusIsError()) window.textcolor = TFT_WHITE;
+
+  window.pushSprite(0, 0);
+}
+
+// Media Screen for URSA Mini Pro G2
+void Screen_MediaURSAMiniProG2(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Media;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+  
+  // TO DO
+}
+
+// Media Screen for URSA Mini Pro 12K
+void Screen_MediaURSAMiniPro12K(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Media;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+  
+  // TO DO
+}
+
+
+// Media screen - redirects to appropriate screen for camera
+void Screen_Media(bool forceRefresh = false)
+{
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  if(camera->getMediaSlots().size() != 0)
+  {
+    if(camera->hasModelName())
+    {
+      if(camera->isPocket4K6K())
+        Screen_Media4K6K(forceRefresh); // Pocket camera
+      else if(camera->isURSAMiniProG2())
+        Screen_MediaURSAMiniProG2(forceRefresh); // URSA Mini Pro G2
+      else if(camera->isURSAMiniPro12K())
+        Screen_MediaURSAMiniPro12K(forceRefresh); // URSA Mini Pro 12K
+      else
+        DEBUG_DEBUG("No Media screen for this camera.");
+    } 
+    else
+      Screen_Media4K6K(forceRefresh); // Handle no model name in 4K/6K screen
+  }
+  else
+    Screen_Media4K6K(forceRefresh); // If we don't have any media info, we show the 4K/6K screen that shows no media
+
+}
+
 
 void setup() {
 
@@ -2380,6 +2557,9 @@ void loop() {
         case Screens::Resolution:
           Screen_Resolution();
           break;
+        case Screens::Media:
+          Screen_Media();
+          break;
       }
 
     }
@@ -2424,7 +2604,7 @@ void loop() {
       {
         case CST816S::GESTURE::SWIPE_DOWN:
           DEBUG_INFO("Swipe Right");
-          // Swiping Right (sideways)
+          // Swiping Right (sideways), going forward through the menus
           switch(connectedScreenIndex)
           {
             case Screens::Dashboard:
@@ -2448,13 +2628,19 @@ void loop() {
             case Screens::Codec:
               Screen_Resolution(true);
               break;
+            case Screens::Resolution:
+              Screen_Media(true);
+              break;
           }
           break;
         case CST816S::GESTURE::SWIPE_UP:
         DEBUG_INFO("Swipe Left");
-          // Swiping Left  (sideways)
+          // Swiping Left  (sideways), going back through the menus
           switch(connectedScreenIndex)
           {
+            case Screens::Media:
+              Screen_Resolution(true);
+              break;
             case Screens::Resolution:
               Screen_Codec(true);
               break;
@@ -2498,7 +2684,7 @@ void loop() {
   delay(25);
 
   // Keep track of the memory use to check that there aren't memory leaks (or significant memory leaks)
-  if(Debug.getDebugLevel() >= DBG_VERBOSE && memoryLoopCounter++ % 400 == 0)
+  if(Debug.getDebugLevel() >= DBG_VERBOSE && memoryLoopCounter++ % 4000 == 0)
   {
     DEBUG_VERBOSE("Heap Size Free: %d of %d", ESP.getFreeHeap(), ESP.getHeapSize());
   }

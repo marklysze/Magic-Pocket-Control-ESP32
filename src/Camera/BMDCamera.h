@@ -34,6 +34,29 @@ public:
         {
             return CCUPacketTypesString::GetEnumString(medium);
         }
+
+        std::string GetStatusString(bool toUpper = true)
+        {
+            switch(status)
+            {
+                case CCUPacketTypes::MediaStatus::None:
+                    return toUpper ? "NONE" : "None";
+                case CCUPacketTypes::MediaStatus::Ready:
+                    return toUpper ? "READY" : "Ready";
+                case CCUPacketTypes::MediaStatus::MountError:
+                    return toUpper ? "MOUNT ERROR" : "Mount Error";
+                case CCUPacketTypes::MediaStatus::RecordError:
+                    return toUpper ? "RECORD ERROR" : "Record Error";
+                default:
+                    return "UNKNOWN STATUS";
+            }   
+        }
+
+        // Is/has the media had an error?
+        bool StatusIsError()
+        {
+            return status == CCUPacketTypes::MediaStatus::MountError || status == CCUPacketTypes::MediaStatus::RecordError;
+        }
     };
 
     // Quick access attributes

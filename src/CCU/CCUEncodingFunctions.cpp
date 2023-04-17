@@ -168,7 +168,7 @@ CCUPacketTypes::Command CCUEncodingFunctions::CreateCodecCommand(CodecInfo codec
 {
     std::vector<byte> data = { static_cast<byte>(codecInfo.basicCodec), codecInfo.codecVariant };
 
-    DEBUG_DEBUG("CreateCodecCommand byte 1: %i, byte 2: %i", codecInfo.basicCodec, codecInfo.codecVariant);
+    // DEBUG_DEBUG("CreateCodecCommand byte 1: %i, byte 2: %i", codecInfo.basicCodec, codecInfo.codecVariant);
 
     CCUPacketTypes::Command command(
         CCUPacketTypes::kBroadcastTarget,

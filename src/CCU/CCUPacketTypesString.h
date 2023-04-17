@@ -16,7 +16,7 @@ class CCUPacketTypesString
                     return "CFAST";
                 case CCUPacketTypes::ActiveStorageMedium::SDCard:
                     return "SD";
-                case CCUPacketTypes::ActiveStorageMedium::SSD:
+                case CCUPacketTypes::ActiveStorageMedium::SSDRecorder:
                     return "SSD";
                 case CCUPacketTypes::ActiveStorageMedium::USB:
                     return "USB";
