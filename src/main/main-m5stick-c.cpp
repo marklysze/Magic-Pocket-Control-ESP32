@@ -1,114 +1,110 @@
-/*
-//#include <Arduino.h>
-#include <M5StickCPlus.h>
+// Magic Pocket Control, by Mark Sze
+// For viewing and changing basic settings on Blackmagic Design Pocket Cinema Cameras and URSA 4.6K G2 and 12K.
 
-#define IWIDTH 135
-#define IHEIGHT 240
+#define USING_TFT_ESPI 0  // Using the TFT_eSPI graphics library <-- must include this in every main file, 0 = not using, 1 = using
+
+#include <M5StickCPlus.h>
+//#include <algorithm>
+
+// M5Stack include a "min" macro in their In_eSPI.h file, we don't want to use that, so undefine it
+#undef min
+
+// Main BMD Libraries
+// #include "Camera\ConstantsTypes.h"
+#include "Camera\PacketWriter.h"
+// #include "CCU\CCUUtility.h"
+// #include "CCU\CCUPacketTypes.h"
+// #include "CCU\CCUValidationFunctions.h"
+#include "Camera\BMDCameraConnection.h"
+// #include "Camera\BMDCamera.h"
+// #include "BMDControlSystem.h"
+
+// Core variables and control system
+BMDCameraConnection cameraConnection;
+std::shared_ptr<BMDControlSystem> BMDControlSystem::instance = nullptr; // Required for Singleton pattern and the constructor for BMDControlSystem
+BMDCameraConnection* BMDCameraConnection::instancePtr = &cameraConnection; // Required for the scan function to run non-blocking and call the object back with the result
 
 void setup() {
+
     Serial.begin(115200);
 
+    // SET DEBUG LEVEL
+    Debug.setDebugLevel(DBG_VERBOSE);
+    Debug.timestampOn();
+
     M5.begin();
-    // Lcd display
-    M5.Lcd.fillScreen(WHITE);
-    delay(500);
-    M5.Lcd.fillScreen(RED);
-    delay(500);
-    M5.Lcd.fillScreen(GREEN);
-    delay(500);
-    M5.Lcd.fillScreen(BLUE);
-    delay(500);
-    M5.Lcd.fillScreen(BLACK);
-    delay(500);
 
-    // text print.  文字打印
-    M5.Lcd.fillScreen(BLACK);
-    M5.Lcd.setCursor(0, 10);
-    M5.Lcd.setTextColor(WHITE);
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.printf("Display Test!");
+    // Initialise the screen
+    M5.Lcd.setRotation(3);
 
-    // draw graphic.  绘图🌹
-    delay(1000);
-    M5.Lcd.drawRect(15, 55, 50, 50, BLUE);
-    delay(1000);
-    M5.Lcd.fillRect(15, 55, 50, 50, BLUE);
-    delay(1000);
-    M5.Lcd.drawCircle(40, 80, 30, RED);
-    delay(1000);
-    M5.Lcd.fillCircle(40, 80, 30, RED);
-    delay(1000);
+    // Prepare for Bluetooth connections and start scanning for cameras
+    cameraConnection.initialise(); // For Serial-based pass key entry
+
 }
 
 void loop() {
-    Serial.print("<O>");
-    delay(1000);
-    M5.Lcd.fillTriangle(random(M5.Lcd.width() - 1), random(M5.Lcd.height() - 1),
-                    random(M5.Lcd.width() - 1), random(M5.Lcd.height() - 1),
-                    random(M5.Lcd.width() - 1), random(M5.Lcd.height() - 1),
-                    random(0xfffe));
-}
-*/
 
-/*
-*******************************************************************************
-* Copyright (c) 2021 by M5Stack
-*                  Equipped with M5StickC-Plus sample source code
-*                          配套  M5StickC-Plus 示例源代码
-* Visit for more information: https://docs.m5stack.com/en/core/m5stickc_plus
-* 获取更多资料请访问: https://docs.m5stack.com/zh_CN/core/m5stickc_plus
-*
-* Describe: Display.
-* Date: 2021/9/14
-*******************************************************************************
-*/
-#include <M5StickCPlus.h>
+    static unsigned long lastConnectedTime = 0;
+    const unsigned long reconnectInterval = 5000;  // 5 seconds (milliseconds)
 
-/* After M5StickC Plus is started or reset
-  the program in the setUp () function will be run, and this part will only be
-  run once. 在 M5StickC Plus
-  启动或者复位后，即会开始执行setup()函数中的程序，该部分只会执行一次。 */
-void setup() {
-    M5.begin();
-    // Lcd display
-    M5.Lcd.fillScreen(WHITE);
-    delay(500);
-    M5.Lcd.fillScreen(RED);
-    delay(500);
-    M5.Lcd.fillScreen(GREEN);
-    delay(500);
-    M5.Lcd.fillScreen(BLUE);
-    delay(500);
-    M5.Lcd.fillScreen(BLACK);
-    delay(500);
+    unsigned long currentTime = millis();
 
-    // text print.  文字打印
-    M5.Lcd.fillScreen(BLACK);
-    M5.Lcd.setCursor(0, 10);
-    M5.Lcd.setTextColor(WHITE);
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.printf("Display Test!");
+    static bool hitRecord = false; // Let's just hit record once.
 
-    // draw graphic.  绘图🌹
-    delay(1000);
-    M5.Lcd.drawRect(15, 55, 50, 50, BLUE);
-    delay(1000);
-    M5.Lcd.fillRect(15, 55, 50, 50, BLUE);
-    delay(1000);
-    M5.Lcd.drawCircle(40, 80, 30, RED);
-    delay(1000);
-    M5.Lcd.fillCircle(40, 80, 30, RED);
-    delay(1000);
-}
 
-/* After the program in setup() runs, it runs the program in loop()
-The loop() function is an infinite loop in which the program runs repeatedly
-在setup()函数中的程序执行完后，会接着执行loop()函数中的程序
-loop()函数是一个死循环，其中的程序会不断的重复运行 */
-void loop() {
-    // rand draw
-    M5.Lcd.fillTriangle(random(M5.Lcd.width() - 1), random(M5.Lcd.height() - 1),
-                        random(M5.Lcd.width() - 1), random(M5.Lcd.height() - 1),
-                        random(M5.Lcd.width() - 1), random(M5.Lcd.height() - 1),
-                        random(0xfffe));
+    if (cameraConnection.status == BMDCameraConnection::ConnectionStatus::Disconnected && currentTime - lastConnectedTime >= reconnectInterval) {
+        DEBUG_VERBOSE("Disconnected for too long, trying to reconnect");
+
+        cameraConnection.scan();
+    }
+  else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::Connected)
+  {
+
+    // Example of hitting record once we know the state of the camera
+    if(!hitRecord)
+    {
+        DEBUG_DEBUG("We're connected! Let's hit record once we have the TransportInfo back from the camera as to the state of the camera.");
+        
+        // Do we have a camera instance created (happens when connected)
+        if(BMDControlSystem::getInstance()->hasCamera())
+        {
+            // Get the camera instance so we can check the state of it
+            auto camera = BMDControlSystem::getInstance()->getCamera();
+
+            // Only hit record if we have the Transport Mode info (knowing if it's recording) and we're not already recording.
+            if(camera->hasTransportMode() && !camera->isRecording)
+            {
+                // Record button
+                auto transportInfo = camera->getTransportMode();
+
+                DEBUG_VERBOSE("Record Start");
+                transportInfo.mode = CCUPacketTypes::MediaTransportMode::Record;
+
+                // Send the packet to the camera to start recording
+                PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
+            }
+        }
+    }
+
+    // WHERE THE ACTION HAPPENS
+    // We can do other important things in here, such as call a function to look for the status of the camera, use buttons / keypads to update the camera settings
+
+    lastConnectedTime = currentTime;
+  }
+  else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::ScanningFound)
+  {
+    DEBUG_DEBUG("Cameras found!");
+
+    cameraConnection.connect(cameraConnection.cameraAddresses[0]);
+
+    lastConnectedTime = currentTime;
+  }
+  else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::ScanningNoneFound)
+  {
+    DEBUG_VERBOSE("Status Scanning NONE Found. Marking as Disconnected.");
+    cameraConnection.status = BMDCameraConnection::Disconnected;
+    lastConnectedTime = currentTime;
+  }
+
+  delay(500);
 }

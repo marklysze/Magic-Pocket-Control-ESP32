@@ -71,7 +71,7 @@ void loop() {
                 transportInfo.mode = CCUPacketTypes::MediaTransportMode::Record;
 
                 // Send the packet to the camera to start recording
-                PacketWriter::writeTransportPacket(transportInfo, &cameraConnection);
+                PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
             }
         }
     }

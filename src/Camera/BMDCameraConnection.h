@@ -16,7 +16,10 @@
 #include "CCU\CCUUtility.h"
 #include "BMDControlSystem.h"
 
-#include "ESP32\CST816S\CST816S.h"
+#if USING_TFT_ESPI == 1
+    #include "ESP32\CST816S\CST816S.h"
+#endif
+
 #include "CCU\CCUDecodingFunctions.h"
 #include "Config\Versions.h"
 

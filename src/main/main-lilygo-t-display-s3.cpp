@@ -53,6 +53,7 @@
 // Touch with Gesture for the touch controller on the T-Display-S3
 CST816S touch(PIN_IIC_SDA, PIN_IIC_SCL, PIN_TOUCH_RES, PIN_TOUCH_INT);
 
+// Core variables and control system
 BMDCameraConnection cameraConnection;
 std::shared_ptr<BMDControlSystem> BMDControlSystem::instance = nullptr; // Required for Singleton pattern and the constructor for BMDControlSystem
 BMDCameraConnection* BMDCameraConnection::instancePtr = &cameraConnection; // Required for the scan function to run non-blocking and call the object back with the result
