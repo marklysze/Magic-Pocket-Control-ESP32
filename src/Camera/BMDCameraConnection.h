@@ -7,7 +7,7 @@
 // Include screen and screen security handler only if we're using TFT_eSPI
 #if USING_TFT_ESPI == 1
     #include <TFT_eSPI.h>
-    #include "BLE\ScreenSecurityHandler.h"
+    #include "BLE_TFT_eSPI\ScreenSecurityHandler.h"
 #endif
 
 #include "BLE\SerialSecurityHandler.h"
