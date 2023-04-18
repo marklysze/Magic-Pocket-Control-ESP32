@@ -39,7 +39,7 @@ Here's the state of cameras and firmware.
 | URSA Mini Pro 12K | ... | Not Tested |
 | URSA Mini Pro 12K OLPF | ... | Not Tested |
 
-If you're in Sydney, Australia and would be able to lend me a camera I haven't tested for a day to test I'd be happy to do that. 
+If you're in Sydney, Australia and would be able to lend me a camera I haven't tested for a day to test I'd be happy to do that.
 
 # Why?
 My primary objective was to convert a Windows-based application I had for controlling my cameras to a small portable device.
@@ -127,13 +127,16 @@ I converted a lot of the Swift (Mac) code from Blackmagic Design's Cameras Code 
     - If you're using another ESP32, such as one without a screen, you can use the Serial console to enter the PIN code (see the M5Stick example code) for the first time you connect. Once you've done that you can unplug the device from your computer.
     - Once you've entered the code and connected succesfully both devices should remember each other for future connections, unless you clear the connections (as can be done on the Camera under the Bluetooth screen).
 
+# I'm developing with the code but having trouble
+See the programming and device tips document, [DevelopmentTips.md](DevelopmentTips.md).
+
 # Disclaimer
 * The use of this software is at your own risk. The creator of this software cannot be held liable.
 * Using this software therefore is completely at your own risk.
 
 # License
 * GPL-3.0 license
-* Coverted Swift code from the Blackmagic Design Cameras Code Samples [Download here](https://www.blackmagicdesign.com/au/developer/product/camera)
+* Converted Swift code from the Blackmagic Design Cameras Code Samples [Download here](https://www.blackmagicdesign.com/au/developer/product/camera)
 
 # Contact me
 You can contact me [here](mailto:mark@szeworks.com?subject=Magic%20Pocket%20Control%20on%20GitHub)
