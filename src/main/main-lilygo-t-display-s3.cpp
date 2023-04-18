@@ -149,13 +149,6 @@ void Screen_NoConnection()
   // window.fillSprite(TFT_BLACK);
   spriteMPCSplash.pushToSprite(&window, 0, 0);
 
-  // Status
-  // window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
-
-  // window.fillSmoothCircle(IWIDTH - 25, 25, 18, TFT_RED, TFT_TRANSPARENT);
-
-  DEBUG_VERBOSE("Connection Value: %i", cameraConnection.status);
-
   // Black background for text and Bluetooth Logo
   window.fillRect(0, 3, IWIDTH, 51, TFT_BLACK);
 
@@ -178,7 +171,7 @@ void Screen_NoConnection()
         connectToCameraIndex = 0;
       }
       else
-        window.drawString("Found cameras", 70, 20);
+        window.drawString("Found cameras", 70, 20); // Multiple camera selection is below
       break;
     case BMDCameraConnection::ScanningNoneFound:
       Screen_Common(TFT_RED); // Common elements
@@ -224,6 +217,21 @@ void Screen_NoConnection()
     window.setTextSize(1);
     window.textbgcolor = TFT_DARKGREY;
     window.drawString(cameraConnection.cameraAddresses[count].toString().c_str(), 33 + (count * 125) + (count * 10), 144);
+  }
+
+  // If there's more than one camera, check for a tap to see if they have nominated one to connect to
+  if(cameras > 1 && tapped_x != -1)
+  {
+      if(tapped_x >= 25 && tapped_y >= 60 && tapped_x <= 150 && tapped_y <= 160)
+      {
+        // First camera tapped
+        connectToCameraIndex = 0;
+      }
+      else if(tapped_x >= 160 && tapped_y >= 60 && tapped_x <= 285 && tapped_y <= 160)
+      {
+        // Second camera tapped
+        connectToCameraIndex = 1;
+      }
   }
 
   window.pushSprite(0, 0);
@@ -2582,6 +2590,15 @@ void loop() {
     lastConnectedTime = currentTime;
 
     Screen_NoConnection();
+  }
+  else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::FailedPassKey)
+  {
+    // Pass Key failed, so show it and then delay for 2 seconds and reset status to disconnected.
+    Screen_NoConnection();
+
+    delay(2000);
+
+    cameraConnection.status == BMDCameraConnection::ConnectionStatus::Disconnected;
   }
 
   // Reset tapped point
