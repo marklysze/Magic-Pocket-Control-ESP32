@@ -15,8 +15,8 @@ Despite unplugging power and deploying a thousand times, I'm yet to actually bri
 
 Here are some tips if you can't deploy a build to your device.
 
-#### LILYGO T-Display-S3
-If I've been developing for a while on this device, regularly deploying builds to it, it does start to become less welcoming for a new build.
+#### LILYGO T-Display-S3, Freenove ESP32-S3-WROOM, and probably most ESP32 devices
+If I've been developing for a while on these devices, regularly deploying builds to it, they can start to become less welcoming for a new build. (Once I left the T-Display-S3 on overnight and had to follow the below steps a number of times to revive it - useful to get these screenshots!)
 
 Sometimes you'll try to deploy and it can't find the device or stops while writing partway with messages like "The chipped stopped responding" (that may look like this).
 
