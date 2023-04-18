@@ -53,7 +53,7 @@ bool SerialSecurityHandler::onSecurityRequest()
 void SerialSecurityHandler::onAuthenticationComplete(esp_ble_auth_cmpl_t auth_cmpl)
 {
     DEBUG_VERBOSE("onAuthenticationComplete");
-
+    
     // Update the connection status based on the outcome of the authentication
     if(auth_cmpl.success)
         _bmdCameraConnectionPtr->status = BMDCameraConnection::Connected;

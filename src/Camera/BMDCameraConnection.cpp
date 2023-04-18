@@ -91,7 +91,7 @@ void BMDCameraConnection::connectCallback(BLEScanResults scanResults) {
             {
                 instance->cameraAddresses.push_back(device.getAddress());
 
-                DEBUG_VERBOSE("Blackmagic Camera found %s", device.getAddress().toString());
+                DEBUG_VERBOSE("Blackmagic Camera found %s", device.getAddress().toString().c_str());
             }
         }
     }
@@ -102,7 +102,46 @@ void BMDCameraConnection::connectCallback(BLEScanResults scanResults) {
         instance->status = ConnectionStatus::ScanningNoneFound;
 }
 
+// Clears BLE bonding, mainly for testing pass key connections: https://icircuit.net/esp-idf-bluetooth-remove-bonded-devices/3040
+void BMDCameraConnection::clearBondedDevices()
+{
+    int dev_num = esp_ble_get_bond_device_num();
+    esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
+    esp_ble_get_bond_device_list(&dev_num, dev_list);
+    for (int i = 0; i < dev_num; i++) {
+        esp_ble_remove_bond_device(dev_list[i].bd_addr);
+    }
 
+    free(dev_list);
+}
+
+// Have we got a bond to the camera address on the BLE device?
+bool BMDCameraConnection::isCameraBonded(BLEAddress cameraAddress)
+{
+    int dev_num = esp_ble_get_bond_device_num();
+
+    esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
+
+    esp_ble_get_bond_device_list(&dev_num, dev_list);
+
+    bool returnValue = false;
+
+    for (int i = 0; i < dev_num; i++)
+    {  
+        BLEAddress bleBondedAddress(dev_list[i].bd_addr);
+
+        if(bleBondedAddress == cameraAddress)
+        {
+            DEBUG_VERBOSE("Have previously bonded to this camera.");
+
+            returnValue = true;
+            break;
+        }
+    }
+
+    free(dev_list);
+    return returnValue;
+}
 
 void BMDCameraConnection::connect(BLEAddress cameraAddress)
 {
@@ -119,7 +158,6 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
         {
             DEBUG_ERROR("Failed to create Client");
             disconnect();
-            // status = ConnectionStatus::Disconnected;
             return;
         }
 
@@ -132,14 +170,12 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
 
         // Connect to the first BLE Server (Camera)
         status = ConnectionStatus::Connecting;
-        DEBUG_DEBUG("connect: Connection Status set to %i", status);
         bool connectedToCamera = bleClient->connect(cameraAddress); // if you pass BLEAdvertisedDevice instead of address, it will be recognized type of peer device address (public or private)
 
         if(!connectedToCamera)
         {
             DEBUG_ERROR("Unable to connect to camera.");
             disconnect();
-            // status = ConnectionStatus::Disconnected;
             return;
         }
 
@@ -147,16 +183,12 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
         bleRemoteService = bleClient->getService(Constants::UUID_BMD_BCS);
         if (bleRemoteService == nullptr)
         {
-            // Serial.print("Failed to find our service UUID: ");
-            // Serial.println(BmdCameraService.toString().c_str());
-            // bleClient->disconnect();
             disconnect();
-            // status = ConnectionStatus::Disconnected;
             return;
         }
         else
             DEBUG_VERBOSE("Connected to Blackmagic Camera Service");
-
+        
         // Check the Protocol Version to make sure it's compatible
         bleChar_ProtocolVersion = bleRemoteService->getCharacteristic(Constants::UUID_BMD_BCS_PROTOCOL_VERSION);
         if(bleChar_ProtocolVersion != nullptr)
@@ -229,6 +261,9 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
             DEBUG_VERBOSE("Connected to Timecode Characteristic");
         }
 
+        // Check if we failed the pass key entry and return if so.
+        if(status == ConnectionStatus::FailedPassKey)
+            return;
 
         // Create Camera
         BMDControlSystem::getInstance()->activateCamera();

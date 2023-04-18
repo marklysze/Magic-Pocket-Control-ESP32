@@ -6,18 +6,16 @@
 
 #include <M5StickCPlus.h>
 
-// M5Stack include a "min" macro in their In_eSPI.h file, we don't want to use that, so undefine it
+// M5Stack include a "min" macro in their In_eSPI.h file, we don't want to use that, so undefine it otherwise it won't compile
 #undef min
 
 // Main BMD Libraries
-// #include "Camera\ConstantsTypes.h"
 #include "Camera\PacketWriter.h"
-// #include "CCU\CCUUtility.h"
-// #include "CCU\CCUPacketTypes.h"
-// #include "CCU\CCUValidationFunctions.h"
 #include "Camera\BMDCameraConnection.h"
-// #include "Camera\BMDCamera.h"
-// #include "BMDControlSystem.h"
+
+// Bluetooth for bonding support
+#include <BLEUtils.h>
+#include <BLEServer.h>
 
 // Images
 #include "Images\MPCSplash-M5StickC-Plus.h"
@@ -83,28 +81,17 @@ void Screen_NoConnection()
 
   connectedScreenIndex = Screens::NoConnection;
 
-  DEBUG_DEBUG("NoConnection Screen.");
-
-  // spriteMPCSplash.pushToSprite(&window, 0, 0);
   window.pushImage(0, 0, IWIDTH, IHEIGHT, MPCSplash_M5StickC_Plus);
-
-  // Status
-  // window.fillRect(13, 0, 2, 170, TFT_DARKGREY);
-
-  // window.fillSmoothCircle(IWIDTH - 25, 25, 18, TFT_RED, TFT_TRANSPARENT);
-
-  DEBUG_VERBOSE("Connection Value: %i", cameraConnection.status);
 
   // Black background for text and Bluetooth Logo
   window.fillRect(0, 3, IWIDTH, 51, TFT_BLACK);
 
   // Bluetooth Image
-  // spriteBluetooth.pushToSprite(&window, 26, 6);
   window.pushImage(20, 6, 30, 46, Wikipedia_Bluetooth_30x46);
   
-
   window.setTextSize(2);
   window.textbgcolor = TFT_BLACK;
+  window.textcolor = TFT_WHITE;
   switch(cameraConnection.status)
   {
     case BMDCameraConnection::Scanning:
@@ -130,12 +117,12 @@ void Screen_NoConnection()
       window.drawString("Connecting...", 70, 20);
       break;
     case BMDCameraConnection::NeedPassKey:
+      DEBUG_DEBUG("Need Pass Key");
       Screen_Common(TFT_PURPLE); // Common elements
-      window.drawString("Need Pass Key", 70, 20);
       break;
     case BMDCameraConnection::FailedPassKey:
       Screen_Common(TFT_ORANGE); // Common elements
-      window.drawString("Wrong Pass Key", 70, 20);
+      window.drawString("Wrong Key", 70, 20);
       break;
     case BMDCameraConnection::Disconnected:
       Screen_Common(TFT_RED); // Common elements
@@ -150,32 +137,33 @@ void Screen_NoConnection()
       break;
   }
 
-  // Show up to two cameras
-  int cameras = cameraConnection.cameraAddresses.size();
-  for(int count = 0; count < cameras && count < 2; count++)
-  {
-    /*
-    // Cameras
-    window.fillRoundRect(25 + (count * 125) + (count * 10), 60, 125, 100, 5, TFT_DARKGREY);
 
-    // Highlight the camera to connect to
-    if(connectToCameraIndex != -1 && connectToCameraIndex == count)
-      window.drawSmoothRoundRect(25 + (count * 125) + (count * 10), 60, 5, 2, 125, 100, TFT_GREEN, TFT_DARKGREY);
-
-    spritePocket4k.pushToSprite(&window, 33 + (count * 125) + (count * 10), 69);
-    window.setTextSize(1);
-    window.textbgcolor = TFT_DARKGREY;
-    window.drawString(cameraConnection.cameraAddresses[count].toString().c_str(), 33 + (count * 125) + (count * 10), 144);
-    */
-  }
-
-  window.pushSprite(0, 0);
-
+  // Although we could support more than one camera, we'll just connect to the first.
   if(connectToCameraIndex != -1)
   {
+    // Check if we have a Bluetooth bonding to the camera already
+    if(BMDCameraConnection::isCameraBonded(cameraConnection.cameraAddresses[connectToCameraIndex]))
+    {
+      // We have previously bonded so chances are we won't see the pass key entry
+      window.pushSprite(0, 0);
+    }
+    else
+    {
+      // Expect the pass key entry, so display a message
+        window.fillRoundRect(30, 65, 200, 60, 3, TFT_YELLOW);
+        window.textbgcolor = TFT_YELLOW;
+        window.setTextColor(TFT_BLACK);
+        window.drawCentreString("PASS KEY", 130, 75, M5.Lcd.textfont);
+        window.drawCentreString("SERIAL TERMINAL", 130, 100, M5.Lcd.textfont);
+    }
+
+    window.pushSprite(0, 0);
+
     cameraConnection.connect(cameraConnection.cameraAddresses[connectToCameraIndex]);
     connectToCameraIndex = -1;
   }
+  else
+    window.pushSprite(0, 0);
 }
 
 // Default screen for connected state
@@ -305,21 +293,21 @@ void Screen_Dashboard(bool forceRefresh = false)
 
     if(!slotString.empty())
     {
-      window.fillRoundRect(20, 90, 70, 45, 3, TFT_DARKGREY);
+      window.fillRoundRect(20, 90, 70, 42, 3, TFT_DARKGREY);
 
       window.setTextSize(2);
       window.drawCentreString(slotString.c_str(), 55, 105, M5.Lcd.textfont);
 
       // Show recording error
       if(camera->hasRecordError())
-        window.drawRoundRect(20, 90, 70, 45, 3, TFT_RED);
+        window.drawRoundRect(20, 90, 70, 42, 3, TFT_RED);
     }
     else
     {
       // Show no Media
-      window.fillRoundRect(20, 90, 70, 30, 3, TFT_DARKGREY);
+      window.fillRoundRect(20, 90, 70, 42, 3, TFT_DARKGREY);
       window.setTextSize(1);
-      window.drawCentreString("NO MEDIA", 55, 98, M5.Lcd.textfont);
+      window.drawCentreString("NO MEDIA", 55, 105, M5.Lcd.textfont);
     }
   }
 
@@ -327,15 +315,15 @@ void Screen_Dashboard(bool forceRefresh = false)
   if(camera->hasRecordingFormat())
   {
     // Frame Rate
-    window.fillRoundRect(95, 90, 70, 45, 3, TFT_DARKGREY);
+    window.fillRoundRect(95, 90, 70, 42, 3, TFT_DARKGREY);
     window.setTextSize(2);
 
-    window.drawCentreString(camera->getRecordingFormat().frameRate_string().c_str(), 130, 105, M5.Lcd.textfont);
+    window.drawCentreString(camera->getRecordingFormat().frameRate_string().c_str(), 130, 98, M5.Lcd.textfont);
     window.setTextSize(1);
-    window.drawCentreString("fps", 130, 125, M5.Lcd.textfont);
+    window.drawCentreString("fps", 130, 120, M5.Lcd.textfont);
 
     // Resolution
-    window.fillRoundRect(170, 75, 70, 60, 3, TFT_DARKGREY);
+    window.fillRoundRect(170, 75, 70, 57, 3, TFT_DARKGREY);
 
     std::string resolution = camera->getRecordingFormat().frameDimensionsShort_string();
     window.setTextSize(2);
@@ -356,6 +344,60 @@ void Screen_Dashboard(bool forceRefresh = false)
   window.pushSprite(0, 0);
 }
 
+void Screen_Recording(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Recording;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+
+  DEBUG_DEBUG("Screen Recording Refreshed.");
+
+  window.fillSprite(TFT_BLACK);
+
+  Screen_Common(TFT_GREEN); // Common elements
+
+  // Record button
+  if(camera->isRecording) window.fillCircle(242, 63, 58, Constants::DARK_RED); // Recording solid
+  window.drawCircle(242, 63, 57, (camera->isRecording ? TFT_RED : TFT_LIGHTGREY)); // Outer
+  window.fillCircle(242, 63, 38, TFT_RED); // Inner
+
+  // Timecode
+  window.setTextSize(2);
+  window.textcolor = (camera->isRecording ? TFT_RED : TFT_WHITE);
+  window.textbgcolor = TFT_BLACK;
+  window.drawString(camera->getTimecodeString().c_str(), 30, 100);
+
+  // Remaining time and any errors
+  if(camera->getMediaSlots().size() != 0)
+  {
+    window.textcolor = TFT_LIGHTGREY;
+    window.drawString(camera->getActiveMediaSlot().GetMediumString().c_str(), 30, 40);
+    window.drawString(camera->getActiveMediaSlot().remainingRecordTimeString.c_str(), 30, 60);
+
+    window.setTextSize(1);
+    window.drawString("REMAINING TIME", 30, 80);
+
+    // Show any media record errors
+    if(camera->hasRecordError())
+    {
+      window.setTextSize(2);
+      window.textcolor = TFT_RED;
+      window.drawString("RECORD ERROR", 30, 18);
+    }
+  }
+
+  window.pushSprite(0, 0);
+}
+
 void setup() {
 
     Serial.begin(115200);
@@ -369,18 +411,14 @@ void setup() {
     // Initialise the screen
     M5.Lcd.setRotation(3);
 
-    // Drawing objects and images
+    // Main sprite for drawing to screen in one go
     window.createSprite(IWIDTH, IHEIGHT);
 
-    // spriteMPCSplash.createSprite(IWIDTH, IHEIGHT);
-    // window.setSwapBytes(true);
+    // Load the splash screen image into the sprite
     window.pushImage(0, 0, IWIDTH, IHEIGHT, MPCSplash_M5StickC_Plus);
 
-    // spriteMPCSplash.pushSprite(&window, 0, 0);
+    // And draw it on screen!
     window.pushSprite(0, 0);
-
-    // M5.Lcd.setSwapBytes(true);
-    // M5.Lcd.pushImage(0, 0, 240, 135, MPCSplash_M5StickC_Plus);
 
     // Prepare for Bluetooth connections and start scanning for cameras
     cameraConnection.initialise(); // For Serial-based pass key entry
@@ -396,6 +434,9 @@ void loop() {
 
   if (cameraConnection.status == BMDCameraConnection::ConnectionStatus::Disconnected && currentTime - lastConnectedTime >= reconnectInterval) {
     DEBUG_VERBOSE("Disconnected for too long, trying to reconnect");
+
+    // For testing, this removes BLE bondings so the pass key needs to be entered. Remove comment to force pass key entry.
+    // BMDCameraConnection::clearBondedDevices();
 
     // Set the status to Scanning and then show the NoConnection screen to render the Scanning page before starting the scan (which blocks so it can't render the Scanning page before it finishes)
     cameraConnection.status = BMDCameraConnection::ConnectionStatus::Scanning;
@@ -417,32 +458,9 @@ void loop() {
         case Screens::Dashboard:
           Screen_Dashboard();
           break;
-        /*
         case Screens::Recording:
           Screen_Recording();
           break;
-        case Screens::ISO:
-          Screen_ISO();
-          break;
-        case Screens::ShutterAngleSpeed:
-          if(camera->shutterValueIsAngle)
-            Screen_ShutterAngle();
-          else
-            Screen_ShutterSpeed();
-          break;
-        case Screens::WhiteBalanceTint:
-          Screen_WBTint();
-          break;
-        case Screens::Codec:
-          Screen_Codec();
-          break;
-        case Screens::Resolution:
-          Screen_Resolution();
-          break;
-        case Screens::Media:
-          Screen_Media();
-          break;
-        */
       }
 
     }
@@ -465,6 +483,52 @@ void loop() {
 
     Screen_NoConnection();
   }
+  else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::FailedPassKey)
+  {
+    // Pass Key failed, so show it and then delay for 2 seconds and reset status to disconnected.
+    Screen_NoConnection();
 
-    delay(25);
+    delay(2000);
+
+    cameraConnection.status == BMDCameraConnection::ConnectionStatus::Disconnected;
+  }
+
+  // Read the state of the buttons
+  M5.update();
+
+  if(M5.BtnA.wasReleased())
+  {
+    // Record button
+    auto camera = BMDControlSystem::getInstance()->getCamera();
+    auto transportInfo = camera->getTransportMode();
+
+    if(camera->isRecording)
+    {
+      DEBUG_VERBOSE("Record Stop");
+      transportInfo.mode = CCUPacketTypes::MediaTransportMode::Preview;
+    }
+    else
+    {
+      DEBUG_VERBOSE("Record Start");
+      transportInfo.mode = CCUPacketTypes::MediaTransportMode::Record;
+    }
+
+    PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
+
+  }
+  else if(M5.BtnB.wasReleased())
+  {
+    // Screen switcher
+    switch(connectedScreenIndex)
+    {
+      case Screens::Dashboard:
+        Screen_Recording(true);
+        break;
+      case Screens::Recording:
+        Screen_Dashboard(true);
+        break;
+    }
+  }
+
+  delay(25);
 }

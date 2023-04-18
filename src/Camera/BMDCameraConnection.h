@@ -88,6 +88,9 @@ class BMDCameraConnection
 
         static void connectCallback(BLEScanResults scanResults);
 
+        static void clearBondedDevices(); // Clears BLE bonding so we will require pass key for the next connection
+        static bool isCameraBonded(BLEAddress cameraAddress); // Have we got a bond to the camera address on the BLE device?
+
     private:
         std::string appName;
         bool initialised = false;
