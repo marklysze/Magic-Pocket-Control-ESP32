@@ -56,10 +56,21 @@ Then here are the steps I take to get it responsive to another deployment:
    
     - If you still can't upload, unplug the USB-C, hold down the boot button and, while doing so, plug the USB-C cable back in, release the boot button after a few seconds.
     - If you've come this far and it's still not working, you may need to resort to using Espressif's Python scripts to flash the device, see the next section.
-    - Once you've successfully accessed it looks like it has gone through, go back to Visual Studio Code and start the Serial Monitor
-    - If you see the serial messages "->->->"... coming through then you should be right to deploy a build to it
-    - Note: Don't run Arduino IDE's Serial Monitor as it will block Visual Studio's one
+    - Additionally, try to reboot your computer (this has worked for me a number of times) and try again
+    - Once you've successfully uploaded it, go back to Visual Studio Code and start the Serial Monitor
+
+      $\color{green}{\textsf{Success}}$
+      ![Can't Upload in Arduino IDE](Documents/DevTips_TDS3_UploadSuccess.jpg)
+    
+    - If you see the serial messages "->->->"... coming through then you should be right to deploy a build to it (Note: Don't run Arduino IDE's Serial Monitor as it will block Visual Studio's one)
+
+      $\color{green}{\textsf{Unbricked!}}$
+      ![Unbricked!](Documents/DevTips_TDS3_VSCUploadSuccess.jpg)
+
+    - If you've got here and it's still not working, I'm out of advice - except, unplug it, give it some time, reboot, try the Espressif approach below, and the above a few times. Athough I haven't bricked a device yet, it has taken a number of iterations at times. The best of luck!
   
+
+
 Using Espressif's Python esptool to flash the device (Windows, I assume similar option for other OS's):
 1. Ensure you have Python 3 on your computer (I use Anaconda and Anaconda Prompt)
 2. Install as per [Espressif docs](https://docs.espressif.com/projects/esptool/en/latest/esp32/installation.html)
