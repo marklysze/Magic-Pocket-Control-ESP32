@@ -23,6 +23,24 @@ The key features are:
 # What can you do?
 I hope you find the functionality useful and it would be great if you could contribute your improvements, suggestions, or general feedback to the project!
 
+# Has it been tested?
+It needs to be thoroughly tested and even though they do contain fairly basic functionality, there's still unknowns around connection longevity, camera firmware changes, known issues in camera firmware, and the position of the sun in the sky.
+
+Here's the state of cameras and firmware.
+
+| Camera | Firmware | Status |
+| :---: | :---: | :---: |
+| Pocket 4K | 7.9.1 | Tested, $\color{green}{\textsf{OK}}$ |
+| Pocket 4K | 7.9.1 | Tested, $\color{red}{\textsf{Not Working}}$ |
+| Pocket 6K | 7.9.1 | Tested, $\color{green}{\textsf{OK}}$ |
+| Pocket 6K G2 | ... | Not Tested |
+| Pocket 6K Pro | ... | Not Tested |
+| URSA Mini Pro 4.6K G2 | ... | Not Tested |
+| URSA Mini Pro 12K | ... | Not Tested |
+| URSA Mini Pro 12K OLPF | ... | Not Tested |
+
+If you're in Sydney, Australia and would be able to lend me a camera I haven't tested for a day to test I'd be happy to do that. 
+
 # Why?
 My primary objective was to convert a Windows-based application I had for controlling my cameras to a small portable device.
 
@@ -116,6 +134,9 @@ I converted a lot of the Swift (Mac) code from Blackmagic Design's Cameras Code 
 # License
 * GPL-3.0 license
 * Coverted Swift code from the Blackmagic Design Cameras Code Samples [Download here](https://www.blackmagicdesign.com/au/developer/product/camera)
+
+# Contact me
+You can contact me [here](mailto:mark@szeworks.com?subject=Magic%20Pocket%20Control%20on%20GitHub)
 
 # :thumbsup: Thank you
 Thanks for being part of the community! :sparkles:
