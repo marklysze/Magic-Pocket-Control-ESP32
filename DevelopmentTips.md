@@ -26,7 +26,7 @@ Then here are the steps I take to get it responsive to another deployment:
 1. Unplug the USB-C cable and then plug it back in, try and deploy a build. If it doesn't work, continue to next step
 2. Open Arduino IDE and follow the next steps
 
-   ![Arduino IDE](DevTips_TDS3_ArduinoIDE.jpg)
+   ![Arduino IDE](Documents/DevTips_TDS3_ArduinoIDE.jpg)
 
 4. Re-select the board (Note: It may have identified it's a different device):
    - Click on the device drop-down at the top
