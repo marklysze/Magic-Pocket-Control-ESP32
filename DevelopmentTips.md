@@ -19,4 +19,4 @@ Here are some tips if you can't deploy a build to your device.
 If I've been developing for a while on this device it does start to become less welcoming for a new build.
 
 If you go to deploy and it can't find the device or stops while writing partway with something that may look like this:
-![Can't deploy to T-Display-S3](/Supporting%20Documents/DevTips_TDS3_CantDeploy.jpg)
+![Can't deploy to T-Display-S3](../Supporting%20Documents/DevTips_TDS3_CantDeploy.jpg)
