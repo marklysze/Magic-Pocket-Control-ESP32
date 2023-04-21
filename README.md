@@ -10,7 +10,7 @@ Designed for the Pocket 4K, Pocket 6K/G2/Pro, USRA G2 4.6K, URSA 12K.
 # What can it do?
 The key features are:
 - Connect to the cameras wirelessly over Bluetooth LE
-- Select the camera to connect to if you have multiple available
+- Detect multiple cameras to allow you to select the camera to connect to, if multiple are available
 - Entry of the Bluetooth connection code (6 digit pin) through a touchscreen numpad (LILYGO T-Display-S3)
 - Entry of the Bluetooth connection code (6 digit pin) through the serial console (when you don't have touch-screen or keypad)
 - Multiple screens that can be viewed by swiping left and right (LILYGO T-Display-S3)
@@ -39,10 +39,12 @@ Here's the state of cameras and firmware.
 | URSA Mini Pro 12K | ... | Not Tested |
 | URSA Mini Pro 12K OLPF | ... | Not Tested |
 
-If you're in Sydney, Australia and would be able to lend me a camera I haven't tested for a day to test I'd be happy to do that.
+If you're in Sydney, Australia and would be able to lend me a camera I haven't tested for a day to test so we know it works, that would be amazing.
 
 # Why?
 My primary objective was to convert a Windows-based application I had for controlling my cameras to a small portable device.
+
+These devices are so small, portable, and don't require much power.
 
 I'm opening up to the community who may find this useful or would like to contribute to it. Any contribution you make will be appreciated!
 
@@ -75,7 +77,7 @@ You will need the following:
 # Configuring PlatformIO
 It is important that you use PlatformIO if you want to use the repository as it is. Feel free to use the libraries in your own project if you don't want to develop for the repository. The following notes are based on using this repository
 
-**platformio.ini** - This file tells PlatformIO what boards you have and which "main-<board name>.cpp" file to use. In the *src/main/* folder you'll see a set of main cpp files, each one is the program that relates to the board. When you compile and upload the program to your board PlatformIO uses the main file that relates to the board you have chosen (in the bottom taskbar of Visual Studio Code you can choose the *environment* you are using which represents the board. For example, programming for the M5Stack M5StickC Plus will be done in the *src/main/main-m5stick-c.cpp* file because that has the name related to the environment chosen when we select "env:m5stick-c".
+**platformio.ini** - This file tells PlatformIO what boards you have and which "main-[board name].cpp" file to use. In the *src/main/* folder you'll see a set of main cpp files, each one is the program that relates to the board. When you compile and upload the program to your board PlatformIO uses the main file that ***matches the name*** of the board you have chosen (in the bottom taskbar of Visual Studio Code you can choose the *environment* you are using which represents the board. For example, programming for the M5Stack M5StickC Plus will be done in the *src/main/main-m5stick-c.cpp* file because that has the name related to the environment chosen when we select "env:m5stick-c".
 
 If you want to add your own board and program for it, do so like this:
 1. Open platformio.ini and check if the board already exists, if so you're good to go.
@@ -105,13 +107,23 @@ See the Blackmagic Camera Control Developer Information document, [here](https:/
 I converted a lot of the Swift (Mac) code from Blackmagic Design's Cameras Code Samples, [Download here](https://www.blackmagicdesign.com/au/developer/product/camera)
 
 # How does the program work?
-[TBD]
+![Control System](Documents/HowItWorks-1.PNG)
 
+![Camera Connection](Documents/HowItWorks-2.PNG)
+
+![Camera](Documents/HowItWorks-3.PNG)
+
+![Changing State](Documents/HowItWorks-4.PNG)
+
+![Establishing a Connection](Documents/HowItWorks-5.PNG)
+
+![Debugging](Documents/HowItWorks-6.PNG)
 
 # Thank you to...
 - Blackmagic Design: For making affordable cameras and having a public protocol so we can interact with them
+- Blackmagic Design Support: A big shoutout to Brendan at Blackmagic Design who helped troubleshoot the changing of Codecs, which was/is a known bug in the camera firmware. Thanks Brendan!
 - BlueMagic32: A great project to control cameras with an ESP32. It provided a reference for the Bluetooth connection functionality. [https://github.com/schoolpost/BlueMagic32](https://github.com/schoolpost/BlueMagic32)
-- LILYGO: For creating this product and having some code examples for it. [https://github.com/Xinyuan-LilyGO/T-Display-S3](https://github.com/Xinyuan-LilyGO/T-Display-S3)
+- LILYGO: For creating a cool product and having some code examples for it. [https://github.com/Xinyuan-LilyGO/T-Display-S3](https://github.com/Xinyuan-LilyGO/T-Display-S3)
 - Volos Projects on YouTube: For having an entertaining set of videos on programming for the T-Display-S3. [T-Display-S3 Touch example](https://www.youtube.com/watch?v=qwRpdarrsQA)
 - ChatGPT: The ability to convert code from Swift to C++ and to assist with C++ coding has saved days of programming. [https://chat.openai.com/](https://chat.openai.com/)
 
