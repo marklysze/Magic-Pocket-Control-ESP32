@@ -499,10 +499,90 @@ void Screen_Recording(bool forceRefresh = false)
   bool tappedAction = false;
   if(tapped_x != -1 && camera->hasTransportMode())
   {
-    // Serial.print("Screen_Recording tapped at: ");
-    // Serial.print(tapped_x);
-    // Serial.print(",");
-    // Serial.println(tapped_y);
+
+    // Testing of Codec change (BMD Support)
+    // Note that under Camera Firmware 7.9.1 Codecs can't be changed. Camera Firmware 8.1 fixes this.
+    /*
+    if(tapped_x < 195 && tapped_y <= 170)
+    {
+      // Send a series of commands with delays to see if any changes help
+      static byte lastTestCommand = 1;
+
+          byte values[] = {0xFF, 0x06, 0x00, 0x00, 0x0A, 0x00, 0x01, 0x00, 0x03, 0x00, 0x00, 0x00};
+          std::vector<byte> byteVector(values, values + sizeof(values) / sizeof(byte));
+
+          byte valuesA[] = {0xFF, 0x06, 0x00, 0x00, 0x0A, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00};
+          std::vector<byte> byteVectorA(valuesA, valuesA + sizeof(valuesA) / sizeof(byte));
+
+          byte valuesB[] = {0xFF, 0x06, 0x00, 0x00, 0x0A, 0x00, 0x01, 0x00, 0x02, 0x03, 0x00, 0x00};
+          std::vector<byte> byteVectorB(valuesB, valuesB + sizeof(valuesB) / sizeof(byte));
+
+          byte valuesC[] = {0xFF, 0x06, 0x00, 0x00, 0x0A, 0x00, 0x01, 0x00, 0x03, 0x00, 0x00, 0x00};
+          std::vector<byte> byteVectorC(valuesC, valuesC + sizeof(valuesC) / sizeof(byte));
+
+          byte valuesD[] = {0xFF, 0x06, 0x00, 0x00, 0x0A, 0x00, 0x01, 0x00, 0x03, 0x07, 0x00, 0x00};
+          std::vector<byte> byteVectorD(valuesD, valuesD + sizeof(valuesD) / sizeof(byte));
+
+          byte valuesE[] = {0xFF, 0x06, 0x00, 0x00, 0x0A, 0x00, 0x01, 0x00, 0x02, 0x03, 0x00, 0x00};
+          std::vector<byte> byteVectorE(valuesE, valuesE + sizeof(valuesE) / sizeof(byte));
+
+          byte valuesF[] = {0xFF, 0x06, 0x00, 0x00, 0x0A, 0x00, 0x01, 0x00, 0x02, 0x01, 0x00, 0x00};
+          std::vector<byte> byteVectorF(valuesF, valuesF + sizeof(valuesF) / sizeof(byte));
+
+          byte valuesG[] = {0xFF, 0x06, 0x00, 0x00, 0x0A, 0x00, 0x01, 0x00, 0x03, 0x02, 0x00, 0x00};
+          std::vector<byte> byteVectorG(valuesG, valuesG + sizeof(valuesG) / sizeof(byte));
+
+          byte valuesH[] = {0xFF, 0x06, 0x00, 0x00, 0x0A, 0x00, 0x01, 0x00, 0x03, 0x04, 0x00, 0x00};
+          std::vector<byte> byteVectorH(valuesH, valuesH + sizeof(valuesH) / sizeof(byte));
+
+      switch(lastTestCommand)
+      {
+        case 1:
+          DEBUG_DEBUG("Test series of commands 1/9");
+          cameraConnection.sendBytesToOutgoing(byteVector);
+          break;
+        case 2:
+          DEBUG_DEBUG("Test series of commands 2/9");
+          cameraConnection.sendBytesToOutgoing(byteVectorA);
+          break;
+        case 3:
+          DEBUG_DEBUG("Test series of commands 3/9");
+          cameraConnection.sendBytesToOutgoing(byteVectorB);
+          break;
+        case 4:
+          DEBUG_DEBUG("Test series of commands 4/9");
+          cameraConnection.sendBytesToOutgoing(byteVectorC);
+          break;
+        case 5:
+          DEBUG_DEBUG("Test series of commands 5/9");
+          cameraConnection.sendBytesToOutgoing(byteVectorD);
+          break;
+        case 6:
+          DEBUG_DEBUG("Test series of commands 6/9");
+          cameraConnection.sendBytesToOutgoing(byteVectorE);
+          break;
+        case 7:
+          DEBUG_DEBUG("Test series of commands 7/9");
+          cameraConnection.sendBytesToOutgoing(byteVectorF);
+          break;
+        case 8:
+          DEBUG_DEBUG("Test series of commands 8/9");
+          cameraConnection.sendBytesToOutgoing(byteVectorG);
+          break;
+        case 9:
+          DEBUG_DEBUG("Test series of commands 9/9");
+          cameraConnection.sendBytesToOutgoing(byteVectorH);
+          break;
+      }
+
+      if(lastTestCommand < 9)
+        lastTestCommand++;
+      else
+        lastTestCommand = 1;
+
+    }
+    */
+
 
     if(tapped_x >= 195 && tapped_y <= 128)
     {
@@ -550,7 +630,7 @@ void Screen_Recording(bool forceRefresh = false)
   window.drawString(camera->getTimecodeString().c_str(), 30, 57);
 
   // Remaining time and any errors
-  if(camera->getMediaSlots().size() != 0)
+  if(camera->getMediaSlots().size() != 0 && camera->hasActiveMediaSlot())
   {
     window.textcolor = TFT_LIGHTGREY;
     window.drawString((camera->getActiveMediaSlot().GetMediumString() + " " + camera->getActiveMediaSlot().remainingRecordTimeString).c_str(), 30, 100);

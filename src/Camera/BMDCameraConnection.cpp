@@ -319,10 +319,16 @@ void BMDCameraConnection::disconnect()
     initialPayloadTime = ULONG_MAX;
 }
 
-void BMDCameraConnection::sendCommandToOutgoing(CCUPacketTypes::Command command, bool response = true)
+void BMDCameraConnection::sendCommandToOutgoing(CCUPacketTypes::Command command, bool response)
 {
     std::vector<byte> data = command.serialize();
 
+    bleChar_OutgoingCameraControl->writeValue(data.data(), data.size(), response);
+}
+
+// Primarily for testing, sends a byte array rather than a formulated and validated command
+void BMDCameraConnection::sendBytesToOutgoing(std::vector<byte> data, bool response)
+{
     bleChar_OutgoingCameraControl->writeValue(data.data(), data.size(), response);
 }
 

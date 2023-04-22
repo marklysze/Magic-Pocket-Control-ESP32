@@ -99,6 +99,7 @@ public:
     const std::vector<BMDCamera::MediaSlot> getMediaSlots();
     std::string getSlotActiveStorageMediumString(int slotIndex);
     std::string getSlotMediumStatusString(int slotIndex);
+    bool hasActiveMediaSlot();
     MediaSlot getActiveMediaSlot();
 
 

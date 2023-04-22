@@ -17,16 +17,23 @@ void CCUDecodingFunctions::DecodeCCUPacket(std::vector<byte> byteArray)
 
         try
         {
+            // Need to check packets coming in at the individual bytes, use this block of code
             // Output decoded packet bytes, but ignore battery is it comes in too regularly
+            // Example of filtering to category 10 (Media) and parameter 0 (Codec)
+            /*
             if(category != CCUPacketTypes::Category::Status && parameter != (byte)CCUPacketTypes::StatusParameter::Battery)
             {
-                DEBUG_DEBUG("DecodeCCUPacket: ");
-                for(int index = 0; index < byteArray.size(); index++)
+                if(category == CCUPacketTypes::Category::Media && parameter == (byte)CCUPacketTypes::MediaParameter::Codec)
                 {
-                    DEBUG_DEBUG("%i: %i", index, byteArray[index]);
-                    
+                    DEBUG_DEBUG("DecodeCCUPacket: ");
+                    for(int index = 0; index < byteArray.size(); index++)
+                    {
+                        DEBUG_DEBUG("%i: %i", index, byteArray[index]);
+                        
+                    }
                 }
             }
+            */
 
             DecodePayloadData(category, parameter, payloadData);
         }
@@ -670,99 +677,7 @@ void CCUDecodingFunctions::DecodeCodec(std::vector<byte> inData)
 {
     std::vector<byte> data = ConvertPayloadDataWithExpectedCount<byte>(inData, 2);
 
-    DEBUG_DEBUG("DecodeCodec Byte 1: %i, Byte 2: %i", data[0], data[1]);
-
     CodecInfo codecInfo(static_cast<CCUPacketTypes::BasicCodec>(data[0]), data[1]);
-
-    /*
-
-    Serial.print("Decoded Codec Info Basic Codec is ");
-    switch(codecInfo.basicCodec)
-    {
-        case CCUPacketTypes::BasicCodec::RAW:
-            Serial.println("RAW");
-            break;
-        case CCUPacketTypes::BasicCodec::DNxHD:
-            Serial.print("DNxHD, ");
-
-            switch(codecInfo.codecVariant)
-            {
-                case 0:
-                    Serial.println("Lossless Raw");
-                    break;
-                case 1:
-                    Serial.println("Raw 3:1");
-                    break;
-                case 2:
-                    Serial.println("Raw 4:1");
-                    break;
-            }
-
-            break;
-        case CCUPacketTypes::BasicCodec::ProRes:
-            Serial.print("ProRes ");
-
-            switch(codecInfo.codecVariant)
-            {
-                case 0:
-                    Serial.println("HQ");
-                    break;
-                case 1:
-                    Serial.println("422");
-                    break;
-                case 2:
-                    Serial.println("LT");
-                    break;
-                case 3:
-                    Serial.println("Proxy");
-                    break;
-                case 4:
-                    Serial.println("444");
-                    break;
-                case 5:
-                    Serial.println("444XQ");
-                    break;
-            }
-
-            break;
-        case CCUPacketTypes::BasicCodec::BRAW:
-            Serial.print("BRAW ");
-
-            switch(codecInfo.codecVariant)
-            {
-                case 0:
-                    Serial.println("Q0");
-                    break;
-                case 1:
-                    Serial.println("Q5");
-                    break;
-                case 2:
-                    Serial.println("3:1");
-                    break;
-                case 3:
-                    Serial.println("5:1");
-                    break;
-                case 4:
-                    Serial.println("8:1");
-                    break;
-                case 5:
-                    Serial.println("12:1");
-                    break;
-                case 6:
-                    Serial.println("18:1"); // Guessing as the Ursa 12K has 18:1.
-                    break;
-                case 7:
-                    Serial.println("Q1");
-                    break;
-                case 8:
-                    Serial.println("Q3");
-                    break;
-            }
-
-            break;
-    }
-
-    */
 
     BMDControlSystem::getInstance()->getCamera()->onCodecReceived(codecInfo);
 }

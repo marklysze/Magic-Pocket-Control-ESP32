@@ -330,6 +330,12 @@ std::string BMDCamera::getSlotMediumStatusString(int slotIndex)
         throw std::runtime_error("Invalid Media Slot index.");
 }
 
+// Is there a known active media slot
+bool BMDCamera::hasActiveMediaSlot()
+{
+    return activeMediaSlotIndex != -1;
+}
+
 BMDCamera::MediaSlot BMDCamera::getActiveMediaSlot()
 {
     if(mediaSlots.size() > activeMediaSlotIndex)

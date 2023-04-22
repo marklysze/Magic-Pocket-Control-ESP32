@@ -31,7 +31,7 @@ Here's the state of cameras and firmware.
 | Camera | Firmware | Status |
 | :---: | :---: | :---: |
 | Pocket 4K | 7.9.1 | Tested, $\color{green}{\textsf{OK}}$ |
-| Pocket 4K | 8.1 | Tested, $\color{red}{\textsf{Not Working}}$ |
+| Pocket 4K | 8.1 | Tested, $\color{red}{\textsf{OK}}$ |
 | Pocket 6K | 7.9.1 | Tested, $\color{green}{\textsf{OK}}$ |
 | Pocket 6K G2 | ... | Not Tested |
 | Pocket 6K Pro | ... | Not Tested |
@@ -40,6 +40,10 @@ Here's the state of cameras and firmware.
 | URSA Mini Pro 12K OLPF | ... | Not Tested |
 
 If you're in Sydney, Australia and would be able to lend me a camera I haven't tested for a day to test so we know it works, that would be amazing.
+
+# Known bugs
+- Changing Codecs between BRAW and ProRes on Camera Firmware 7.9.1 on pocket cameras not functioning
+- Changing resolutions on Camera Firmware 8.1 on pocket cameras not functioning in all cases
 
 # Why?
 My primary objective was to convert a Windows-based application I had for controlling my cameras to a small portable device.
