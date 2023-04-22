@@ -24,6 +24,9 @@ public:
     static void DecodePayloadData(CCUPacketTypes::Category category, byte parameter, std::vector<byte> payloadData);
 
     template<typename T>
+    static int GetCount(std::vector<byte> data);
+
+    template<typename T>
     static std::vector<T> ConvertPayloadDataWithExpectedCount(std::vector<byte> data, int expectedCount);
     static std::string ConvertPayloadDataToString(std::vector<byte> data);
 

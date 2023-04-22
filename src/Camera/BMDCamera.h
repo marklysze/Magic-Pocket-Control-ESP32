@@ -184,9 +184,11 @@ public:
 
     // Metadata Attributes
 
-    void onReelNumberReceived(short inReelNumber);
+    void onReelNumberReceived(short inReelNumber, bool inIsEditable);
     bool hasReelNumber();
     short getReelNumber();
+    bool hasReelEditable();
+    bool getReelEditable();
 
     void onSceneNameReceived(std::string inSceneName);
     bool hasSceneName();
@@ -267,6 +269,7 @@ public:
 
     // Last Modified
     unsigned long getLastModified() const { return lastUpdated; }
+    void setLastModified() { modified(); }
 
     // Last known BRAW Bitrate, BRAW Quality, and ProRes settings (for when we switch between options we know what to change it to)
     // Default options for now, until we get settings from the camera coming through
@@ -324,6 +327,7 @@ private:
 
     // Metadata Attributes
     std::shared_ptr<short> reelNumber;
+    std::shared_ptr<bool> reelEditable;
     std::shared_ptr<std::string> sceneName;
     std::shared_ptr<CCUPacketTypes::MetadataSceneTag> sceneTag;
     std::shared_ptr<CCUPacketTypes::MetadataLocationTypeTag> locationType;

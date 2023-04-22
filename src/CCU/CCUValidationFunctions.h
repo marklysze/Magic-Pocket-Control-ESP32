@@ -99,7 +99,7 @@ class CCUValidationFunctions {
                 return false;
             }
             else if (!isParameterValid) {
-                DEBUG_ERROR("ValidateCCUPacket: CCU packet has invalid parameter for category: %i, Parameter Value: ", categoryValue, parameterValue);
+                DEBUG_ERROR("ValidateCCUPacket: CCU packet has invalid parameter for category: %i, Parameter Value: %i", categoryValue, parameterValue);
                 return false;
             }
 

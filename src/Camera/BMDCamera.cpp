@@ -858,12 +858,17 @@ TransportInfo BMDCamera::getTransportMode()
 // METADATA Attributes
 //
 
-void BMDCamera::onReelNumberReceived(short inReelNumber)
+void BMDCamera::onReelNumberReceived(short inReelNumber, bool inIsEditable)
 {
     if(reelNumber)
         *reelNumber = inReelNumber;
     else
         reelNumber = std::make_shared<short>(inReelNumber);
+
+    if(reelEditable)
+        *reelEditable = inIsEditable;
+    else
+        reelEditable = std::make_shared<bool>(inIsEditable);
     
     modified();
 }
@@ -877,6 +882,17 @@ short BMDCamera::getReelNumber()
         return *reelNumber;
     else
         throw std::runtime_error("Reel Number not assigned to.");
+}
+bool BMDCamera::hasReelEditable()
+{
+    return static_cast<bool>(reelEditable);
+}
+bool BMDCamera::getReelEditable()
+{
+    if(reelEditable)
+        return *reelEditable;
+    else
+        throw std::runtime_error("Reel Editable not assigned to.");
 }
 
 void BMDCamera::onSceneNameReceived(std::string inSceneName)

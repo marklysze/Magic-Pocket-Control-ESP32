@@ -196,9 +196,10 @@ class CCUPacketTypes
             DisplayTimecode = 4,
             CameraSpec = 5,
             SwitcherStatus = 6,
-            DisplayParameters = 7
+            DisplayParameters = 7,
+            NewParameterTBD = 8 // 2023-04-22 MS Camera Firmware 8.1 is sending this through on resolution changes (perhaps on other changes too)
         };
-        const static byte StatusParameterValues[8]; // Added to support checking a value is valid within the enum
+        const static byte StatusParameterValues[9]; // Added to support checking a value is valid within the enum
 
         enum class MediaParameter : byte
         {

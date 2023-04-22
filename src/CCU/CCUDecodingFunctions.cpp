@@ -17,6 +17,17 @@ void CCUDecodingFunctions::DecodeCCUPacket(std::vector<byte> byteArray)
 
         try
         {
+            // Output decoded packet bytes, but ignore battery is it comes in too regularly
+            if(category != CCUPacketTypes::Category::Status && parameter != (byte)CCUPacketTypes::StatusParameter::Battery)
+            {
+                DEBUG_DEBUG("DecodeCCUPacket: ");
+                for(int index = 0; index < byteArray.size(); index++)
+                {
+                    DEBUG_DEBUG("%i: %i", index, byteArray[index]);
+                    
+                }
+            }
+
             DecodePayloadData(category, parameter, payloadData);
         }
         catch (const std::exception& ex)
@@ -106,6 +117,17 @@ void CCUDecodingFunctions::DecodeLensCategory(byte parameter, std::vector<byte> 
     }
     else
         throw "Invalid value for Lens Parameter.";
+}
+
+// Returns the number of elements of the type T in the data (e.g. 2 byte data type and 4 bytes of data will return 4 / 2 = 2)
+template<typename T>
+int CCUDecodingFunctions::GetCount(std::vector<byte> data)
+{
+    int typeSize = sizeof(T);
+    int byteCount = data.size();
+    int convertedCount = byteCount / typeSize;
+
+    return convertedCount;
 }
 
 template<typename T>
@@ -469,6 +491,9 @@ void CCUDecodingFunctions::DecodeStatusCategory(byte parameter, std::vector<byte
                 // Not catered for
                 // Serial.print("DecodeStatusCategory, ParameterType SwitcherStatus not catered for: "); Serial.println(static_cast<byte>(parameterType));
                 break;
+            case CCUPacketTypes::StatusParameter::NewParameterTBD:
+                DEBUG_VERBOSE("DecodeStatusCategory, ParameterType ID %i is new. Payload Byte Count is %i. Two bytes are %i and %i", static_cast<byte>(parameterType), GetCount<byte>(payloadData), payloadData[0], payloadData[1]);
+                break;
         default:
             break;
         }
@@ -794,6 +819,7 @@ void CCUDecodingFunctions::DecodeMetadataCategory(byte parameter, std::vector<by
         switch (parameterType)
         {
             case CCUPacketTypes::MetadataParameter::Reel:
+                DEBUG_VERBOSE("DecodeMetadataCategory - Reel");
                 DecodeReel(payloadData);
                 break;
             case CCUPacketTypes::MetadataParameter::SceneTags:
@@ -849,10 +875,33 @@ void CCUDecodingFunctions::DecodeMetadataCategory(byte parameter, std::vector<by
 
 void CCUDecodingFunctions::DecodeReel(std::vector<byte> inData)
 {
-    std::vector<short> data = ConvertPayloadDataWithExpectedCount<short>(inData, 1);
-    short reelNumber = data[0];
+    int typeCount = GetCount<short>(inData);
 
-    BMDControlSystem::getInstance()->getCamera()->onReelNumberReceived(reelNumber);
+    if(typeCount == 1)
+    {
+        // Firmware 7.9.1 and older
+        std::vector<short> data = ConvertPayloadDataWithExpectedCount<short>(inData, 1);
+        short reelNumber = data[0];
+
+        BMDControlSystem::getInstance()->getCamera()->onReelNumberReceived(reelNumber, true);
+    }
+    else if(typeCount == 2)
+    {
+        // Firmware 8.1
+        std::vector<short> data = ConvertPayloadDataWithExpectedCount<short>(inData, 2);
+        short reelNumber = data[0];
+        bool editable = data[1] != 0;
+
+        BMDControlSystem::getInstance()->getCamera()->onReelNumberReceived(reelNumber, editable);
+    }
+
+    try
+    {
+    }
+    catch(const std::exception& ex)
+    {
+        DEBUG_ERROR("CCUDecodingFunctions::DecodeReel - Caught exception: %s", ex.what());
+    }
 }
 
 void CCUDecodingFunctions::DecodeScene(std::vector<byte> inData)

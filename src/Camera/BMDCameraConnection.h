@@ -22,6 +22,7 @@
 
 #include "CCU\CCUDecodingFunctions.h"
 #include "Config\Versions.h"
+#include "PowerControl.h"
 
 class BMDCameraConnection
 {
@@ -40,7 +41,20 @@ class BMDCameraConnection
             ScanningNoneFound,
             NeedPassKey,
             FailedPassKey,
-            IncompatibleProtocol
+            IncompatibleProtocol,
+            ReceivedInitialPayload
+        };
+
+        // BMD Camera Status characteristic flags and connection status to align with BMD's code for connection status
+        static byte bmdConnectionStatus;
+        struct ConnectionStatusFlags {
+            static const byte kNone = 0x00;
+            static const byte kPower = 0x01;
+            static const byte kConnected = 0x02;
+            static const byte kPaired = 0x04;
+            static const byte kVersionsVerified = 0x08;
+            static const byte kInitialPayloadReceived = 0x10;
+            static const byte kCameraReady = 0x20;
         };
 
         BMDCameraConnection();
@@ -90,11 +104,13 @@ class BMDCameraConnection
 
         static void clearBondedDevices(); // Clears BLE bonding so we will require pass key for the next connection
         static bool isCameraBonded(BLEAddress cameraAddress); // Have we got a bond to the camera address on the BLE device?
+        unsigned long getInitialPayloadTime() { return initialPayloadTime; } // Have we received the initial payload of information from the camera?
 
     private:
         std::string appName;
         bool initialised = false;
         bool scanned = false;
+        unsigned long initialPayloadTime = ULONG_MAX;
 
         BLEDevice bleDevice;
         BLEClient* bleClient;
@@ -109,10 +125,12 @@ class BMDCameraConnection
         BLERemoteCharacteristic* bleChar_DeviceName;
         BLERemoteCharacteristic* bleChar_Timecode;
         BLERemoteCharacteristic* bleChar_ProtocolVersion;
+        BLERemoteCharacteristic* bleChar_CameraStatus;
 
         // BLE Notification functions
         static void IncomingCameraControlNotify(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify);
         static void IncomingTimecodeNotify(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify);
+        static void IncomingCameraStatusNotify(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify);
 
         // For accessing the connection object from a static function
         static BMDCameraConnection* instancePtr;

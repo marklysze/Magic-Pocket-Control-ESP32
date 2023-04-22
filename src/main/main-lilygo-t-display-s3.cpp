@@ -125,9 +125,14 @@ void Screen_Common(int sideBarColour)
     // Sidebar colour
     window.fillRect(0, 0, 13, IHEIGHT, sideBarColour);
     window.fillRect(13, 0, 2, IHEIGHT, TFT_DARKGREY);
+}
 
+void Screen_Common_Connected()
+{
   if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::Connected && BMDControlSystem::getInstance()->hasCamera())
   {
+    Screen_Common(cameraConnection.getInitialPayloadTime() < millis() ? TFT_GREEN : TFT_DARKGREY);
+
     // Show the recording outline
     if(BMDControlSystem::getInstance()->getCamera()->isRecording)
     {
@@ -329,7 +334,7 @@ void Screen_Dashboard(bool forceRefresh = false)
 
   window.fillSprite(TFT_BLACK);
 
-  Screen_Common(TFT_GREEN); // Common elements
+  Screen_Common_Connected(); // Common elements
 
   // ISO
   if(camera->hasSensorGainISOValue())
@@ -492,7 +497,7 @@ void Screen_Recording(bool forceRefresh = false)
 
   // If we have a tap, we should determine if it is on anything
   bool tappedAction = false;
-  if(tapped_x != -1)
+  if(tapped_x != -1 && camera->hasTransportMode())
   {
     // Serial.print("Screen_Recording tapped at: ");
     // Serial.print(tapped_x);
@@ -531,7 +536,7 @@ void Screen_Recording(bool forceRefresh = false)
 
   window.fillSprite(TFT_BLACK);
 
-  Screen_Common(TFT_GREEN); // Common elements
+  Screen_Common_Connected(); // Common elements
 
   // Record button
   if(camera->isRecording) window.fillSmoothCircle(257, 63, 58, Constants::DARK_RED, TFT_RED); // Recording solid
@@ -630,7 +635,7 @@ void Screen_ISO(bool forceRefresh = false)
 
   window.fillSprite(TFT_BLACK);
 
-  Screen_Common(TFT_GREEN); // Common elements
+  Screen_Common_Connected(); // Common elements
 
   // Get the current ISO value
   int currentISO = 0;
@@ -777,7 +782,7 @@ void Screen_ShutterAngle(bool forceRefresh = false)
 
   window.fillSprite(TFT_BLACK);
 
-  Screen_Common(TFT_GREEN); // Common elements
+  Screen_Common_Connected(); // Common elements
 
   // Get the current Shutter Angle (comes through X100, so 180 degrees = 18000)
   int currentShutterAngle = 0;
@@ -923,7 +928,7 @@ void Screen_ShutterSpeed(bool forceRefresh = false)
 
   window.fillSprite(TFT_BLACK);
 
-  Screen_Common(TFT_GREEN); // Common elements
+  Screen_Common_Connected(); // Common elements
 
   // Get the current Shutter Speed
   int currentShutterSpeed = 0;
@@ -1131,7 +1136,7 @@ void Screen_WBTint(bool forceRefresh = false)
 
   window.fillSprite(TFT_BLACK);
 
-  Screen_Common(TFT_GREEN); // Common elements
+  Screen_Common_Connected(); // Common elements
 
   // ISO label
   window.setTextSize(2);
@@ -1376,7 +1381,7 @@ void Screen_Codec4K6K(bool forceRefresh = false)
 
   window.fillSprite(TFT_BLACK);
 
-  Screen_Common(TFT_GREEN); // Common elements
+  Screen_Common_Connected(); // Common elements
 
   // We need to have the Codec information to show the screen
   if(!camera->hasCodec())
@@ -1656,28 +1661,30 @@ void Screen_Resolution4K(bool forceRefresh = false)
       {
         // 4K
         width = 4096; height = 2160;
-        window = true;
+        window = false; // true;
       }
       else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
       {
         // 4K UHD
         width = 3840; height = 2160;
-        window = currentRecordingFormat.windowedModeEnabled;
+        window = true; // currentRecordingFormat.windowedModeEnabled;
       }
       else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
       {
         // HD
         width = 1920; height = 1080;
-        window = currentRecordingFormat.windowedModeEnabled;
+        window = true; // currentRecordingFormat.windowedModeEnabled;
       }
 
       // Windowed options
+      /*
       else if(currentRes == "HD" && tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 310 && tapped_y <= 160)
       {
         // HD - Scaled from Full sensor, 2.6K, or Windowed, can't distinguish
         width = currentRecordingFormat.width; height = currentRecordingFormat.height;
         window = true;
       }
+      */
 
       if(width != 0)
       {
@@ -1703,7 +1710,7 @@ void Screen_Resolution4K(bool forceRefresh = false)
 
   window.fillSprite(TFT_BLACK);
 
-  Screen_Common(TFT_GREEN); // Common elements
+  Screen_Common_Connected(); // Common elements
 
   if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
   {
@@ -2014,7 +2021,7 @@ void Screen_Resolution6K(bool forceRefresh = false)
 
   window.fillSprite(TFT_BLACK);
 
-  Screen_Common(TFT_GREEN); // Common elements
+  Screen_Common_Connected(); // Common elements
 
   if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
   {
@@ -2304,7 +2311,7 @@ void Screen_Media4K6K(bool forceRefresh = false)
 
   window.fillSprite(TFT_BLACK);
 
-  Screen_Common(TFT_GREEN); // Common elements
+  Screen_Common_Connected(); // Common elements
 
     // Media label
   window.setTextSize(2);
@@ -2536,9 +2543,14 @@ void loop() {
   }
   else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::Connected)
   {
+    auto camera = BMDControlSystem::getInstance()->getCamera();
+
     if(static_cast<byte>(connectedScreenIndex) >= 100)
     {
-      auto camera = BMDControlSystem::getInstance()->getCamera();
+
+      // Check if the initial payload has been fully received and if it was after the camera's last modified time, update the camera's modified time
+      if(cameraConnection.getInitialPayloadTime() != ULONG_MAX && cameraConnection.getInitialPayloadTime() > camera->getLastModified())
+        camera->setLastModified();
 
       switch(connectedScreenIndex)
       {
@@ -2683,9 +2695,13 @@ void loop() {
           }
           break;
         case CST816S::GESTURE::SWIPE_LEFT:
+          // Swipe up to recording screen
+          if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::Connected && connectedScreenIndex != Screens::Recording)
+            Screen_Recording(true);
           break;
         case CST816S::GESTURE::SWIPE_RIGHT:
-          if(connectedScreenIndex != Screens::Dashboard)
+          // Swipe down to dashboard
+          if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::Connected && connectedScreenIndex != Screens::Dashboard)
             Screen_Dashboard(true);
           break;
         case CST816S::GESTURE::NONE:

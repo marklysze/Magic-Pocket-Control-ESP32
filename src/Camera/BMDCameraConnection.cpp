@@ -3,6 +3,9 @@
 // Update this to what you would like shown on the back of the camera
 const std::string BMDCameraConnection::CODEAPPNAME ="Magic Pocket Control";
 
+// BMD's Connection Status variable (primarily for consistency, we use our own connection status variable)
+byte BMDCameraConnection::bmdConnectionStatus = 0;
+
 BMDCameraConnection::BMDCameraConnection() {}
 
 BMDCameraConnection::~BMDCameraConnection()
@@ -27,6 +30,7 @@ BMDCameraConnection::~BMDCameraConnection()
   delete bleChar_DeviceName;
   delete bleChar_Timecode;
   delete bleChar_ProtocolVersion;
+  delete bleChar_CameraStatus;
 
   initialised = false;
   bleDevice.deinit(true);
@@ -261,6 +265,22 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
             DEBUG_VERBOSE("Connected to Timecode Characteristic");
         }
 
+        // Subscribe to Camera Status messages
+        bleChar_CameraStatus = bleRemoteService->getCharacteristic(Constants::UUID_BMD_BCS_CAMERA_STATUS);
+        if (bleChar_CameraStatus == nullptr)
+        {
+            DEBUG_ERROR("Could not connect to Camera Status Characteristic");
+            disconnect();
+            return;
+        }
+        else
+        {
+            // Connect to the notifications from the characteristic
+            bleChar_CameraStatus->registerForNotify(IncomingCameraStatusNotify, true);
+
+            DEBUG_VERBOSE("Connected to Incoming Camera Status Characteristic");
+        }
+
         // Check if we failed the pass key entry and return if so.
         if(status == ConnectionStatus::FailedPassKey)
             return;
@@ -269,6 +289,10 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
         BMDControlSystem::getInstance()->activateCamera();
 
         status = ConnectionStatus::Connected;
+
+        bmdConnectionStatus |= ConnectionStatusFlags::kConnected;
+        bmdConnectionStatus |= ConnectionStatusFlags::kPaired;
+
         return;
     }
     else
@@ -290,6 +314,9 @@ void BMDCameraConnection::disconnect()
         BMDControlSystem::getInstance()->deactivateCamera();
 
     status = ConnectionStatus::Disconnected;
+
+    bmdConnectionStatus = ConnectionStatusFlags::kNone;
+    initialPayloadTime = ULONG_MAX;
 }
 
 void BMDCameraConnection::sendCommandToOutgoing(CCUPacketTypes::Command command, bool response = true)
@@ -332,4 +359,47 @@ void BMDCameraConnection::IncomingTimecodeNotify(BLERemoteCharacteristic *pBLERe
     }
     else
         DEBUG_ERROR("IncomingTimecodeNotify: Invalid incoming packet length.");
+}
+
+// Incoming Camera Status - primarily using for consistency with BMD's code
+void BMDCameraConnection::IncomingCameraStatusNotify(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify)
+{
+    std::vector<byte> data(pData, pData + length);
+    byte cameraStatus = CameraStatus::GetCameraStatusFlags(data);
+
+    // Check camera status flags
+    bool cameraIsOn = (cameraStatus & CameraStatus::Flags::CameraPowerFlag) != 0;
+    bool cameraIsReady = (cameraStatus & CameraStatus::Flags::CameraReadyFlag) != 0;
+    bool cameraWasReady = (bmdConnectionStatus & CameraStatus::Flags::CameraReadyFlag) != 0;
+    bool alreadyReceivedInitalPayload = (bmdConnectionStatus & ConnectionStatusFlags::kInitialPayloadReceived) != 0;
+
+    if(cameraIsReady)
+    {
+        if(!alreadyReceivedInitalPayload)
+        {
+            DEBUG_VERBOSE("IncomingCameraStatusNotify, Initial Payload Received.");
+
+            // Access the class instance using the static member variable and set the initial payload as received
+            BMDCameraConnection* instance = BMDCameraConnection::instancePtr;
+            instance->initialPayloadTime = millis();
+        }
+        
+        if(!cameraWasReady)
+            DEBUG_VERBOSE("IncomingCameraStatusNotify, Camera Ready.");
+
+        bmdConnectionStatus |= ConnectionStatusFlags::kInitialPayloadReceived;
+        bmdConnectionStatus |= ConnectionStatusFlags::kCameraReady;
+        bmdConnectionStatus |= ConnectionStatusFlags::kPower;
+    }
+    else if(cameraIsOn)
+    {
+        DEBUG_VERBOSE("IncomingCameraStatusNotify, Camera On.");
+        bmdConnectionStatus |= ConnectionStatusFlags::kPower;
+    }
+    else
+    {
+        DEBUG_VERBOSE("IncomingCameraStatusNotify, Camera Off.");
+        bmdConnectionStatus &= ~ConnectionStatusFlags::kCameraReady;
+        bmdConnectionStatus &= ~ConnectionStatusFlags::kPower;
+    }
 }
