@@ -723,10 +723,10 @@ class CCUPacketTypes
                 // When sending commands, debug.
                 if(buffer[PacketFormatIndex::OperationType] == static_cast<int>(CCUPacketTypes::OperationType::AssignValue))
                 {
-                    DEBUG_DEBUG("Command Serialize - Assign Value: ");
+                    DEBUG_VERBOSE("Command Serialize - Assign Value: ");
                     for(int index = 0; index < buffer.size(); index++)
                     {
-                        DEBUG_DEBUG("%i: %i", index, buffer[index]);
+                        DEBUG_VERBOSE("%i: %i", index, buffer[index]);
                         
                     }
                 }

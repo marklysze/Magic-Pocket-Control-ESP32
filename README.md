@@ -30,9 +30,9 @@ Here's the state of cameras and firmware.
 
 | Camera | Firmware | Status |
 | :---: | :---: | :---: |
-| Pocket 4K | 7.9.1 | Tested, $\color{green}{\textsf{OK}}$ |
-| Pocket 4K | 8.1 | Tested, $\color{red}{\textsf{OK}}$ |
-| Pocket 6K | 7.9.1 | Tested, $\color{green}{\textsf{OK}}$ |
+| Pocket 4K | 7.9.1 | $\color{green}{\textsf{OK}}$ $\color{orange}{\textsf{ (BRAW <-> ProRes change firmware bug)}}$ |
+| Pocket 4K | 8.1 | $\color{green}{\textsf{OK}}$ |
+| Pocket 6K | 7.9.1 | $\color{green}{\textsf{OK}}$ $\color{orange}{\textsf{ (BRAW <-> ProRes change firmware bug)}}$ |
 | Pocket 6K G2 | ... | Not Tested |
 | Pocket 6K Pro | ... | Not Tested |
 | URSA Mini Pro 4.6K G2 | ... | Not Tested |
