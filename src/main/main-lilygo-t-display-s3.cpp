@@ -9,6 +9,11 @@
 
 #include "Arduino_DebugUtils.h" // Debugging to Serial - https://github.com/arduino-libraries/Arduino_DebugUtils
 
+#include "OneButton.h" // For handling button presses
+#include <esp_sleep.h> // Library to put it to be able to put it into sleep and wake up
+#define SLEEP_BUTTON_PIN 0 // Boot button, used to put it to sleep
+OneButton sleepButton(SLEEP_BUTTON_PIN, true);
+
 #include <TFT_eSPI.h> // Master copy here: https://github.com/Bodmer/TFT_eSPI
 
 // https://github.com/fbiego/CST816S
@@ -42,7 +47,7 @@
 #include "Images\WBIncandescentBG.h"
 #include "Images\WBMixedLightBG.h"
 
-// Include the watchdog library so we can hold stop it timing out while pass key entry.
+// Include the watchdog library so we can stop it timing out while pass key entry.
 #include "esp_task_wdt.h"
 
 // Fonts
@@ -2509,15 +2514,24 @@ void Screen_Media(bool forceRefresh = false)
 void setup() {
 
   // Power and Backlight settings for T-Display-S3
-	pinMode(15, OUTPUT); // PIN_POWER_ON 15
-	pinMode(38, OUTPUT); // PIN_LCD_BL 38
+  pinMode(15, OUTPUT); // PIN_POWER_ON 15
 	digitalWrite(15, HIGH);
-	digitalWrite(38, HIGH);
 
   Serial.begin(115200);
 
   // Allow a timeout of 20 seconds for time for the pass key entry.
   esp_task_wdt_init(20, true);
+
+  // When the Sleep Button (Boot button on the device) is pressed, go to sleep and enable wakeup on button 14 (configured in PinConfig.h)
+  sleepButton.attachClick([]() {
+    DEBUG_INFO("Going to Sleep");
+    pinMode(PIN_POWER_ON, OUTPUT);
+    pinMode(PIN_LCD_BL, OUTPUT);
+    digitalWrite(PIN_POWER_ON, LOW);
+    digitalWrite(PIN_LCD_BL, LOW); // Turn screen off
+    esp_sleep_enable_ext0_wakeup((gpio_num_t)PIN_BUTTON_2, 0); // 1 = High, 0 = Low
+    esp_deep_sleep_start();
+  });
 
   // SET DEBUG LEVEL
   Debug.setDebugLevel(DBG_VERBOSE);
@@ -2540,6 +2554,14 @@ void setup() {
 
   spriteMPCSplash.pushToSprite(&window, 0, 0);
   window.pushSprite(0, 0);
+
+  // Fade in the screen
+  ledcSetup(0, 10000, 8);
+  ledcAttachPin(PIN_LCD_BL, 0);
+  for (uint8_t i = 0; i < 0xFF; i++) {
+      ledcWrite(0, i);
+      delay(2);
+  }
 
   // Images, store them in sprites ready to be used when we need them
   spriteBluetooth.createSprite(30, 46);
@@ -2608,6 +2630,8 @@ void loop() {
   const unsigned long reconnectInterval = 5000;  // 5 seconds (milliseconds)
 
   unsigned long currentTime = millis();
+
+  sleepButton.tick(); // Check if the sleep button has been pressed
 
   if (cameraConnection.status == BMDCameraConnection::ConnectionStatus::Disconnected && currentTime - lastConnectedTime >= reconnectInterval) {
     DEBUG_VERBOSE("Disconnected for too long, trying to reconnect");
