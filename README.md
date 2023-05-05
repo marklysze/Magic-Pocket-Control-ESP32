@@ -3,6 +3,8 @@ Blackmagic Design camera control on a LILYGO T-Display-S3, M5Stack M5StickC Plus
 
 Designed for the Pocket 4K, Pocket 6K/G2/Pro, USRA G2 4.6K, URSA 12K.
 
+Coding is in C++ and setup for development in Visual Studio Code with the PlatformIO extension.
+
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 :star: How about a Star?
