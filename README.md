@@ -20,6 +20,9 @@ The key features are:
     - ISO: Change ISO
 - Read and write the many settings of the camera (Record Start & Stop, ISO, Shutter Speed / Angle, White Balance, Tint, Codec, Resolution, FPS, Off-speed Recording, Media available and time remaining, Slate, Project Name, Lens Data)
 
+# Some visuals
+[I'm working on them! :running: :camera: ]
+
 # What can you do?
 I hope you find the functionality useful and it would be great if you could contribute your improvements, suggestions, or general feedback to the project!
 
