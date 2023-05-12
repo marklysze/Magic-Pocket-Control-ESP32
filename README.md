@@ -5,6 +5,8 @@ Designed for the Pocket 4K, Pocket 6K/G2/Pro, USRA G2 4.6K, URSA 12K.
 
 Coding is in C++ and setup for development in Visual Studio Code with the PlatformIO extension.
 
+![Magic Pocket Control](Documents/RepositorySplash.webp)
+
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 :star: How about a Star?
@@ -38,13 +40,14 @@ Here's the state of cameras and firmware.
 | Pocket 4K | 7.9.1 | $\color{green}{\textsf{OK}}$ $\color{orange}{\textsf{ (BRAW <-> ProRes change firmware bug)}}$ |
 | Pocket 4K | 8.1 | $\color{green}{\textsf{OK}}$ |
 | Pocket 6K | 7.9.1 | $\color{green}{\textsf{OK}}$ $\color{orange}{\textsf{ (BRAW <-> ProRes change firmware bug)}}$ |
+| Pocket 6K | 8.1 | $\color{green}{\textsf{OK}}$ |
 | Pocket 6K G2 | ... | Not Tested |
 | Pocket 6K Pro | ... | Not Tested |
 | URSA Mini Pro 4.6K G2 | ... | Not Tested |
 | URSA Mini Pro 12K | ... | Not Tested |
 | URSA Mini Pro 12K OLPF | ... | Not Tested |
 
-If you're in Sydney, Australia and would be able to lend me a camera I haven't tested for a day to test so we know it works, that would be amazing.
+If you're in Sydney, Australia, and would be able to lend me a camera I haven't tested for a day to test so we know it works, that would be amazing.
 
 # Known bugs
 - Changing Codecs between BRAW and ProRes on Camera Firmware 7.9.1 on pocket cameras not functioning
