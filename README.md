@@ -7,6 +7,10 @@ Coding is in C++ and setup for development in Visual Studio Code with the Platfo
 
 ![Magic Pocket Control](Documents/RepositorySplash.webp)
 
+Video with demos:
+
+[![](https://markdown-videos.deta.dev/youtube/6xJVSfzSDwQ)](https://youtu.be/6xJVSfzSDwQ)
+
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 :star: How about a Star?
