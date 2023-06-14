@@ -2,6 +2,7 @@
 // For viewing and changing basic settings on Blackmagic Design Pocket Cinema Cameras and URSA 4.6K G2 and 12K.
 
 #define USING_TFT_ESPI 1  // Using the TFT_eSPI graphics library <-- must include this in every main file, 0 = not using, 1 = using
+#define USING_M5GFX = 0   // Using the M5GFX graphics library <-- must include this in every main file, 0 = not using, 1 = using
 
 #include <Arduino.h>
 #include <stdint.h>
@@ -251,15 +252,6 @@ void Screen_NoConnection()
     cameraConnection.connect(cameraConnection.cameraAddresses[connectToCameraIndex]);
     connectToCameraIndex = -1;
   }
-}
-
-void Screen_PassKey()
-{
-  connectedScreenIndex = Screens::PassKey;
-
-  // Don't do anything here, it will be handled by the security handler
-  // Wait for the screen security handler to do its work to get the pass key.
-  vTaskDelay(1);
 }
 
 // Default screen for connected state

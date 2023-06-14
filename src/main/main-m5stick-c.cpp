@@ -2,6 +2,8 @@
 // For viewing and changing basic settings on Blackmagic Design Pocket Cinema Cameras and URSA 4.6K G2 and 12K.
 
 #define USING_TFT_ESPI 0  // Using the TFT_eSPI graphics library <-- must include this in every main file, 0 = not using, 1 = using
+#define USING_M5GFX = 0   // Using the M5GFX graphics library <-- must include this in every main file, 0 = not using, 1 = using
+
 // Note that the M5Stack libraries have their own modified TFT_eSPI libraries
 
 #include <M5StickCPlus.h>

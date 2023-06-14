@@ -19,6 +19,7 @@ BMDCameraConnection* BMDCameraConnection::instancePtr = &cameraConnection; // Re
 
 
 #define USING_TFT_ESPI 0    // Not using the TFT_eSPI graphics library <-- must include this in every main file, 0 = not using, 1 = using
+#define USING_M5GFX = 0   // Using the M5GFX graphics library <-- must include this in every main file, 0 = not using, 1 = using
 
 void setup() {
 
