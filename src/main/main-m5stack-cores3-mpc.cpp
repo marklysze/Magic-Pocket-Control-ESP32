@@ -131,7 +131,11 @@ void Screen_Common(int sideBarColour)
       if(camera->isRecording)
         window.fillSmoothCircle(IWIDTH / 2, 240, 30, TFT_RED);
       else
+      {
+        // Two outlines to make it a bit thicker
         window.drawCircle(IWIDTH / 2, 240, 30, TFT_RED);
+        window.drawCircle(IWIDTH / 2, 240, 29, TFT_RED);
+      }
 
       window.fillSmoothRoundRect(210, 210, 80, 40, 3, TFT_DARKCYAN);
       window.drawCenterString("CODEC", 250, 220);
@@ -760,6 +764,1613 @@ void Screen_ISO(bool forceRefresh = false)
 }
 
 
+void Screen_ShutterAngle(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::ShutterAngleSpeed;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // Shutter Angle Values: 15, 60, 90, 120, 150, 180, 270, 360, CUSTOM
+  // Note that the protocol takes shutter angle times 100, so 180 = 180 x 100 = 18000. This is so it can accommodate decimal places, like 172.8 degrees = 17280 for the protocol.
+
+  // If we have a tap, we should determine if it is on anything
+  bool tappedAction = false;
+  if(tapped_x != -1)
+  {
+    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 160)
+    {
+      // Tapped within the area
+      int newShutterAngle = 0;
+
+      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
+        newShutterAngle = 1500;
+      else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
+        newShutterAngle = 6000;
+      else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
+        newShutterAngle = 9000;
+
+      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 110 && tapped_y <= 115)
+        newShutterAngle = 12000;
+      else if(tapped_x >= 115 && tapped_y >= 75 && tapped_x <= 205 && tapped_y <= 115)
+        newShutterAngle = 15000;
+      else if(tapped_x >= 210 && tapped_y >= 75 && tapped_x <= 310 && tapped_y <= 115)
+        newShutterAngle = 18000;
+
+      else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 110 && tapped_y <= 160)
+        newShutterAngle = 27000;
+      else if(tapped_x >= 115 && tapped_y >= 120 && tapped_x <= 205 && tapped_y <= 160)
+        newShutterAngle = 36000;
+
+      if(newShutterAngle != 0)
+      {
+        // Shutter Angle selected, send it to the camera
+        PacketWriter::writeShutterAngle(newShutterAngle, &cameraConnection);
+
+        tappedAction = true;
+      }
+    }
+  }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+  
+  DEBUG_DEBUG("Screen Shutter Angle Refreshed.");
+
+  window.fillSprite(TFT_BLACK);
+
+  Screen_Common_Connected(); // Common elements
+
+  // Get the current Shutter Angle (comes through X100, so 180 degrees = 18000)
+  int currentShutterAngle = 0;
+  if(camera->hasShutterAngle())
+    currentShutterAngle = camera->getShutterAngle();
+
+  // Shutter Angle label
+  window.setTextColor(TFT_WHITE);
+  window.setTextSize(buttonFontSizeSmall);
+  window.drawString("DEGREES", 265, 9);
+  window.setTextSize(buttonFontSizeNormal);
+  window.drawString("SHUTTER ANGLE", 30, 9);
+
+  // 15
+  int labelShutterAngle = 1500;
+  window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 65, 41);
+
+  // 60
+  labelShutterAngle = 6000;
+  window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 160, 41);
+
+  // 90
+  labelShutterAngle = 9000;
+  window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 260, 41);
+
+  // 120
+  labelShutterAngle = 12000;
+  window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 65, 87);
+
+  // 150
+  labelShutterAngle = 15000;
+  window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 160, 87);
+
+  // 180 (with a border around it)
+  labelShutterAngle = 18000;
+  window.fillSmoothRoundRect(210, 75, 100, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawRoundRect(210, 75, 100, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 260, 87);
+
+  // 270
+  labelShutterAngle = 27000;
+  window.fillSmoothRoundRect(20, 120, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 65, 131);
+
+  // 360
+  labelShutterAngle = 36000;
+  window.fillSmoothRoundRect(115, 120, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 160, 131);
+
+  // Custom Shutter Angle - show if not one of the above values
+  if(currentShutterAngle != 0)
+  {
+    // Only show the Shutter angle value if it's not a standard one
+    if(currentShutterAngle != 1500 && currentShutterAngle != 6000 && currentShutterAngle != 9000 && currentShutterAngle != 12000 && currentShutterAngle != 15000 && currentShutterAngle != 18000 && currentShutterAngle != 27000 && currentShutterAngle != 36000)
+    {
+      float customShutterAngle = currentShutterAngle / 100.0;
+
+      window.fillSmoothRoundRect(210, 120, 100, 40, 3, TFT_DARKGREEN);
+      window.drawCentreString(String(customShutterAngle, (currentShutterAngle % 100 == 0 ? 0 : 1)).c_str(), 260, 126);
+      window.setTextSize(buttonFontSizeSmall);
+      window.drawCentreString("CUSTOM", 260, 149);
+    }
+  }
+
+  window.pushSprite(0, 0);
+}
+
+void Screen_ShutterSpeed(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::ShutterAngleSpeed;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // Shutter Speed Values: 1/30, 1/50, 1/60, 1/125, 1/200, 1/250, 1/500, 1/2000, CUSTOM
+  // Note that the protocol takes the denominator as its parameter value. So for 1/60 we'll pass 60.
+
+  // If we have a tap, we should determine if it is on anything
+  bool tappedAction = false;
+  if(tapped_x != -1)
+  {
+    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 160)
+    {
+      // Tapped within the area
+      int newShutterSpeed = 0;
+
+      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
+        newShutterSpeed = 30;
+      else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
+        newShutterSpeed = 50;
+      else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
+        newShutterSpeed = 60;
+
+      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 110 && tapped_y <= 115)
+        newShutterSpeed = 125;
+      else if(tapped_x >= 115 && tapped_y >= 75 && tapped_x <= 205 && tapped_y <= 115)
+        newShutterSpeed = 200;
+      else if(tapped_x >= 210 && tapped_y >= 75 && tapped_x <= 310 && tapped_y <= 115)
+        newShutterSpeed = 250;
+
+      else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 110 && tapped_y <= 160)
+        newShutterSpeed = 500;
+      else if(tapped_x >= 115 && tapped_y >= 120 && tapped_x <= 205 && tapped_y <= 160)
+        newShutterSpeed = 2000;
+
+      if(newShutterSpeed != 0)
+      {
+        // Shutter Speed selected, send it to the camera
+        PacketWriter::writeShutterSpeed(newShutterSpeed, &cameraConnection);
+
+        tappedAction = true;
+      }
+    }
+  }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+  
+  DEBUG_DEBUG("Screen Shutter Speed Refreshed.");
+
+
+  window.fillSprite(TFT_BLACK);
+
+  Screen_Common_Connected(); // Common elements
+
+  // Get the current Shutter Speed
+  int currentShutterSpeed = 0;
+  if(camera->hasShutterSpeed())
+    currentShutterSpeed = camera->getShutterSpeed();
+  else
+    DEBUG_DEBUG("DO NOT HAVE SHUTTER SPEED!");
+
+  // Shutter Speed label
+  window.setTextColor(TFT_WHITE);
+
+  if(camera->hasRecordingFormat())
+  {
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawRightString(camera->getRecordingFormat().frameRate_string().c_str() + String(" fps"), 310, 9);
+  }
+
+  window.setTextSize(buttonFontSizeNormal);
+  window.drawString("SHUTTER SPEED", 30, 9);
+
+  // 1/30
+  int labelShutterSpeed = 30;
+  window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawCentreString("1/" + String(labelShutterSpeed), 65, 41);
+
+  // 1/50
+  labelShutterSpeed = 50;
+  window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawCentreString("1/" + String(labelShutterSpeed), 160, 41);
+
+  // 1/60
+  labelShutterSpeed = 60;
+  window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawCentreString("1/" + String(labelShutterSpeed), 260, 41);
+
+  // 1/125
+  labelShutterSpeed = 125;
+  window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawCentreString("1/" + String(labelShutterSpeed), 65, 87);
+
+  // 1/200
+  labelShutterSpeed = 200;
+  window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawCentreString("1/" + String(labelShutterSpeed), 160, 87);
+
+  // 1/250
+  labelShutterSpeed = 250;
+  window.fillSmoothRoundRect(210, 75, 100, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawCentreString("1/" + String(labelShutterSpeed), 260, 87);
+
+  // 1/500
+  labelShutterSpeed = 500;
+  window.fillSmoothRoundRect(20, 120, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawCentreString("1/" + String(labelShutterSpeed), 65, 131);
+
+  // 1/2000
+  labelShutterSpeed = 2000;
+  window.fillSmoothRoundRect(115, 120, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawCentreString("1/" + String(labelShutterSpeed), 160, 131);
+
+  // Custom Shutter Speed - show if not one of the above values
+  if(currentShutterSpeed != 0)
+  {
+    // Only show the Shutter Speed value if it's not a standard one
+    if(currentShutterSpeed != 30 && currentShutterSpeed != 50 && currentShutterSpeed != 60 && currentShutterSpeed != 125 && currentShutterSpeed != 200 && currentShutterSpeed != 250 && currentShutterSpeed != 500 && currentShutterSpeed != 2000)
+    {
+      window.fillSmoothRoundRect(210, 120, 100, 40, 3, TFT_DARKGREEN);
+      window.drawCentreString("1/" + String(currentShutterSpeed), 260, 126);
+      window.setTextSize(buttonFontSizeSmall);
+      window.drawCentreString("CUSTOM", 260, 149);
+    }
+  }
+
+  window.pushSprite(0, 0);
+}
+
+void Screen_WBTint(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::WhiteBalanceTint;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // White Balance and Tint
+  // WB: Bright, Incandescent, Fluorescent, Mixed Light, Cloud
+
+  // Get the current White Balance value
+  int currentWB = 0;
+  if(camera->hasWhiteBalance())
+    currentWB = camera->getWhiteBalance();
+
+  // Get the current Tint value
+  int currentTint = 0;
+  if(camera->hasTint())
+    currentTint = camera->getTint();
+
+  // If we have a tap, we should determine if it is on anything
+  bool tappedAction = false;
+  if(tapped_x != -1)
+  {
+    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 160)
+    {
+      // Tapped within the area
+      int newWB = 0;
+      int newTint = 0;
+
+      // Check Preset Clicks
+      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 90 && tapped_y <= 70)
+      {
+        // Bright
+        newWB = 5600;
+        newTint = 10;
+      }
+      else if(tapped_x >= 95 && tapped_y >= 30 && tapped_x <= 165 && tapped_y <= 70)
+      {
+        // Incandescent
+        newWB = 3200;
+        newTint = 0;
+      }
+      else if(tapped_x >= 170 && tapped_y >= 30 && tapped_x <= 240 && tapped_y <= 70)
+      {
+        // Fluorescent
+        newWB = 4000;
+        newTint = 15;
+      }
+      else if(tapped_x >= 245 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 70)
+      {
+        // Mixed Light
+        newWB = 4500;
+        newTint = 15;
+      }
+      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 90 && tapped_y <= 115)
+      {
+        // Cloud
+        newWB = 6500;
+        newTint = 10;
+      }
+
+      // Preset clicked
+      if(newWB != 0)
+      {
+        // Send preset to camera
+        PacketWriter::writeWhiteBalance(newWB, newTint, &cameraConnection);
+
+        tappedAction = true;
+      }
+      else
+      {
+        // Not a preset
+
+        // WB Left
+        if(currentWB != 0 && currentWB >= 2550 && tapped_x >= 95 && tapped_y >= 75 && tapped_x <= 155 && tapped_y <= 115)
+        {
+          // Adjust down by 50
+          PacketWriter::writeWhiteBalance(currentWB - 50, currentTint, &cameraConnection);
+
+          tappedAction = true;
+        }
+        else if(currentWB != 0 && currentWB <= 9950 && tapped_x >= 255 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
+        {
+          // Adjust up by 50
+          PacketWriter::writeWhiteBalance(currentWB + 50, currentTint, &cameraConnection);
+
+          tappedAction = true;
+        }
+        else if(currentWB != 0 && currentTint > -50 && tapped_x >= 95 && tapped_y >= 120 && tapped_x <= 155 && tapped_y <= 160)
+        {
+          // Adjust down by 1
+          PacketWriter::writeWhiteBalance(currentWB, currentTint - 1, &cameraConnection);
+
+          tappedAction = true;
+        }
+        else if(currentWB != 0 && currentWB <= 9950 && tapped_x >= 255 && tapped_y >= 120 && tapped_x <= 315 && tapped_y <= 160)
+        {
+          // Adjust up by 1
+          PacketWriter::writeWhiteBalance(currentWB, currentTint + 1, &cameraConnection);
+
+          tappedAction = true;
+        }
+      }
+    }
+  }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+  
+  DEBUG_DEBUG("Screen WB Tint Refreshed.");
+
+  window.fillSprite(TFT_BLACK);
+
+  Screen_Common_Connected(); // Common elements
+
+  // ISO label
+  window.setTextSize(buttonFontSizeNormal);
+  window.setTextColor(TFT_WHITE);
+  window.drawString("WHITE BALANCE", 30, 9);
+  window.drawCentreString("TINT", 54, 132);
+
+  // Bright, 5600K
+  int lblWBKelvin = 5600;
+  int lblTint = 10;
+  window.fillSmoothRoundRect(20, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(currentWB == lblWBKelvin && currentTint == lblTint)
+    spriteWBBrightBG.pushSprite(&window, 40, 35);
+  else
+    spriteWBBright.pushSprite(&window, 40, 35);
+
+  // Incandescent, 3200K
+  lblWBKelvin = 3200;
+  lblTint = 0;
+  window.fillSmoothRoundRect(95, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(currentWB == lblWBKelvin && currentTint == lblTint)
+    spriteWBIncandescentBG.pushSprite(&window, 115, 35);
+  else
+    spriteWBIncandescent.pushSprite(&window, 115, 35);
+
+  // Fluorescent, 4000K
+  lblWBKelvin = 4000;
+  lblTint = 15;
+  window.fillSmoothRoundRect(170, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(currentWB == lblWBKelvin && currentTint == lblTint)
+    spriteWBFlourescentBG.pushSprite(&window, 190, 35);
+  else
+    spriteWBFlourescent.pushSprite(&window, 190, 35);
+
+  // Mixed Light, 4500K
+  lblWBKelvin = 4500;
+  lblTint = 15;
+  window.fillSmoothRoundRect(245, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(currentWB == lblWBKelvin && currentTint == lblTint)
+    spriteWBMixedLightBG.pushSprite(&window, 265, 35);
+  else
+    spriteWBMixedLight.pushSprite(&window, 265, 35);
+
+  // Cloud, 6500K
+  lblWBKelvin = 6500;
+  lblTint = 10;
+  window.fillSmoothRoundRect(20, 75, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(currentWB == lblWBKelvin && currentTint == lblTint)
+    spriteWBCloudBG.pushSprite(&window, 40, 80);
+  else
+    spriteWBCloud.pushSprite(&window, 40, 80);
+
+  // WB Adjust Left <
+  window.fillSmoothRoundRect(95, 75, 60, 40, 3, TFT_DARKGREY);
+  window.drawCentreString("<", 125, 87);
+
+  // Current White Balance Kelvin
+  window.fillSmoothRoundRect(160, 75, 90, 40, 3, TFT_DARKGREEN);
+  window.drawCentreString(String(currentWB), 205, 82);
+  window.setTextSize(buttonFontSizeSmall);
+  window.drawCentreString("KELVIN", 205, 104);
+  window.setTextSize(buttonFontSizeNormal);
+
+  // WB Adjust Right >
+  window.fillSmoothRoundRect(255, 75, 60, 40, 3, TFT_DARKGREY);
+  window.drawCentreString(">", 284, 87);
+
+  // Tint Adjust Left <
+  window.fillSmoothRoundRect(95, 120, 60, 40, 3, TFT_DARKGREY);
+  window.drawCentreString("<", 125, 132);
+
+  // Current Tint
+  window.fillSmoothRoundRect(160, 120, 90, 40, 3, TFT_DARKGREEN);
+  window.drawCentreString(String(currentTint), 205, 132);
+
+  // Tint Adjust Right >
+  window.fillSmoothRoundRect(255, 120, 60, 40, 3, TFT_DARKGREY);
+  window.drawCentreString(">", 284, 132);
+
+  window.pushSprite(0, 0);
+}
+
+// Codec Screen for Pocket 4K and 6K + Variants
+void Screen_Codec4K6K(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Codec;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // Get the current Codec values
+  CodecInfo currentCodec = camera->getCodec();
+
+  // Codec: BRAW and ProRes
+
+  // If we have a tap, we should determine if it is on anything
+  bool tappedAction = false;
+  if(tapped_x != -1 && camera->hasCodec())
+  {
+    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 160)
+    {
+      // Switching between BRAW and ProRes
+      if(currentCodec.basicCodec != CCUPacketTypes::BasicCodec::BRAW && tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 165 && tapped_y <= 70)
+      {
+        // Switch to BRAW (using the last known setting)
+        DEBUG_DEBUG("Changing to last unknown BRAW");
+        DEBUG_DEBUG("Changing Codecs through Bluetooth is a known bug from Blackmagic Design as of April 2023");
+
+        PacketWriter::writeCodec(camera->lastKnownBRAWIsBitrate ? camera->lastKnownBRAWBitrate : camera->lastKnownBRAWQuality, &cameraConnection);
+
+        tappedAction = true;
+      }
+      else if(currentCodec.basicCodec != CCUPacketTypes::BasicCodec::ProRes && tapped_x >= 170 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 70)
+      {
+        // Switch to ProRes (using the last known setting)
+        DEBUG_DEBUG("Changing to last unknown ProRes");
+        DEBUG_DEBUG("Changing Codecs through Bluetooth is a known bug from Blackmagic Design as of April 2023");
+
+        PacketWriter::writeCodec(camera->lastKnownProRes, &cameraConnection);
+
+        tappedAction = true;
+      }
+      else if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
+      {
+        // BRAW
+
+        // Are we Constant Bitrate or Constant Quality
+        std::string currentCodecString = currentCodec.to_string();
+        auto pos = std::find(currentCodecString.begin(), currentCodecString.end(), ':');
+        bool isConstantBitrate = pos != currentCodecString.end(); // Is there a colon, :, in the string? If so, it's Constant Bitrate
+
+        // Constant Bitrate and Constant Quality
+        if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 165 && tapped_y <= 115)
+        {
+          // Change to Constant Bitrate if we're not already on Constant Bitrate. If it is we do nothing
+          if(!isConstantBitrate)
+          {
+            PacketWriter::writeCodec(camera->lastKnownBRAWBitrate, &cameraConnection);
+
+            tappedAction = true;
+          }
+        } 
+        else if(tapped_x >= 170 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
+        {
+          // Change to Constant Quality if we're not already on Constant Quality. If it is we do nothing
+          if(isConstantBitrate)
+          {
+            PacketWriter::writeCodec(camera->lastKnownBRAWQuality, &cameraConnection);
+
+            tappedAction = true;
+          }
+        } 
+        else
+        {
+          // Setting
+
+          if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 90 && tapped_y <= 160)
+          {
+            // 3:1 / Q0
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, isConstantBitrate ? CCUPacketTypes::CodecVariants::kBRAW3_1 : CCUPacketTypes::CodecVariants::kBRAWQ0), &cameraConnection);
+
+            tappedAction = true;
+          }
+          else if(tapped_x >= 95 && tapped_y >= 120 && tapped_x <= 165 && tapped_y <= 160)
+          {
+            // 5:1 / Q1
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, isConstantBitrate ? CCUPacketTypes::CodecVariants::kBRAW5_1 : CCUPacketTypes::CodecVariants::kBRAWQ1), &cameraConnection);
+
+            tappedAction = true;
+          }
+          else if(tapped_x >= 170 && tapped_y >= 120 && tapped_x <= 240 && tapped_y <= 160)
+          {
+            // 8:1 / Q3
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, isConstantBitrate ? CCUPacketTypes::CodecVariants::kBRAW8_1 : CCUPacketTypes::CodecVariants::kBRAWQ3), &cameraConnection);
+
+            tappedAction = true;
+          }
+          else if(tapped_x >= 245 && tapped_y >= 120 && tapped_x <= 315 && tapped_y <= 160)
+          {
+            // 12:1 / Q5
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, isConstantBitrate ? CCUPacketTypes::CodecVariants::kBRAW12_1 : CCUPacketTypes::CodecVariants::kBRAWQ5), &cameraConnection);
+
+            tappedAction = true;
+          }
+        }
+      }
+      else
+      {
+        // ProRes
+
+        if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 165 && tapped_y <= 115)
+          {
+            // HQ
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProResHQ), &cameraConnection);
+
+            tappedAction = true;
+          }
+          else if(tapped_x >= 170 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
+          {
+            // 422
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProRes422), &cameraConnection);
+
+            tappedAction = true;
+          }
+          else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 165 && tapped_y <= 160)
+          {
+            // LT
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProResLT), &cameraConnection);
+
+            tappedAction = true;
+          }
+          else if(tapped_x >= 170 && tapped_y >= 120 && tapped_x <= 315 && tapped_y <= 160)
+          {
+            // PXY
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProResProxy), &cameraConnection);
+
+            tappedAction = true;
+          }
+      }
+    }
+
+  }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+  
+  DEBUG_DEBUG("Screen Codec 4K/6K Refreshed.");
+
+  window.fillSprite(TFT_BLACK);
+
+  Screen_Common_Connected(); // Common elements
+
+  // We need to have the Codec information to show the screen
+  if(!camera->hasCodec())
+  {
+    window.setTextSize(buttonFontSizeNormal);
+    window.setTextColor(TFT_WHITE);
+    window.drawString("NO CODEC INFO.", 30, 9);
+
+    window.pushSprite(0, 0);
+
+    return;
+  }
+
+  // Codec label
+  window.setTextSize(buttonFontSizeNormal);
+  window.setTextColor(TFT_WHITE);
+  window.drawString("CODEC", 30, 9);
+
+  // BRAW and ProRes selector buttons
+
+  // BRAW
+  window.setTextSize(buttonFontSizeNormal);
+  window.fillSmoothRoundRect(20, 30, 145, 40, 5, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawRoundRect(20, 30, 145, 40, 3, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawCentreString("BRAW", 93, 41);
+
+  // ProRes
+  window.fillSmoothRoundRect(170, 30, 145, 40, 5, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawRoundRect(170, 30, 145, 40, 3, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawCentreString("ProRes", 242, 41);
+
+  if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
+  {
+    // BRAW
+
+    window.setTextSize(buttonFontSizeNormal);
+
+    // Are we Constant Bitrate or Constant Quality
+    std::string currentCodecString = currentCodec.to_string();
+    auto pos = std::find(currentCodecString.begin(), currentCodecString.end(), ':');
+    bool isConstantBitrate = pos != currentCodecString.end(); // Is there a colon, :, in the string? If so, it's Constant Bitrate
+
+    // Get the bitrate or quality setting
+    std::size_t spaceIndex = currentCodecString.find(" ");
+    std::string qualityBitrateSetting = currentCodecString.substr(spaceIndex + 1); // e.g. 3:1, Q3, etc.
+
+    // Constant Bitrate
+    window.fillSmoothRoundRect(20, 75, 145, 40, 3, (isConstantBitrate ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString("BITRATE", 93, 83);
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawCentreString("CONSTANT", 93, 102);
+
+    // Constant Quality
+    window.fillSmoothRoundRect(170, 75, 145, 40, 3, (!isConstantBitrate ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.setTextSize(buttonFontSizeNormal);
+    window.drawCentreString("QUALITY", 242, 83);
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawCentreString("CONSTANT", 242, 102);
+
+    window.setTextSize(buttonFontSizeNormal);
+
+    // Setting 1 of 4
+    std::string optionString = (isConstantBitrate ? "3:1" : "Q0");
+    window.fillSmoothRoundRect(20, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString(optionString.c_str(), 55, 131);
+
+    // Setting 2 of 4
+    optionString = (isConstantBitrate ? "5:1" : "Q1");
+    window.fillSmoothRoundRect(95, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString(optionString.c_str(), 130, 131);
+
+  //   Setting 3 of 4
+    optionString = (isConstantBitrate ? "8:1" : "Q3");
+    window.fillSmoothRoundRect(170, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString(optionString.c_str(), 205, 131);
+
+    // Setting 4 of 4
+    optionString = (isConstantBitrate ? "12:1" : "Q5");
+    window.fillSmoothRoundRect(245, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString(optionString.c_str(), 280, 131);
+  }
+  else
+  {
+    // ProRes
+
+    window.setTextSize(buttonFontSizeNormal);
+
+    // Get the ProRes Setting
+    std::string currentCodecString = currentCodec.to_string();
+    std::size_t spaceIndex = currentCodecString.find(" ");
+    std::string currentProResSetting = currentCodecString.substr(spaceIndex + 1); // e.g. HQ, 422, LT, PXY
+
+    // HQ
+    std::string proResLabel = "HQ";
+    window.fillSmoothRoundRect(20, 75, 145, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString(proResLabel.c_str(), 93, 87);
+
+    // 422
+    proResLabel = "422";
+    window.fillSmoothRoundRect(170, 75, 145, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString(proResLabel.c_str(), 242, 87);
+
+    // LT
+    proResLabel = "LT";
+    window.fillSmoothRoundRect(20, 120, 145, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString(proResLabel.c_str(), 93, 131);
+
+    // PXY
+    proResLabel = "PXY";
+    window.fillSmoothRoundRect(170, 120, 145, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString(proResLabel.c_str(), 242, 131);
+
+    window.setTextSize(buttonFontSizeNormal);
+  }
+
+  window.pushSprite(0, 0);
+}
+
+// Codec Screen for URSA Mini Pro G2
+void Screen_CodecURSAMiniProG2(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Codec;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+  
+  // TO DO
+}
+
+// Codec Screen for URSA Mini Pro 12K
+void Screen_CodecURSAMiniPro12K(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Codec;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+  
+  // TO DO
+}
+
+// Codec screen - redirects to appropriate screen for camera
+void Screen_Codec(bool forceRefresh = false)
+{
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  if(camera->hasCodec())
+  {
+    if(camera->hasModelName())
+    {
+      if(camera->isPocket4K6K())
+        Screen_Codec4K6K(forceRefresh); // Pocket camera
+      else if(camera->isURSAMiniProG2())
+        Screen_CodecURSAMiniProG2(forceRefresh); // URSA Mini Pro G2
+      else if(camera->isURSAMiniPro12K())
+        Screen_CodecURSAMiniPro12K(forceRefresh); // URSA Mini Pro 12K
+      else
+        DEBUG_DEBUG("No Codec screen for this camera.");
+    } 
+    else
+      Screen_Codec4K6K(forceRefresh); // Handle no model name in 4K/6K screen
+  }
+  else
+    Screen_Codec4K6K(forceRefresh); // If we don't have any codec info, we show the 4K/6K screen that shows no codec
+
+}
+
+
+// Resolution screen for Pocket 4K
+void Screen_Resolution4K(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Resolution;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // Pocket 4K Resolution and Sensor Windows
+
+  // Get the current Resolution and Codec
+  CCUPacketTypes::RecordingFormatData currentRecordingFormat;
+  if(camera->hasRecordingFormat())
+    currentRecordingFormat = camera->getRecordingFormat();
+
+  // Get the current Codec values
+  CodecInfo currentCodec = camera->getCodec();
+
+  // If we have a tap, we should determine if it is on anything
+  bool tappedAction = false;
+  if(tapped_x != -1)
+  {
+    if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
+    {
+      int width = 0;
+      int height = 0;
+      bool window = false;
+
+      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
+      {
+        // 4K DCI
+        width = 4096; height = 2160;
+      }
+      else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
+      {
+        // 4K 2.4:1
+        width = 4096; height = 1720;
+        window = true;
+      }
+      else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
+      {
+        // 4K UHD
+        width = 3840; height = 2160;
+        window = true;
+      }
+
+      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 110 && tapped_y <= 115)
+      {
+        // 2.8K Ana
+        width = 2880; height = 2160;
+        window = true;
+      }
+      else if(tapped_x >= 115 && tapped_y >= 75 && tapped_x <= 205 && tapped_y <= 115)
+      {
+        // 2.6K 16:9
+        width = 2688; height = 1512;
+        window = true;
+      }
+      else if(tapped_x >= 210 && tapped_y >= 75 && tapped_x <= 310 && tapped_y <= 115)
+      {
+        // HD
+        width = 1920; height = 1080;
+        window = true;
+      }
+
+      if(width != 0)
+      {
+        // Resolution selected, write to camera
+        CCUPacketTypes::RecordingFormatData newRecordingFormat = currentRecordingFormat;
+        newRecordingFormat.width = width;
+        newRecordingFormat.height = height;
+        newRecordingFormat.windowedModeEnabled = window;
+        PacketWriter::writeRecordingFormat(newRecordingFormat, &cameraConnection);
+
+        tappedAction = true;
+      }
+    }
+    else
+    {
+      // ProRes
+
+      int width = 0;
+      int height = 0;
+      bool window = false;
+
+      String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "4K DCI", "4K UHD", "HD"
+
+      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
+      {
+        // 4K
+        width = 4096; height = 2160;
+        window = false; // true;
+      }
+      else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
+      {
+        // 4K UHD
+        width = 3840; height = 2160;
+        window = true; // currentRecordingFormat.windowedModeEnabled;
+      }
+      else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
+      {
+        // HD
+        width = 1920; height = 1080;
+        window = true; // currentRecordingFormat.windowedModeEnabled;
+      }
+
+      // Windowed options
+      /*
+      else if(currentRes == "HD" && tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 310 && tapped_y <= 160)
+      {
+        // HD - Scaled from Full sensor, 2.6K, or Windowed, can't distinguish
+        width = currentRecordingFormat.width; height = currentRecordingFormat.height;
+        window = true;
+      }
+      */
+
+      if(width != 0)
+      {
+        // Resolution or Sensor Area selected, write to camera
+        CCUPacketTypes::RecordingFormatData newRecordingFormat = currentRecordingFormat;
+        newRecordingFormat.width = width;
+        newRecordingFormat.height = height;
+        newRecordingFormat.windowedModeEnabled = window;
+        PacketWriter::writeRecordingFormat(newRecordingFormat, &cameraConnection);
+
+        tappedAction = true;
+      }
+    }
+  }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+  
+  DEBUG_DEBUG("Screen Resolution Pocket 4K Refreshed.");
+
+  window.fillSprite(TFT_BLACK);
+
+  Screen_Common_Connected(); // Common elements
+
+  if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
+  {
+    // Main label
+    window.setTextSize(buttonFontSizeNormal);
+    window.setTextColor(TFT_WHITE);
+    window.drawString("BRAW RESOLUTION", 30, 9);
+
+    String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "4K DCI", "4K 2.4:1", "4K UHD", "2.8K Ana", "2.6K 16:9", "HD"
+
+    // 4K DCI
+    String labelRes = "4K DCI";
+    window.setTextSize(buttonFontSizeNormal);
+    window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString("4K", 65, 36);
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawCentreString("DCI", 65, 58);
+    window.setTextSize(buttonFontSizeNormal);
+
+    // 4K 2.4:1
+    labelRes = "4K 2.4:1";
+    window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString("4K", 160, 36);
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawCentreString("2.4:1", 160, 58);
+    window.setTextSize(buttonFontSizeNormal);
+
+    // 4K UHD
+    labelRes = "4K UHD";
+    window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString("4K", 260, 36);
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawCentreString("UHD", 260, 58);
+    window.setTextSize(buttonFontSizeNormal);
+
+    // 2.8K Ana
+    labelRes = "2.8K Ana";
+    window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString("2.8K", 65, 82);
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawCentreString("ANAMORPHIC", 65, 104);
+    window.setTextSize(buttonFontSizeNormal);
+
+    // 2.6K 16:9
+    labelRes = "2.6K 16:9";
+    window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString("2.6K", 160, 82);
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawCentreString("16:9", 160, 104);
+    window.setTextSize(buttonFontSizeNormal);
+
+    // HD
+    labelRes = "HD";
+    window.fillSmoothRoundRect(210, 75, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString("HD", 260, 87);
+
+    // Sensor Area
+
+    // Pocket 4K all are Windowed except 4K
+    // window.drawSmoothRoundRect(20, 120, 5, 3, 290, 40, TFT_DARKGREY); // Optionally draw a rectangle around this info.
+    window.drawCentreString(currentRes == "4K" ? "FULL SENSOR" :"SENSOR WINDOWED", 165, 129);
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawCentreString(currentRecordingFormat.frameWidthHeight_string().c_str(), 165, 148);
+    window.setTextSize(buttonFontSizeNormal);
+  }
+  else if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes)
+  {
+    // Main label
+    window.setTextSize(buttonFontSizeNormal);
+    window.setTextColor(TFT_WHITE);
+    window.drawString("ProRes RESOLUTION", 30, 9);
+
+    String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "4K DCI", "4K UHD", "HD"
+
+    // 4K
+    String labelRes = "4K DCI";
+    window.setTextSize(buttonFontSizeNormal);
+    window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString("4K", 65, 36);
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawCentreString("DCI", 65, 58);
+    window.setTextSize(buttonFontSizeNormal);
+
+    // 4K UHD
+    labelRes = "4K UHD";
+    window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString("UHD", 160, 41);
+
+    // HD
+    labelRes = "HD";
+    window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString("HD", 260, 41);
+
+    // Sensor Area
+
+    // 4K DCI is Scaled from 5.7K, Ultra HD is Scaled from Full or 5.7K, HD is Scaled from Full, 5.7K, or 2.8K (however we can't change the 5.7K or 2.8K)
+
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawString(currentRecordingFormat.frameWidthHeight_string().c_str(), 30, 90);
+    window.drawString("SCALED FROM SENSOR AREA", 30, 105);
+    window.setTextSize(buttonFontSizeNormal);
+
+    if(currentRes == "4K DCI")
+    {
+      // Full sensor area only]
+      window.fillSmoothRoundRect(20, 120, 90, 40, 3, TFT_DARKGREEN);
+      window.drawCentreString("FULL", 65, 131);
+    }
+    else if(currentRes == "4K UHD")
+    {
+      // Full sensor area only]
+      window.fillSmoothRoundRect(20, 120, 90, 40, 3, TFT_DARKGREEN);
+      window.drawCentreString("WINDOW", 65, 131);
+    }
+    else
+    {
+      // HD
+
+      // Scaled from Full, 2.6K or Windowed (however we can't tell which)
+      window.fillSmoothRoundRect(20, 120, 290, 40, 3, TFT_DARKGREEN);
+      window.drawCentreString("FULL / 2.6K / WINDOW", 165, 129);
+      window.setTextSize(buttonFontSizeSmall);
+      window.drawCentreString("CHECK/SET ON CAMERA", 165, 146);
+      window.setTextSize(buttonFontSizeNormal);
+    }
+  }
+  else
+    DEBUG_ERROR("Resolution Pocket 4K - Codec not catered for.");
+
+  window.pushSprite(0, 0);
+}
+
+// Resolution screen for Pocket 6K
+void Screen_Resolution6K(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Resolution;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // Pocket 6K Resolution and Sensor Windows
+
+  // Get the current Resolution and Codec
+  CCUPacketTypes::RecordingFormatData currentRecordingFormat;
+  if(camera->hasRecordingFormat())
+    currentRecordingFormat = camera->getRecordingFormat();
+
+  // Get the current Codec values
+  CodecInfo currentCodec = camera->getCodec();
+
+  // If we have a tap, we should determine if it is on anything
+  bool tappedAction = false;
+  if(tapped_x != -1)
+  {
+    if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
+    {
+      int width = 0;
+      int height = 0;
+      bool window = false;
+
+      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
+      {
+        // 6K
+        width = 6144; height = 3456;
+      }
+      else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
+      {
+        // 6K 2.4:1
+        width = 6144; height = 2560;
+        window = true;
+      }
+      else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
+      {
+        // 5.7K 17:9
+        width = 5744; height = 3024;
+        window = true;
+      }
+
+      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 110 && tapped_y <= 115)
+      {
+        // 4K DCI
+        width = 4096; height = 2160;
+        window = true;
+      }
+      else if(tapped_x >= 115 && tapped_y >= 75 && tapped_x <= 205 && tapped_y <= 115)
+      {
+        // 3.7K Anamorphic
+        width = 3728; height = 3104;
+        window = true;
+      }
+      else if(tapped_x >= 210 && tapped_y >= 75 && tapped_x <= 310 && tapped_y <= 115)
+      {
+        // 2.8K 17:9
+        width = 2868; height = 1512;
+        window = true;
+      }
+
+      if(width != 0)
+      {
+        // Resolution selected, write to camera
+        CCUPacketTypes::RecordingFormatData newRecordingFormat = currentRecordingFormat;
+        newRecordingFormat.width = width;
+        newRecordingFormat.height = height;
+        newRecordingFormat.windowedModeEnabled = window;
+        PacketWriter::writeRecordingFormat(newRecordingFormat, &cameraConnection);
+
+        tappedAction = true;
+      }
+    }
+    else
+    {
+      // ProRes
+
+      int width = 0;
+      int height = 0;
+      bool window = false;
+
+      String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "4K DCI", "4K UHD", "HD"
+
+      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
+      {
+        // 4K
+        width = 4096; height = 2160;
+        window = true;
+      }
+      else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
+      {
+        // 4K UHD
+        width = 3840; height = 2160;
+        window = currentRecordingFormat.windowedModeEnabled;
+      }
+      else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
+      {
+        // HD
+        width = 1920; height = 1080;
+        window = currentRecordingFormat.windowedModeEnabled;
+      }
+
+      // Windowed options
+      else if(currentRes == "4K UHD" && tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 110 && tapped_y <= 160)
+      {
+        // 4K UHD - Full Sensor
+        width = currentRecordingFormat.width; height = currentRecordingFormat.height;
+        window = false;
+      }
+      else if(currentRes == "4K UHD" && tapped_x >= 115 && tapped_y >= 120 && tapped_x <= 205 && tapped_y <= 160)
+      {
+        // 4K UHD - Windowed 5.7K
+        width = currentRecordingFormat.width; height = currentRecordingFormat.height;
+        window = true;
+      }
+      else if(currentRes == "HD" && tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 110 && tapped_y <= 160)
+      {
+        // HD - Full Sensor
+        width = currentRecordingFormat.width; height = currentRecordingFormat.height;
+        window = false;
+      }
+      else if(currentRes == "HD" && tapped_x >= 115 && tapped_y >= 120 && tapped_x <= 310 && tapped_y <= 160)
+      {
+        // HD - Scaled from 5.7K or 2.8K, can't distinguish which unfortunately
+        width = currentRecordingFormat.width; height = currentRecordingFormat.height;
+        window = true;
+      }
+
+      if(width != 0)
+      {
+        // Resolution or Sensor Area selected, write to camera
+        CCUPacketTypes::RecordingFormatData newRecordingFormat = currentRecordingFormat;
+        newRecordingFormat.width = width;
+        newRecordingFormat.height = height;
+        newRecordingFormat.windowedModeEnabled = window;
+        PacketWriter::writeRecordingFormat(newRecordingFormat, &cameraConnection);
+
+        tappedAction = true;
+      }
+    }
+  }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+  
+  DEBUG_DEBUG("Screen Resolution Pocket 6K Refreshed.");
+
+  window.fillSprite(TFT_BLACK);
+
+  Screen_Common_Connected(); // Common elements
+
+  if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
+  {
+    // Main label
+    window.setTextSize(buttonFontSizeNormal);
+    window.setTextColor(TFT_WHITE);
+    window.drawString("BRAW RESOLUTION", 30, 9);
+
+    String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "6K", "6K 2.4:1", "5.7K 17:9", "4K DCI", "3.7K 6:5A", "2.8K 17:9"
+
+    // 6K
+    String labelRes = "6K";
+    window.setTextSize(buttonFontSizeNormal);
+    window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString(String(labelRes).c_str(), 65, 41);
+
+    // 6K, 2.4:1
+    labelRes = "6K 2.4:1";
+    window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString("6K", 160, 36);
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawCentreString("2.4:1", 160, 58);
+    window.setTextSize(buttonFontSizeNormal);
+
+    // 5.7K, 17:9
+    labelRes = "5.7K 17:9";
+    window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString("5.7K", 260, 36);
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawCentreString("17:9", 260, 58);
+    window.setTextSize(buttonFontSizeNormal);
+
+    // 4K DCI
+    labelRes = "4K DCI";
+    window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString("4K", 65, 82);
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawCentreString("DCI", 65, 104);
+    window.setTextSize(buttonFontSizeNormal);
+
+    // 3.7K 6:5A
+    labelRes = "3.7K 6:5A";
+    window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString("3.7K", 160, 82);
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawCentreString("6:5 ANA", 160, 104);
+    window.setTextSize(buttonFontSizeNormal);
+
+    // 2.8K 17:9
+    labelRes = "2.8K 17:9";
+    window.fillSmoothRoundRect(210, 75, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString("2.8K", 260, 82);
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawCentreString("17:9", 260, 104);
+    window.setTextSize(buttonFontSizeNormal);
+
+    // Sensor Area
+
+    // Pocket 6K all are Windowed except 6K
+    // window.drawSmoothRoundRect(20, 120, 5, 3, 290, 40, TFT_DARKGREY); // Optionally draw a rectangle around this info.
+    window.drawCentreString(currentRes == "6K" ? "FULL SENSOR" :"SENSOR WINDOWED", 165, 129);
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawCentreString(currentRecordingFormat.frameWidthHeight_string().c_str(), 165, 148);
+    window.setTextSize(buttonFontSizeNormal);
+  }
+  else if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes)
+  {
+    // Main label
+    window.setTextSize(buttonFontSizeNormal);
+    window.setTextColor(TFT_WHITE);
+    window.drawString("ProRes RESOLUTION", 30, 9);
+
+    String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "4K DCI", "4K UHD", "HD"
+
+    // 4K
+    String labelRes = "4K DCI";
+    window.setTextSize(buttonFontSizeNormal);
+    window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString("4K", 65, 36);
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawCentreString("DCI", 65, 58);
+    window.setTextSize(buttonFontSizeNormal);
+
+    // 4K UHD
+    labelRes = "4K UHD";
+    window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString("UHD", 160, 41);
+
+    // HD
+    labelRes = "HD";
+    window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    window.drawCentreString("HD", 260, 41);
+
+    // Sensor Area
+
+    // 4K DCI is Scaled from 5.7K, Ultra HD is Scaled from Full or 5.7K, HD is Scaled from Full, 5.7K, or 2.8K (however we can't change the 5.7K or 2.8K)
+
+    window.setTextSize(buttonFontSizeSmall);
+    window.drawString(currentRecordingFormat.frameWidthHeight_string().c_str(), 30, 90);
+    window.drawString("SCALED FROM SENSOR AREA", 30, 105);
+    window.setTextSize(buttonFontSizeNormal);
+
+    if(currentRes == "4K DCI")
+    {
+      // Full sensor area only]
+      window.fillSmoothRoundRect(20, 120, 90, 40, 3, TFT_DARKGREEN);
+      window.drawCentreString("FULL", 65, 131);
+    }
+    else if(currentRes == "4K UHD")
+    {
+      // Scaled from Full or 5.7K
+      window.fillSmoothRoundRect(20, 120, 90, 40, 3, (!currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
+      window.drawCentreString("FULL", 65, 131);
+
+      // 5.7K
+      window.fillSmoothRoundRect(115, 120, 90, 40, 3, (currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
+      window.drawCentreString("5.7K", 160, 131);
+    }
+    else
+    {
+      // HD
+
+      // Scaled from Full, 2.8K or 5.7K (however we can't tell if it's 2.8K or 5.7K)
+      window.fillSmoothRoundRect(20, 120, 90, 40, 3, (!currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
+      window.drawCentreString("FULL", 65, 131);
+
+      // 2.8K 5.7K
+      window.fillSmoothRoundRect(115, 120, 195, 40, 3, (currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
+      window.drawCentreString("5.7K / 2.8K", 212, 126);
+      window.setTextSize(buttonFontSizeSmall);
+      window.drawCentreString("CHECK/SET ON CAMERA", 212, 146);
+      window.setTextSize(buttonFontSizeNormal);
+    }
+  }
+  else
+    DEBUG_ERROR("Resolution Pocket 6K - Codec not catered for.");
+
+  window.pushSprite(0, 0);
+}
+
+// Resolution Screen for URSA Mini Pro G2
+void Screen_ResolutionURSAMiniProG2(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Resolution;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+  
+  // TO DO
+}
+
+// Resolution Screen for URSA Mini Pro 12K
+void Screen_ResolutionURSAMiniPro12K(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Resolution;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+  
+  // TO DO
+}
+
+// Resolution screen - redirects to appropriate screen fro camera
+void Screen_Resolution(bool forceRefresh = false)
+{
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  if(camera->hasCodec())
+  {
+    if(camera->hasRecordingFormat())
+    {
+      if(camera->isPocket4K())
+        Screen_Resolution4K(forceRefresh); // Pocket 4K
+      else if(camera->isPocket6K())
+        Screen_Resolution6K(forceRefresh); // Pocket 6K
+      else if(camera->isURSAMiniProG2())
+        Screen_ResolutionURSAMiniProG2(forceRefresh); // URSA Mini Pro G2
+      else if(camera->isURSAMiniPro12K())
+        Screen_ResolutionURSAMiniPro12K(forceRefresh); // URSA Mini Pro 12K
+      else
+        DEBUG_DEBUG("No Codec screen for this camera.");
+    } 
+    else
+      Screen_Resolution4K(forceRefresh); // Handle no model name in 4K screen
+  }
+  else
+    Screen_Resolution4K(forceRefresh); // If we don't have any codec info, we show the 4K screen that shows no codec
+}
+
+// Media screen for Pocket 4K
+void Screen_Media4K6K(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Media;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // 3 Media Slots - CFAST, SD, USB
+
+  // If we have a tap, we should determine if it is on anything
+  bool tappedAction = false;
+  if(tapped_x != -1 && camera->getMediaSlots().size() != 0)
+  {
+    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 160)
+    {
+      // Tapped within the area
+      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 70)
+      {
+        // CFAST
+        if(camera->getMediaSlots()[0].status != CCUPacketTypes::MediaStatus::None && !camera->getMediaSlots()[0].active)
+        {
+          TransportInfo transportInfo = camera->getTransportMode();
+          transportInfo.slots[0].active = true;
+          transportInfo.slots[1].active = false;
+          transportInfo.slots[2].active = false;
+          PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
+
+          tappedAction = true;
+        }
+      }
+      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
+      {
+          // Change to SD
+        if(camera->getMediaSlots()[1].status != CCUPacketTypes::MediaStatus::None && !camera->getMediaSlots()[1].active)
+        {
+          TransportInfo transportInfo = camera->getTransportMode();
+          transportInfo.slots[0].active = false;
+          transportInfo.slots[1].active = true;
+          transportInfo.slots[2].active = false;
+          PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
+
+          tappedAction = true;
+        }
+      }
+      else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 315 && tapped_y <= 160)
+      {
+          // Change to USB
+        if(camera->getMediaSlots()[2].status != CCUPacketTypes::MediaStatus::None && !camera->getMediaSlots()[2].active)
+        {
+          TransportInfo transportInfo = camera->getTransportMode();
+          transportInfo.slots[0].active = false;
+          transportInfo.slots[1].active = false;
+          transportInfo.slots[2].active = true;
+          PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
+
+          tappedAction = true;
+        }
+      }
+    }
+  }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+  
+  DEBUG_DEBUG("Screen Media Pocket 4K/6K Refreshed.");
+
+  window.fillSprite(TFT_BLACK);
+
+  Screen_Common_Connected(); // Common elements
+
+    // Media label
+  window.setTextSize(buttonFontSizeNormal);
+  window.setTextColor(TFT_WHITE);
+  window.drawString("MEDIA", 30, 9);
+
+  // CFAST
+  BMDCamera::MediaSlot cfast = camera->getMediaSlots()[0];
+  window.fillSmoothRoundRect(20, 30, 295, 40, 3, (cfast.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(cfast.StatusIsError()) window.drawRoundRect(20, 30, 295, 40, 3, (cfast.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawString("CFAST", 28, 50);
+  if(cfast.status != CCUPacketTypes::MediaStatus::None) window.drawString(cfast.remainingRecordTimeString.c_str(), 155, 50);
+
+  window.setTextSize(buttonFontSizeSmall);
+  
+  if(cfast.status != CCUPacketTypes::MediaStatus::None) window.drawString("REMAINING TIME", 155, 35);
+  window.drawString("1", 300, 35);
+  window.drawString(cfast.GetStatusString().c_str(), 28, 35);
+
+  window.setTextSize(buttonFontSizeNormal);
+
+  // SD
+  BMDCamera::MediaSlot sd = camera->getMediaSlots()[1];
+  window.fillSmoothRoundRect(20, 75, 295, 40, 3, (sd.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(sd.StatusIsError()) window.drawRoundRect(20, 75, 295, 40, 3, (sd.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawString("SD", 28, 95);
+  if(sd.status != CCUPacketTypes::MediaStatus::None) window.drawString(sd.remainingRecordTimeString.c_str(), 155, 95);
+
+  window.setTextSize(buttonFontSizeSmall);
+  
+  if(sd.status != CCUPacketTypes::MediaStatus::None) window.drawString("REMAINING TIME", 155, 80);
+  window.drawString("2", 300, 80);
+  window.drawString(sd.GetStatusString().c_str(), 28, 80);
+  if(sd.StatusIsError()) window.setTextColor(TFT_WHITE);
+
+  window.setTextSize(buttonFontSizeNormal);
+
+  // USB
+  BMDCamera::MediaSlot usb = camera->getMediaSlots()[2];
+  window.fillSmoothRoundRect(20, 120, 295, 40, 3, (usb.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(usb.StatusIsError()) window.drawRoundRect(20, 120, 295, 40, 3, (usb.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawString("USB", 28, 140);
+  if(usb.status != CCUPacketTypes::MediaStatus::None) window.drawString(usb.remainingRecordTimeString.c_str(), 155, 140);
+
+  window.setTextSize(buttonFontSizeSmall);
+  
+  if(usb.status != CCUPacketTypes::MediaStatus::None) window.drawString("REMAINING TIME", 155, 125);
+  window.drawString("3", 300, 125);
+  window.drawString(usb.GetStatusString().c_str(), 28, 125);
+  if(usb.StatusIsError()) window.setTextColor(TFT_WHITE);
+
+  window.pushSprite(0, 0);
+}
+
+// Media Screen for URSA Mini Pro G2
+void Screen_MediaURSAMiniProG2(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Media;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+  
+  // TO DO
+}
+
+// Media Screen for URSA Mini Pro 12K
+void Screen_MediaURSAMiniPro12K(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Media;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+  
+  // TO DO
+}
+
+
+// Media screen - redirects to appropriate screen for camera
+void Screen_Media(bool forceRefresh = false)
+{
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  if(camera->getMediaSlots().size() != 0)
+  {
+    if(camera->hasModelName())
+    {
+      if(camera->isPocket4K6K())
+        Screen_Media4K6K(forceRefresh); // Pocket camera
+      else if(camera->isURSAMiniProG2())
+        Screen_MediaURSAMiniProG2(forceRefresh); // URSA Mini Pro G2
+      else if(camera->isURSAMiniPro12K())
+        Screen_MediaURSAMiniPro12K(forceRefresh); // URSA Mini Pro 12K
+      else
+        DEBUG_DEBUG("No Media screen for this camera.");
+    } 
+    else
+      Screen_Media4K6K(forceRefresh); // Handle no model name in 4K/6K screen
+  }
+  else
+    Screen_Media4K6K(forceRefresh); // If we don't have any media info, we show the 4K/6K screen that shows no media
+
+}
+
 void setup() {
 
   // Allow a timeout of 20 seconds for time for the pass key entry.
@@ -913,24 +2524,22 @@ void loop() {
           Screen_ISO();
           break;
         case Screens::ShutterAngleSpeed:
-          /*
           if(camera->shutterValueIsAngle)
             Screen_ShutterAngle();
           else
             Screen_ShutterSpeed();
-          */
           break;
         case Screens::WhiteBalanceTint:
-          // Screen_WBTint();
+          Screen_WBTint();
           break;
         case Screens::Codec:
-          // Screen_Codec();
+          Screen_Codec();
           break;
         case Screens::Resolution:
-          // Screen_Resolution();
+          Screen_Resolution();
           break;
         case Screens::Media:
-          // Screen_Media();
+          Screen_Media();
           break;
       }
     }
@@ -963,39 +2572,6 @@ void loop() {
     cameraConnection.status == BMDCameraConnection::ConnectionStatus::Disconnected;
   }
 
-  /*Change the active screen's background color*/
-  // lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x6C3483), LV_PART_MAIN);
-
-  /*Create a white label, set its text and align it to the center*/
-  // lv_obj_t * label = lv_label_create(lv_scr_act());
-  // lv_label_set_text(label, "Hello world");
-  // lv_obj_set_style_text_color(lv_scr_act(), lv_color_hex(0xffffff), LV_PART_MAIN);
-  // lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-
-  /*
-  M5.Display.drawString("Hello there.", 100, 100);
-
-  M5.Display.setColor(0xFF0000U);                        // 描画色に赤色を指定
-  M5.Display.fillCircle ( 40, 80, 20    );               // 赤色で円の塗り
-  M5.Display.fillEllipse( 80, 40, 10, 20);               // 赤色で楕円の塗り
-  M5.Display.fillArc    ( 80, 80, 20, 10, 0, 90);        // 赤色で円弧の塗り
-  M5.Display.fillTriangle(80, 80, 60, 80, 80, 60);       // 赤色で三角の塗り
-  M5.Display.setColor(0x0000FFU);                        // 描画色に青色を指定
-  M5.Display.drawCircle ( 40, 80, 20    );               // 青色で円の外周
-  M5.Display.drawEllipse( 80, 40, 10, 20);               // 青色で楕円の外周
-  M5.Display.drawArc    ( 80, 80, 20, 10, 0, 90);        // 青色で円弧の外周
-  M5.Display.drawTriangle(60, 80, 80, 80, 80, 60);       // 青色で三角の外周
-  M5.Display.setColor(0x00FF00U);                        // 描画色に緑色を指定
-  M5.Display.drawBezier( 60, 80, 80, 80, 80, 60);        // 緑色で二次ベジエ曲線
-  M5.Display.drawBezier( 60, 80, 80, 20, 20, 80, 80, 60);// 緑色で三次ベジエ曲線
-
-// グラデーションの線を描画するdrawGradientLine は色の指定を省略できません。
-  M5.Display.drawGradientLine( 0, 80, 80, 0, 0xFF0000U, 0x0000FFU);// 赤から青へのグラデーション直線
-*/
-
-
-
-
   // Reset tapped point
   tapped_x = -1;
   tapped_y = -1;
@@ -1013,8 +2589,7 @@ void loop() {
       tapped_x = tp[i].x;
       tapped_y = tp[i].y;
 
-      DEBUG_DEBUG("Main Loop - Screen Tapped");
-
+      // Uncomment these lines to show the coordinates of the tap on screen
       // M5.Display.setCursor(16, 16 + i * 24);
       // M5.Display.printf("Raw X:%03d  Y:%03d", tp[i].x, tp[i].y);
 
@@ -1032,12 +2607,12 @@ void loop() {
         connectedScreenIndex = Screens::Recording;
         lastRefreshedScreen = 0; // Forces a refresh
     }
+    else if(tapped_x > 220 && tapped_x <= 320 && tapped_y > 220) // Codec Page
+    {
+        connectedScreenIndex = Screens::Codec;
+        lastRefreshedScreen = 0; // Forces a refresh
+    }
   }
-
-  /*
-  if(memoryLoopCounter % 100 == 0)
-    USBSerial.println("->>>");
-  */
 
   delay(10);
 }
