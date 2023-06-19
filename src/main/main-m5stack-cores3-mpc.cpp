@@ -1,4 +1,3 @@
-
 #define USING_TFT_ESPI 0    // Not using the TFT_eSPI graphics library <-- must include this in every main file, 0 = not using, 1 = using
 #define USING_M5GFX 1       // Using the M5GFX library
 
@@ -30,14 +29,20 @@ static M5GFX display;
 static M5Canvas window(&M5.Display);
 static M5Canvas spritePassKey(&M5.Display);
 
+// Lato font from Google Fonts
+// Agency FB font is free for commercial use, copied from Windows fonts
+// Rather than using font sizes, we use specific fonts for each size as it renders better on screen
+#include "Lato_Regular12pt7b.h" // Slightly larger version
+#include "Lato_Regular11pt7b.h" // Standard font
+#include "Lato_Regular5pt7b.h" // Small version
+#include "AgencyFB_Regular7pt7b.h" // Agency FB for tiny text
+#include "AgencyFB_Bold9pt7b.h" // Agency FB small for above buttons
+#include "AgencyFB_Regular9pt7b.h" // Agency FB small-medium for above buttons
+
 
 // Screen width and height
 #define IWIDTH 320
 #define IHEIGHT 240
-
-const float buttonFontSizeLarge = 2;
-const float buttonFontSizeNormal = 1;
-const float buttonFontSizeSmall = 0.5;
 
 // Sprites for Images
 LGFX_Sprite spriteMPCSplash;
@@ -124,9 +129,8 @@ void Screen_Common(int sideBarColour)
 
       // Bottom Buttons
       window.fillSmoothRoundRect(30, 210, 80, 40, 3, TFT_DARKCYAN);
-      window.setTextSize(buttonFontSizeSmall);
       window.setTextColor(TFT_WHITE);
-      window.drawCenterString("DASHBOARD", 70, 220);
+      window.drawCenterString("DASH", 70, 217, &AgencyFB_Bold9pt7b);
 
       if(camera->isRecording)
         window.fillSmoothCircle(IWIDTH / 2, 240, 30, TFT_RED);
@@ -138,7 +142,7 @@ void Screen_Common(int sideBarColour)
       }
 
       window.fillSmoothRoundRect(210, 210, 80, 40, 3, TFT_DARKCYAN);
-      window.drawCenterString("CODEC", 250, 220);
+      window.drawCenterString("CODEC", 250, 217, &AgencyFB_Bold9pt7b); //fonts::FreeMono9pt7b);
 
     }
 }
@@ -167,74 +171,53 @@ void Screen_NoConnection()
 
   connectedScreenIndex = Screens::NoConnection;
 
-  // spriteMPCSplash.pushToSprite(&window, 0, 0);
-  // M5.Display.pushImage(0,0,320,240,MPCSplash_M5Stack_CoreS3);
-
-  // window.createSprite(IWIDTH, IHEIGHT);
-
   spriteMPCSplash.pushSprite(&window, 0, 0);
 
   // Black background for text and Bluetooth Logo
-  // window.fillRect(0, 3, IWIDTH, 51, TFT_BLACK);
-  // M5.Display.fillRect(0, 3, IWIDTH, 51, TFT_BLACK);
   window.fillRect(0, 3, IWIDTH, 51, TFT_BLACK);
 
   // Bluetooth Image
-  // spriteBluetooth.pushToSprite(&window, 26, 6);
-  // M5.Display.pushImage(26, 6, 30, 46, Wikipedia_Bluetooth_30x46);
   spriteBluetooth.pushSprite(&window, 26, 6);
-
-  // M5.Display.setTextSize(2);
-  window.setTextSize(buttonFontSizeNormal);
 
   switch(cameraConnection.status)
   {
     case BMDCameraConnection::Scanning:
       Screen_Common(TFT_BLUE); // Common elements
-      // M5.Display.drawString("Scanning...", 70, 20);
       window.drawString("Scanning...", 70, 20);
       break;
     case BMDCameraConnection::ScanningFound:
       Screen_Common(TFT_BLUE); // Common elements
       if(cameraConnection.cameraAddresses.size() == 1)
       {
-        // M5.Display.drawString("Found, connecting...", 70, 20);
         window.drawString("Found, connecting...", 70, 20);
         connectToCameraIndex = 0;
       }
       else
-        // M5.Display.drawString("Found cameras", 70, 20); // Multiple camera selection is below
         window.drawString("Found cameras", 70, 20); // Multiple camera selection is below
       break;
     case BMDCameraConnection::ScanningNoneFound:
       Screen_Common(TFT_RED); // Common elements
-      // M5.Display.drawString("No camera found", 70, 20);
       window.drawString("No camera found", 70, 20);
       break;
     case BMDCameraConnection::Connecting:
       Screen_Common(TFT_YELLOW); // Common elements
-      // M5.Display.drawString("Connecting...", 70, 20);
       window.drawString("Connecting...", 70, 20);
       break;
     case BMDCameraConnection::NeedPassKey:
       Screen_Common(TFT_PURPLE); // Common elements
-      // M5.Display.drawString("Need Pass Key", 70, 20);
       window.drawString("Need Pass Key", 70, 20);
       break;
     case BMDCameraConnection::FailedPassKey:
       Screen_Common(TFT_ORANGE); // Common elements
-      // M5.Display.drawString("Wrong Pass Key", 70, 20);
       window.drawString("Wrong Pass Key", 70, 20);
       break;
     case BMDCameraConnection::Disconnected:
       Screen_Common(TFT_RED); // Common elements
-      // M5.Display.drawString("Disconnected (wait)", 70, 20);
       window.drawString("Disconnected (wait)", 70, 20);
       break;
     case BMDCameraConnection::IncompatibleProtocol:
       // Note: This needs to be worked on as there's no incompatible protocol connections yet.
       Screen_Common(TFT_RED); // Common elements
-      // M5.Display.drawString("Incompatible Protocol", 70, 20);
       window.drawString("Incompatible Protocol", 70, 20);
       break;
     default:
@@ -246,26 +229,17 @@ void Screen_NoConnection()
   for(int count = 0; count < cameras && count < 2; count++)
   {
     // Cameras
-    // M5.Display.fillRoundRect(25 + (count * 125) + (count * 10), 60, 125, 100, 5, TFT_DARKGREY);
     window.fillRoundRect(25 + (count * 125) + (count * 10), 60, 125, 100, 5, TFT_DARKGREY);
 
     // Highlight the camera to connect to
     if(connectToCameraIndex != -1 && connectToCameraIndex == count)
     {
-      // M5.Display.drawRoundRect(25 + (count * 125) + (count * 10), 60, 5, 2, TFT_GREEN);
       window.drawRoundRect(25 + (count * 125) + (count * 10), 60, 5, 2, TFT_GREEN);
     }
 
-    // spritePocket4k.pushToSprite(&window, 33 + (count * 125) + (count * 10), 69);
-    // M5.Display.pushImage(33 + (count * 125) + (count * 10), 69, 110, 61, blackmagic_pocket_4k_110x61);
     spritePocket4k.pushSprite(&window, 33 + (count * 125) + (count * 10), 69);
 
-    // M5.Display.setTextSize(1);
-    window.setTextSize(buttonFontSizeNormal);
-    // window.textbgcolor = TFT_DARKGREY;
-    // M5.Display.drawString(cameraConnection.cameraAddresses[count].toString().c_str(), 33 + (count * 125) + (count * 10), 144);
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawString(cameraConnection.cameraAddresses[count].toString().c_str(), 33 + (count * 125) + (count * 10), 144);
+    window.drawString(cameraConnection.cameraAddresses[count].toString().c_str(), 33 + (count * 125) + (count * 10), 144, &Lato_Regular5pt7b);
   }
 
   // If there's more than one camera, check for a tap to see if they have nominated one to connect to
@@ -372,20 +346,17 @@ void Screen_Dashboard(bool forceRefresh = false)
   Screen_Common_Connected(); // Common elements
 
   // M5GFX, set font here rather than on each drawString line
-  window.setFont(&fonts::FreeMono12pt7b);
+  window.setFont(&Lato_Regular11pt7b);
 
   // ISO
   if(camera->hasSensorGainISOValue())
   {
     window.fillSmoothRoundRect(20, 5, 75, 65, 3, TFT_DARKGREY);
-    window.setTextSize(buttonFontSizeNormal);
     window.setTextColor(TFT_WHITE);
-    // window.textbgcolor = TFT_DARKGREY;
 
-    window.drawCentreString(String(camera->getSensorGainISOValue()), 58, 28);
+    window.drawCentreString(String(camera->getSensorGainISOValue()), 58, 23);
 
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString("ISO", 58, 59);
+    window.drawCentreString("ISO", 58, 50, &AgencyFB_Regular7pt7b);
   }
 
   // Shutter
@@ -395,9 +366,7 @@ void Screen_Dashboard(bool forceRefresh = false)
     DEBUG_DEBUG("Dashboard: Shutter Angle");
 
     window.fillSmoothRoundRect(20 + xshift, 5, 75, 65, 3, TFT_DARKGREY);
-    window.setTextSize(buttonFontSizeNormal);
     window.setTextColor(TFT_WHITE);
-    // window.textbgcolor = TFT_DARKGREY;
 
     if(camera->shutterValueIsAngle)
     {
@@ -405,7 +374,7 @@ void Screen_Dashboard(bool forceRefresh = false)
       int currentShutterAngle = camera->getShutterAngle();
       float ShutterAngleFloat = currentShutterAngle / 100.0;
 
-      window.drawCentreString(String(ShutterAngleFloat, (currentShutterAngle % 100 == 0 ? 0 : 1)), 58 + xshift, 28);
+      window.drawCentreString(String(ShutterAngleFloat, (currentShutterAngle % 100 == 0 ? 0 : 1)), 58 + xshift, 23);
     }
     else
     {
@@ -414,11 +383,10 @@ void Screen_Dashboard(bool forceRefresh = false)
       // Shutter Speed
       int currentShutterSpeed = camera->getShutterSpeed();
 
-      window.drawCentreString("1/" + String(currentShutterSpeed), 58 + xshift, 28);
+      window.drawCentreString("1/" + String(currentShutterSpeed), 58 + xshift, 23);
     }
 
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString(camera->shutterValueIsAngle ? "DEGREES" : "SPEED", 58 + xshift, 59); //  "SHUTTER"
+    window.drawCentreString(camera->shutterValueIsAngle ? "DEGREES" : "SPEED", 58 + xshift, 50, &AgencyFB_Regular7pt7b); //  "SHUTTER"
   }
 
   // WhiteBalance and Tint
@@ -428,24 +396,19 @@ void Screen_Dashboard(bool forceRefresh = false)
     DEBUG_DEBUG("Dashboard: White Balance");
 
     window.fillSmoothRoundRect(20 + xshift, 5, 135, 65, 3, TFT_DARKGREY);
-    window.setTextSize(buttonFontSizeNormal);
     window.setTextColor(TFT_WHITE);
-    // window.textbgcolor = TFT_DARKGREY;
 
     if(camera->hasWhiteBalance())
-      window.drawCentreString(String(camera->getWhiteBalance()), 58 + xshift, 28);
+      window.drawCentreString(String(camera->getWhiteBalance()), 58 + xshift, 23);
 
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString("WB", 58 + xshift, 59);
+    window.drawCentreString("WB", 58 + xshift, 50, &AgencyFB_Regular7pt7b);
 
     xshift += 66;
 
-    window.setTextSize(buttonFontSizeNormal);
     if(camera->hasTint())
-      window.drawCentreString(String(camera->getTint()), 58 + xshift, 28);
+      window.drawCentreString(String(camera->getTint()), 58 + xshift, 23);
 
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString("TINT", 58 + xshift, 59);
+    window.drawCentreString("TINT", 58 + xshift, 50, &AgencyFB_Regular7pt7b);
   }
 
   // Codec
@@ -453,8 +416,7 @@ void Screen_Dashboard(bool forceRefresh = false)
   {
     window.fillSmoothRoundRect(20, 75, 155, 40, 3, TFT_DARKGREY);
 
-    window.setTextSize(buttonFontSizeNormal);
-    window.drawCentreString(camera->getCodec().to_string().c_str(), 97, 87);
+    window.drawCentreString(camera->getCodec().to_string().c_str(), 97, 84);
   }
 
   // Media
@@ -491,8 +453,7 @@ void Screen_Dashboard(bool forceRefresh = false)
     {
       window.fillSmoothRoundRect(20, 120, 100, 40, 3, TFT_DARKGREY);
 
-      window.setTextSize(buttonFontSizeNormal);
-      window.drawCentreString(slotString.c_str(), 70, 133);
+      window.drawCentreString(slotString.c_str(), 70, 130);
 
       // Show recording error
       if(camera->hasRecordError())
@@ -502,8 +463,7 @@ void Screen_Dashboard(bool forceRefresh = false)
     {
       // Show no Media
       window.fillSmoothRoundRect(20, 120, 100, 40, 3, TFT_DARKGREY);
-      window.setTextSize(buttonFontSizeSmall);
-      window.drawCentreString("NO MEDIA", 70, 135);
+      window.drawCentreString("NO MEDIA", 70, 135, &AgencyFB_Regular7pt7b);
     }
   }
 
@@ -512,19 +472,16 @@ void Screen_Dashboard(bool forceRefresh = false)
   {
     // Frame Rate
     window.fillSmoothRoundRect(180, 75, 135, 40, 3, TFT_DARKGREY);
-    window.setTextSize(buttonFontSizeNormal);
 
-    window.drawCentreString(camera->getRecordingFormat().frameRate_string().c_str(), 237, 87);
+    window.drawCentreString(camera->getRecordingFormat().frameRate_string().c_str(), 237, 84);
 
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString("fps", 285, 97);
+    window.drawCentreString("fps", 285, 89, &AgencyFB_Regular7pt7b);
 
     // Resolution
     window.fillSmoothRoundRect(125, 120, 190, 40, 3, TFT_DARKGREY);
 
     std::string resolution = camera->getRecordingFormat().frameDimensionsShort_string();
-    window.setTextSize(buttonFontSizeNormal);
-    window.drawCentreString(resolution.c_str(), 220, 133);
+    window.drawCentreString(resolution.c_str(), 220, 130);
   }
 
   window.pushSprite(0, 0);
@@ -579,7 +536,7 @@ void Screen_Recording(bool forceRefresh = false)
   Screen_Common_Connected(); // Common elements
 
   // M5GFX, set font here rather than on each drawString line
-  window.setFont(&fonts::FreeMono12pt7b);
+  window.setFont(&Lato_Regular11pt7b);
 
   // Record button
   if(camera->isRecording) window.fillSmoothCircle(257, 63, 58, Constants::DARK_RED); // Recording solid
@@ -587,9 +544,7 @@ void Screen_Recording(bool forceRefresh = false)
   window.fillSmoothCircle(257, 63, 38, camera->isRecording ? TFT_RED : TFT_LIGHTGREY); // Inner
 
   // Timecode
-  window.setTextSize(buttonFontSizeNormal);
   window.setTextColor(camera->isRecording ? TFT_RED : TFT_WHITE);
-  // window.textbgcolor = TFT_BLACK;
   window.drawString(camera->getTimecodeString().c_str(), 30, 57);
 
   // Remaining time and any errors
@@ -598,13 +553,11 @@ void Screen_Recording(bool forceRefresh = false)
     window.setTextColor(TFT_LIGHTGREY);
     window.drawString((camera->getActiveMediaSlot().GetMediumString() + " " + camera->getActiveMediaSlot().remainingRecordTimeString).c_str(), 30, 130);
 
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawString("REMAINING TIME", 30, 153);
+    window.drawString("REMAINING TIME", 30, 153, &Lato_Regular5pt7b);
 
     // Show any media record errors
     if(camera->hasRecordError())
     {
-      window.setTextSize(buttonFontSizeNormal);
       window.setTextColor(TFT_RED);
       window.drawString("RECORD ERROR", 30, 20);
     }
@@ -676,7 +629,7 @@ void Screen_ISO(bool forceRefresh = false)
   Screen_Common_Connected(); // Common elements
 
   // M5GFX, set font here rather than on each drawString line
-  window.setFont(&fonts::FreeMono12pt7b);
+  window.setFont(&Lato_Regular11pt7b);
 
   // Get the current ISO value
   int currentISO = 0;
@@ -684,57 +637,45 @@ void Screen_ISO(bool forceRefresh = false)
     currentISO = camera->getSensorGainISOValue();
 
   // ISO label
-  window.setTextSize(buttonFontSizeNormal);
   window.setTextColor(TFT_WHITE);
-  // window.textbgcolor = TFT_BLACK;
   window.drawString("ISO", 30, 9);
 
   // window.textbgcolor = TFT_DARKGREY;
 
   // 200
   int labelISO = 200;
-  window.setTextSize(buttonFontSizeNormal);
   window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  // if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
   window.drawCentreString(String(labelISO).c_str(), 65, 41);
 
   // 400
   labelISO = 400;
   window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  // if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
   window.drawCentreString(String(labelISO).c_str(), 160, 36);
-  window.setTextSize(buttonFontSizeSmall);
-  window.drawCentreString("NATIVE", 160, 59);
-  window.setTextSize(buttonFontSizeNormal);
+  window.drawCentreString("NATIVE", 160, 59, &Lato_Regular5pt7b);
 
   // 8000
   labelISO = 8000;
   window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  // if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
   window.drawCentreString(String(labelISO).c_str(), 260, 41);
 
   // 640
   labelISO = 640;
   window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  // if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
   window.drawCentreString(String(labelISO).c_str(), 65, 87);
 
   // 800
   labelISO = 800;
   window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  // if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
   window.drawCentreString(String(labelISO).c_str(), 160, 87);
 
   // 12800
   labelISO = 12800;
   window.fillSmoothRoundRect(210, 75, 100, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  // if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
   window.drawCentreString(String(labelISO).c_str(), 260, 87);
 
   // 1250
   labelISO = 1250;
   window.fillSmoothRoundRect(20, 120, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  // if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
   window.drawCentreString(String(labelISO).c_str(), 65, 131);
 
   // 3200
@@ -742,9 +683,7 @@ void Screen_ISO(bool forceRefresh = false)
   window.fillSmoothRoundRect(115, 120, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
   // if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
   window.drawCentreString(String(labelISO).c_str(), 160, 126);
-  window.setTextSize(buttonFontSizeSmall);
-  window.drawCentreString("NATIVE", 160, 149);
-  window.setTextSize(buttonFontSizeNormal);
+  window.drawCentreString("NATIVE", 160, 149, &Lato_Regular5pt7b);
 
   // Custom ISO - show if ISO is not one of the above values
   if(currentISO != 0)
@@ -755,8 +694,7 @@ void Screen_ISO(bool forceRefresh = false)
       window.fillSmoothRoundRect(210, 120, 100, 40, 3, TFT_DARKGREEN);
       // window.textbgcolor = TFT_DARKGREEN;
       window.drawCentreString(String(currentISO).c_str(), 260, 126);
-      window.setTextSize(buttonFontSizeSmall);
-      window.drawCentreString("CUSTOM", 260, 149);
+      window.drawCentreString("CUSTOM", 260, 149, &Lato_Regular5pt7b);
     }
   }
 
@@ -833,9 +771,7 @@ void Screen_ShutterAngle(bool forceRefresh = false)
 
   // Shutter Angle label
   window.setTextColor(TFT_WHITE);
-  window.setTextSize(buttonFontSizeSmall);
-  window.drawString("DEGREES", 265, 9);
-  window.setTextSize(buttonFontSizeNormal);
+  window.drawString("DEGREES", 265, 9, &Lato_Regular5pt7b);
   window.drawString("SHUTTER ANGLE", 30, 9);
 
   // 15
@@ -889,8 +825,7 @@ void Screen_ShutterAngle(bool forceRefresh = false)
 
       window.fillSmoothRoundRect(210, 120, 100, 40, 3, TFT_DARKGREEN);
       window.drawCentreString(String(customShutterAngle, (currentShutterAngle % 100 == 0 ? 0 : 1)).c_str(), 260, 126);
-      window.setTextSize(buttonFontSizeSmall);
-      window.drawCentreString("CUSTOM", 260, 149);
+      window.drawCentreString("CUSTOM", 260, 149, &Lato_Regular5pt7b);
     }
   }
 
@@ -972,11 +907,9 @@ void Screen_ShutterSpeed(bool forceRefresh = false)
 
   if(camera->hasRecordingFormat())
   {
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawRightString(camera->getRecordingFormat().frameRate_string().c_str() + String(" fps"), 310, 9);
+    window.drawRightString(camera->getRecordingFormat().frameRate_string().c_str() + String(" fps"), 310, 9, &Lato_Regular5pt7b);
   }
 
-  window.setTextSize(buttonFontSizeNormal);
   window.drawString("SHUTTER SPEED", 30, 9);
 
   // 1/30
@@ -1027,8 +960,7 @@ void Screen_ShutterSpeed(bool forceRefresh = false)
     {
       window.fillSmoothRoundRect(210, 120, 100, 40, 3, TFT_DARKGREEN);
       window.drawCentreString("1/" + String(currentShutterSpeed), 260, 126);
-      window.setTextSize(buttonFontSizeSmall);
-      window.drawCentreString("CUSTOM", 260, 149);
+      window.drawCentreString("CUSTOM", 260, 149, &Lato_Regular5pt7b);
     }
   }
 
@@ -1157,7 +1089,6 @@ void Screen_WBTint(bool forceRefresh = false)
   Screen_Common_Connected(); // Common elements
 
   // ISO label
-  window.setTextSize(buttonFontSizeNormal);
   window.setTextColor(TFT_WHITE);
   window.drawString("WHITE BALANCE", 30, 9);
   window.drawCentreString("TINT", 54, 132);
@@ -1214,9 +1145,7 @@ void Screen_WBTint(bool forceRefresh = false)
   // Current White Balance Kelvin
   window.fillSmoothRoundRect(160, 75, 90, 40, 3, TFT_DARKGREEN);
   window.drawCentreString(String(currentWB), 205, 82);
-  window.setTextSize(buttonFontSizeSmall);
-  window.drawCentreString("KELVIN", 205, 104);
-  window.setTextSize(buttonFontSizeNormal);
+  window.drawCentreString("KELVIN", 205, 104, &Lato_Regular5pt7b);
 
   // WB Adjust Right >
   window.fillSmoothRoundRect(255, 75, 60, 40, 3, TFT_DARKGREY);
@@ -1395,7 +1324,6 @@ void Screen_Codec4K6K(bool forceRefresh = false)
   // We need to have the Codec information to show the screen
   if(!camera->hasCodec())
   {
-    window.setTextSize(buttonFontSizeNormal);
     window.setTextColor(TFT_WHITE);
     window.drawString("NO CODEC INFO.", 30, 9);
 
@@ -1405,14 +1333,12 @@ void Screen_Codec4K6K(bool forceRefresh = false)
   }
 
   // Codec label
-  window.setTextSize(buttonFontSizeNormal);
   window.setTextColor(TFT_WHITE);
   window.drawString("CODEC", 30, 9);
 
   // BRAW and ProRes selector buttons
 
   // BRAW
-  window.setTextSize(buttonFontSizeNormal);
   window.fillSmoothRoundRect(20, 30, 145, 40, 5, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW ? TFT_DARKGREEN : TFT_DARKGREY));
   window.drawRoundRect(20, 30, 145, 40, 3, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW ? TFT_DARKGREEN : TFT_DARKGREY));
   window.drawCentreString("BRAW", 93, 41);
@@ -1426,8 +1352,6 @@ void Screen_Codec4K6K(bool forceRefresh = false)
   {
     // BRAW
 
-    window.setTextSize(buttonFontSizeNormal);
-
     // Are we Constant Bitrate or Constant Quality
     std::string currentCodecString = currentCodec.to_string();
     auto pos = std::find(currentCodecString.begin(), currentCodecString.end(), ':');
@@ -1440,17 +1364,12 @@ void Screen_Codec4K6K(bool forceRefresh = false)
     // Constant Bitrate
     window.fillSmoothRoundRect(20, 75, 145, 40, 3, (isConstantBitrate ? TFT_DARKGREEN : TFT_DARKGREY));
     window.drawCentreString("BITRATE", 93, 83);
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString("CONSTANT", 93, 102);
+    window.drawCentreString("CONSTANT", 93, 102, &Lato_Regular5pt7b);
 
     // Constant Quality
     window.fillSmoothRoundRect(170, 75, 145, 40, 3, (!isConstantBitrate ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.setTextSize(buttonFontSizeNormal);
     window.drawCentreString("QUALITY", 242, 83);
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString("CONSTANT", 242, 102);
-
-    window.setTextSize(buttonFontSizeNormal);
+    window.drawCentreString("CONSTANT", 242, 102, &Lato_Regular5pt7b);
 
     // Setting 1 of 4
     std::string optionString = (isConstantBitrate ? "3:1" : "Q0");
@@ -1476,8 +1395,6 @@ void Screen_Codec4K6K(bool forceRefresh = false)
   {
     // ProRes
 
-    window.setTextSize(buttonFontSizeNormal);
-
     // Get the ProRes Setting
     std::string currentCodecString = currentCodec.to_string();
     std::size_t spaceIndex = currentCodecString.find(" ");
@@ -1502,8 +1419,6 @@ void Screen_Codec4K6K(bool forceRefresh = false)
     proResLabel = "PXY";
     window.fillSmoothRoundRect(170, 120, 145, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
     window.drawCentreString(proResLabel.c_str(), 242, 131);
-
-    window.setTextSize(buttonFontSizeNormal);
   }
 
   window.pushSprite(0, 0);
@@ -1709,7 +1624,6 @@ void Screen_Resolution4K(bool forceRefresh = false)
   if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
   {
     // Main label
-    window.setTextSize(buttonFontSizeNormal);
     window.setTextColor(TFT_WHITE);
     window.drawString("BRAW RESOLUTION", 30, 9);
 
@@ -1717,44 +1631,33 @@ void Screen_Resolution4K(bool forceRefresh = false)
 
     // 4K DCI
     String labelRes = "4K DCI";
-    window.setTextSize(buttonFontSizeNormal);
     window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
     window.drawCentreString("4K", 65, 36);
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString("DCI", 65, 58);
-    window.setTextSize(buttonFontSizeNormal);
+    window.drawCentreString("DCI", 65, 58, &Lato_Regular5pt7b);
 
     // 4K 2.4:1
     labelRes = "4K 2.4:1";
     window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
     window.drawCentreString("4K", 160, 36);
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString("2.4:1", 160, 58);
-    window.setTextSize(buttonFontSizeNormal);
+    window.drawCentreString("2.4:1", 160, 58, &Lato_Regular5pt7b);
 
     // 4K UHD
     labelRes = "4K UHD";
     window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
     window.drawCentreString("4K", 260, 36);
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString("UHD", 260, 58);
-    window.setTextSize(buttonFontSizeNormal);
+    window.drawCentreString("UHD", 260, 58, &Lato_Regular5pt7b);
 
     // 2.8K Ana
     labelRes = "2.8K Ana";
     window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
     window.drawCentreString("2.8K", 65, 82);
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString("ANAMORPHIC", 65, 104);
-    window.setTextSize(buttonFontSizeNormal);
+    window.drawCentreString("ANAMORPHIC", 65, 104, &Lato_Regular5pt7b);
 
     // 2.6K 16:9
     labelRes = "2.6K 16:9";
     window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
     window.drawCentreString("2.6K", 160, 82);
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString("16:9", 160, 104);
-    window.setTextSize(buttonFontSizeNormal);
+    window.drawCentreString("16:9", 160, 104, &Lato_Regular5pt7b);
 
     // HD
     labelRes = "HD";
@@ -1766,14 +1669,11 @@ void Screen_Resolution4K(bool forceRefresh = false)
     // Pocket 4K all are Windowed except 4K
     // window.drawSmoothRoundRect(20, 120, 5, 3, 290, 40, TFT_DARKGREY); // Optionally draw a rectangle around this info.
     window.drawCentreString(currentRes == "4K" ? "FULL SENSOR" :"SENSOR WINDOWED", 165, 129);
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString(currentRecordingFormat.frameWidthHeight_string().c_str(), 165, 148);
-    window.setTextSize(buttonFontSizeNormal);
+    window.drawCentreString(currentRecordingFormat.frameWidthHeight_string().c_str(), 165, 148, &Lato_Regular5pt7b);
   }
   else if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes)
   {
     // Main label
-    window.setTextSize(buttonFontSizeNormal);
     window.setTextColor(TFT_WHITE);
     window.drawString("ProRes RESOLUTION", 30, 9);
 
@@ -1781,12 +1681,9 @@ void Screen_Resolution4K(bool forceRefresh = false)
 
     // 4K
     String labelRes = "4K DCI";
-    window.setTextSize(buttonFontSizeNormal);
     window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
     window.drawCentreString("4K", 65, 36);
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString("DCI", 65, 58);
-    window.setTextSize(buttonFontSizeNormal);
+    window.drawCentreString("DCI", 65, 58, &Lato_Regular5pt7b);
 
     // 4K UHD
     labelRes = "4K UHD";
@@ -1802,10 +1699,8 @@ void Screen_Resolution4K(bool forceRefresh = false)
 
     // 4K DCI is Scaled from 5.7K, Ultra HD is Scaled from Full or 5.7K, HD is Scaled from Full, 5.7K, or 2.8K (however we can't change the 5.7K or 2.8K)
 
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawString(currentRecordingFormat.frameWidthHeight_string().c_str(), 30, 90);
+    window.drawString(currentRecordingFormat.frameWidthHeight_string().c_str(), 30, 90, &Lato_Regular5pt7b);
     window.drawString("SCALED FROM SENSOR AREA", 30, 105);
-    window.setTextSize(buttonFontSizeNormal);
 
     if(currentRes == "4K DCI")
     {
@@ -1826,9 +1721,7 @@ void Screen_Resolution4K(bool forceRefresh = false)
       // Scaled from Full, 2.6K or Windowed (however we can't tell which)
       window.fillSmoothRoundRect(20, 120, 290, 40, 3, TFT_DARKGREEN);
       window.drawCentreString("FULL / 2.6K / WINDOW", 165, 129);
-      window.setTextSize(buttonFontSizeSmall);
-      window.drawCentreString("CHECK/SET ON CAMERA", 165, 146);
-      window.setTextSize(buttonFontSizeNormal);
+      window.drawCentreString("CHECK/SET ON CAMERA", 165, 146, &Lato_Regular5pt7b);
     }
   }
   else
@@ -2000,7 +1893,6 @@ void Screen_Resolution6K(bool forceRefresh = false)
   if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
   {
     // Main label
-    window.setTextSize(buttonFontSizeNormal);
     window.setTextColor(TFT_WHITE);
     window.drawString("BRAW RESOLUTION", 30, 9);
 
@@ -2008,7 +1900,6 @@ void Screen_Resolution6K(bool forceRefresh = false)
 
     // 6K
     String labelRes = "6K";
-    window.setTextSize(buttonFontSizeNormal);
     window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
     window.drawCentreString(String(labelRes).c_str(), 65, 41);
 
@@ -2016,55 +1907,42 @@ void Screen_Resolution6K(bool forceRefresh = false)
     labelRes = "6K 2.4:1";
     window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
     window.drawCentreString("6K", 160, 36);
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString("2.4:1", 160, 58);
-    window.setTextSize(buttonFontSizeNormal);
-
+    window.drawCentreString("2.4:1", 160, 58, &Lato_Regular5pt7b);
+  
     // 5.7K, 17:9
     labelRes = "5.7K 17:9";
     window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
     window.drawCentreString("5.7K", 260, 36);
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString("17:9", 260, 58);
-    window.setTextSize(buttonFontSizeNormal);
+    window.drawCentreString("17:9", 260, 58, &Lato_Regular5pt7b);
 
     // 4K DCI
     labelRes = "4K DCI";
     window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
     window.drawCentreString("4K", 65, 82);
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString("DCI", 65, 104);
-    window.setTextSize(buttonFontSizeNormal);
+    window.drawCentreString("DCI", 65, 104, &Lato_Regular5pt7b);
 
     // 3.7K 6:5A
     labelRes = "3.7K 6:5A";
     window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
     window.drawCentreString("3.7K", 160, 82);
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString("6:5 ANA", 160, 104);
-    window.setTextSize(buttonFontSizeNormal);
+    window.drawCentreString("6:5 ANA", 160, 104, &Lato_Regular5pt7b);
 
     // 2.8K 17:9
     labelRes = "2.8K 17:9";
     window.fillSmoothRoundRect(210, 75, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
     window.drawCentreString("2.8K", 260, 82);
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString("17:9", 260, 104);
-    window.setTextSize(buttonFontSizeNormal);
+    window.drawCentreString("17:9", 260, 104, &Lato_Regular5pt7b);
 
     // Sensor Area
 
     // Pocket 6K all are Windowed except 6K
     // window.drawSmoothRoundRect(20, 120, 5, 3, 290, 40, TFT_DARKGREY); // Optionally draw a rectangle around this info.
     window.drawCentreString(currentRes == "6K" ? "FULL SENSOR" :"SENSOR WINDOWED", 165, 129);
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString(currentRecordingFormat.frameWidthHeight_string().c_str(), 165, 148);
-    window.setTextSize(buttonFontSizeNormal);
+    window.drawCentreString(currentRecordingFormat.frameWidthHeight_string().c_str(), 165, 148, &Lato_Regular5pt7b);
   }
   else if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes)
   {
     // Main label
-    window.setTextSize(buttonFontSizeNormal);
     window.setTextColor(TFT_WHITE);
     window.drawString("ProRes RESOLUTION", 30, 9);
 
@@ -2072,12 +1950,9 @@ void Screen_Resolution6K(bool forceRefresh = false)
 
     // 4K
     String labelRes = "4K DCI";
-    window.setTextSize(buttonFontSizeNormal);
     window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
     window.drawCentreString("4K", 65, 36);
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawCentreString("DCI", 65, 58);
-    window.setTextSize(buttonFontSizeNormal);
+    window.drawCentreString("DCI", 65, 58, &Lato_Regular5pt7b);
 
     // 4K UHD
     labelRes = "4K UHD";
@@ -2093,10 +1968,8 @@ void Screen_Resolution6K(bool forceRefresh = false)
 
     // 4K DCI is Scaled from 5.7K, Ultra HD is Scaled from Full or 5.7K, HD is Scaled from Full, 5.7K, or 2.8K (however we can't change the 5.7K or 2.8K)
 
-    window.setTextSize(buttonFontSizeSmall);
-    window.drawString(currentRecordingFormat.frameWidthHeight_string().c_str(), 30, 90);
+    window.drawString(currentRecordingFormat.frameWidthHeight_string().c_str(), 30, 90, &Lato_Regular5pt7b);
     window.drawString("SCALED FROM SENSOR AREA", 30, 105);
-    window.setTextSize(buttonFontSizeNormal);
 
     if(currentRes == "4K DCI")
     {
@@ -2125,9 +1998,7 @@ void Screen_Resolution6K(bool forceRefresh = false)
       // 2.8K 5.7K
       window.fillSmoothRoundRect(115, 120, 195, 40, 3, (currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
       window.drawCentreString("5.7K / 2.8K", 212, 126);
-      window.setTextSize(buttonFontSizeSmall);
-      window.drawCentreString("CHECK/SET ON CAMERA", 212, 146);
-      window.setTextSize(buttonFontSizeNormal);
+      window.drawCentreString("CHECK/SET ON CAMERA", 212, 146, &Lato_Regular5pt7b);
     }
   }
   else
@@ -2266,7 +2137,6 @@ void Screen_Media4K6K(bool forceRefresh = false)
   Screen_Common_Connected(); // Common elements
 
     // Media label
-  window.setTextSize(buttonFontSizeNormal);
   window.setTextColor(TFT_WHITE);
   window.drawString("MEDIA", 30, 9);
 
@@ -2277,13 +2147,9 @@ void Screen_Media4K6K(bool forceRefresh = false)
   window.drawString("CFAST", 28, 50);
   if(cfast.status != CCUPacketTypes::MediaStatus::None) window.drawString(cfast.remainingRecordTimeString.c_str(), 155, 50);
 
-  window.setTextSize(buttonFontSizeSmall);
-  
-  if(cfast.status != CCUPacketTypes::MediaStatus::None) window.drawString("REMAINING TIME", 155, 35);
-  window.drawString("1", 300, 35);
-  window.drawString(cfast.GetStatusString().c_str(), 28, 35);
-
-  window.setTextSize(buttonFontSizeNormal);
+  if(cfast.status != CCUPacketTypes::MediaStatus::None) window.drawString("REMAINING TIME", 155, 35, &Lato_Regular5pt7b);
+  window.drawString("1", 300, 35, &Lato_Regular5pt7b);
+  window.drawString(cfast.GetStatusString().c_str(), 28, 35, &Lato_Regular5pt7b);
 
   // SD
   BMDCamera::MediaSlot sd = camera->getMediaSlots()[1];
@@ -2292,14 +2158,10 @@ void Screen_Media4K6K(bool forceRefresh = false)
   window.drawString("SD", 28, 95);
   if(sd.status != CCUPacketTypes::MediaStatus::None) window.drawString(sd.remainingRecordTimeString.c_str(), 155, 95);
 
-  window.setTextSize(buttonFontSizeSmall);
-  
-  if(sd.status != CCUPacketTypes::MediaStatus::None) window.drawString("REMAINING TIME", 155, 80);
-  window.drawString("2", 300, 80);
-  window.drawString(sd.GetStatusString().c_str(), 28, 80);
+  if(sd.status != CCUPacketTypes::MediaStatus::None) window.drawString("REMAINING TIME", 155, 80, &Lato_Regular5pt7b);
+  window.drawString("2", 300, 80, &Lato_Regular5pt7b);
+  window.drawString(sd.GetStatusString().c_str(), 28, 80, &Lato_Regular5pt7b);
   if(sd.StatusIsError()) window.setTextColor(TFT_WHITE);
-
-  window.setTextSize(buttonFontSizeNormal);
 
   // USB
   BMDCamera::MediaSlot usb = camera->getMediaSlots()[2];
@@ -2307,12 +2169,10 @@ void Screen_Media4K6K(bool forceRefresh = false)
   if(usb.StatusIsError()) window.drawRoundRect(20, 120, 295, 40, 3, (usb.active ? TFT_DARKGREEN : TFT_DARKGREY));
   window.drawString("USB", 28, 140);
   if(usb.status != CCUPacketTypes::MediaStatus::None) window.drawString(usb.remainingRecordTimeString.c_str(), 155, 140);
-
-  window.setTextSize(buttonFontSizeSmall);
   
-  if(usb.status != CCUPacketTypes::MediaStatus::None) window.drawString("REMAINING TIME", 155, 125);
-  window.drawString("3", 300, 125);
-  window.drawString(usb.GetStatusString().c_str(), 28, 125);
+  if(usb.status != CCUPacketTypes::MediaStatus::None) window.drawString("REMAINING TIME", 155, 125, &Lato_Regular5pt7b);
+  window.drawString("3", 300, 125, &Lato_Regular5pt7b);
+  window.drawString(usb.GetStatusString().c_str(), 28, 125, &Lato_Regular5pt7b);
   if(usb.StatusIsError()) window.setTextColor(TFT_WHITE);
 
   window.pushSprite(0, 0);
@@ -2470,7 +2330,7 @@ void setup() {
   M5.Display.pushImage(0,0,320,240,MPCSplash_M5Stack_CoreS3);
 
   // Set main font
-  window.setFont(&fonts::FreeMono12pt7b);
+  window.setFont(&Lato_Regular11pt7b);
 
   // Get and pass pointer to touch object specifically for passkey entry
   lgfx::v1::ITouch* touch = M5.Display.panel()->getTouch();
