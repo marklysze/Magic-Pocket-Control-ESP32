@@ -27,6 +27,15 @@ std::string LensConfig::GetFStopString(float fStopValue, ApertureUnits apertureU
             break;
     }
 
+    // std::string fStopString = std::to_string(static_cast<int>(fStopValue * 10 + 0.5) / 10.0);
+
+    char fStopBuffer[8];
+    std::snprintf(fStopBuffer, sizeof(fStopBuffer), "%.1f", fStopValue);
+    std::string fStopString(fStopBuffer);
+
+    return unitPrefix + fStopString;
+
+    /*
     bool isFractionalNumber = fStopValue != std::floor(fStopValue);
     bool isLessThanTen = fStopValue < 10.0;
     if(isFractionalNumber || isLessThanTen) {
@@ -34,4 +43,5 @@ std::string LensConfig::GetFStopString(float fStopValue, ApertureUnits apertureU
     }
 
     return unitPrefix + std::to_string((int)fStopValue);
+    */
 }

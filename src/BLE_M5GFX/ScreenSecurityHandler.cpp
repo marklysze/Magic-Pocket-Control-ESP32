@@ -1,4 +1,5 @@
 #include "ScreenSecurityHandler.h"
+#include "Lato_Regular11pt7b.h" // Standard font
 
 // Take in all the pointers we need access to to render the screen and handle touch
 ScreenSecurityHandler::ScreenSecurityHandler(BMDCameraConnection* bmdCameraConnectionPtr, lgfx::v1::ITouch* touchPtr, LGFX_Sprite* windowPtr, LGFX_Sprite* spritePassKeyPtr, int screenWidth, int screenHeight)
@@ -28,9 +29,9 @@ uint32_t ScreenSecurityHandler::onPassKeyRequest()
     _spritePassKeyPtr->fillRect(0, 0, 13, _screenHeight, TFT_ORANGE);
     _spritePassKeyPtr->fillRect(13, 0, 2, _screenHeight, TFT_DARKGREY);
 
-    _spritePassKeyPtr->setTextSize(2);
+    // _spritePassKeyPtr->setTextSize(2);
     _spritePassKeyPtr->setTextColor(TFT_WHITE);
-    _spritePassKeyPtr->drawString("Code:", 24, 7);
+    _spritePassKeyPtr->drawString("Code:", 24, 7, &Lato_Regular11pt7b);
 
     // Draw the 11 buttons, left to right, top to bottom
     _spritePassKeyPtr->fillSmoothRoundRect(20, 30, 70, 60, 5, TFT_YELLOW); // 7
@@ -39,9 +40,9 @@ uint32_t ScreenSecurityHandler::onPassKeyRequest()
     _spritePassKeyPtr->fillSmoothRoundRect(245, 30, 70, 60, 5, TFT_RED); // Back
 
     _spritePassKeyPtr->setTextColor(TFT_BLACK);
-    _spritePassKeyPtr->drawString("7", 50, 53);
-    _spritePassKeyPtr->drawString("8", 125, 53);
-    _spritePassKeyPtr->drawString("9", 200, 53);
+    _spritePassKeyPtr->drawString("7", 50, 53, &Lato_Regular11pt7b);
+    _spritePassKeyPtr->drawString("8", 125, 53, &Lato_Regular11pt7b);
+    _spritePassKeyPtr->drawString("9", 200, 53, &Lato_Regular11pt7b);
     _spritePassKeyPtr->fillTriangle(269, 60, 289, 45, 289, 73, TFT_BLACK);
 
     _spritePassKeyPtr->fillSmoothRoundRect(20, 95, 70, 60, 5, TFT_YELLOW); // 4
@@ -49,18 +50,18 @@ uint32_t ScreenSecurityHandler::onPassKeyRequest()
     _spritePassKeyPtr->fillSmoothRoundRect(170, 95, 70, 60, 5, TFT_YELLOW); // 6
     _spritePassKeyPtr->fillSmoothRoundRect(245, 95, 70, 125, 5, TFT_YELLOW); // 0
 
-    _spritePassKeyPtr->drawString("4", 50, 118);
-    _spritePassKeyPtr->drawString("5", 125, 118);
-    _spritePassKeyPtr->drawString("6", 200, 118);
-    _spritePassKeyPtr->drawString("0", 275, 151);
+    _spritePassKeyPtr->drawString("4", 50, 118, &Lato_Regular11pt7b);
+    _spritePassKeyPtr->drawString("5", 125, 118, &Lato_Regular11pt7b);
+    _spritePassKeyPtr->drawString("6", 200, 118, &Lato_Regular11pt7b);
+    _spritePassKeyPtr->drawString("0", 275, 151, &Lato_Regular11pt7b);
 
     _spritePassKeyPtr->fillSmoothRoundRect(20, 160, 70, 60, 5, TFT_YELLOW); // 1
     _spritePassKeyPtr->fillSmoothRoundRect(95, 160, 70, 60, 5, TFT_YELLOW); // 2
     _spritePassKeyPtr->fillSmoothRoundRect(170, 160, 70, 60, 5, TFT_YELLOW); // 3
 
-    _spritePassKeyPtr->drawString("1", 50, 174);
-    _spritePassKeyPtr->drawString("2", 125, 174);
-    _spritePassKeyPtr->drawString("3", 200, 174);
+    _spritePassKeyPtr->drawString("1", 50, 174, &Lato_Regular11pt7b);
+    _spritePassKeyPtr->drawString("2", 125, 174, &Lato_Regular11pt7b);
+    _spritePassKeyPtr->drawString("3", 200, 174, &Lato_Regular11pt7b);
 
     _spritePassKeyPtr->pushSprite(_windowPtr, 0, 0);
     _windowPtr->pushSprite(0, 0);
@@ -68,7 +69,7 @@ uint32_t ScreenSecurityHandler::onPassKeyRequest()
     bool pinComplete = false;
     std::vector<int> pinCodeArray;
 
-    _windowPtr->setTextSize(2);
+    // _windowPtr->setTextSize(2);
     _windowPtr->setTextColor(TFT_WHITE);
 
     unsigned long lastTapTime = 0; // Ensure we don't count a tap as a double entry
@@ -96,7 +97,7 @@ uint32_t ScreenSecurityHandler::onPassKeyRequest()
         _windowPtr->fillRect(95, 0, 100, 21, TFT_BLACK);
         for(int count = 0; count < pinCodeArray.size(); count++)
         {
-            _windowPtr->drawString(String(pinCodeArray[count]), 95 + (count * 15), 7);
+            _windowPtr->drawString(String(pinCodeArray[count]), 95 + (count * 15), 7, &Lato_Regular11pt7b);
         }
 
         _windowPtr->pushSprite(0, 0);

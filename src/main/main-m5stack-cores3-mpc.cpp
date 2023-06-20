@@ -282,7 +282,7 @@ void Screen_Dashboard(bool forceRefresh = false)
   if(tapped_x != -1)
   {
 
-    if(tapped_x >= 20 && tapped_y >= 5 && tapped_x <= 315 && tapped_y <= 160)
+    if(tapped_x >= 20 && tapped_y >= 5 && tapped_x <= 315 && tapped_y <= 205)
     {
       if(tapped_x >= 20 && tapped_y >= 5 && tapped_x <= 95 && tapped_y <= 70)
       {
@@ -330,6 +330,13 @@ void Screen_Dashboard(bool forceRefresh = false)
         lastRefreshedScreen = 0; // Forces a refresh
         return;
       }
+      else if(camera->hasHasLens() && tapped_x >= 20 && tapped_y >= 165 && tapped_x <= 315 && tapped_y <= 205)
+      {
+        // Lens
+        connectedScreenIndex = Screens::Lens;
+        lastRefreshedScreen = 0; // Forces a refresh
+        return;
+      }
     }
   }
 
@@ -363,8 +370,6 @@ void Screen_Dashboard(bool forceRefresh = false)
   xshift = 80;
   if(camera->hasShutterAngle())
   {
-    DEBUG_DEBUG("Dashboard: Shutter Angle");
-
     window.fillSmoothRoundRect(20 + xshift, 5, 75, 65, 3, TFT_DARKGREY);
     window.setTextColor(TFT_WHITE);
 
@@ -378,8 +383,6 @@ void Screen_Dashboard(bool forceRefresh = false)
     }
     else
     {
-      DEBUG_DEBUG("Dashboard: Shutter Speed");
-
       // Shutter Speed
       int currentShutterSpeed = camera->getShutterSpeed();
 
@@ -393,8 +396,6 @@ void Screen_Dashboard(bool forceRefresh = false)
   xshift += 80;
   if(camera->hasWhiteBalance() || camera->hasTint())
   {
-    DEBUG_DEBUG("Dashboard: White Balance");
-
     window.fillSmoothRoundRect(20 + xshift, 5, 135, 65, 3, TFT_DARKGREY);
     window.setTextColor(TFT_WHITE);
 
@@ -482,6 +483,23 @@ void Screen_Dashboard(bool forceRefresh = false)
 
     std::string resolution = camera->getRecordingFormat().frameDimensionsShort_string();
     window.drawCentreString(resolution.c_str(), 220, 130);
+  }
+
+  // Lens
+  if(camera->hasHasLens())
+  {
+    // Lens
+    window.fillSmoothRoundRect(20, 165, 295, 40, 3, TFT_DARKGREY);
+
+    if(camera->hasFocalLengthMM() && camera->hasApertureFStopString())
+    {
+      auto focalLength = camera->getFocalLengthMM();
+      std::string focalLengthMM = std::to_string(focalLength);
+      std::string combined = focalLengthMM + "mm";
+
+      window.drawString(combined.c_str(), 30, 174);
+      window.drawString(camera->getApertureFStopString().c_str(), 100, 174);
+    }
   }
 
   window.pushSprite(0, 0);
@@ -638,7 +656,7 @@ void Screen_ISO(bool forceRefresh = false)
 
   // ISO label
   window.setTextColor(TFT_WHITE);
-  window.drawString("ISO", 30, 9);
+  window.drawString("ISO", 30, 9, &AgencyFB_Bold9pt7b);
 
   // window.textbgcolor = TFT_DARKGREY;
 
@@ -681,7 +699,6 @@ void Screen_ISO(bool forceRefresh = false)
   // 3200
   labelISO = 3200;
   window.fillSmoothRoundRect(115, 120, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  // if(currentISO == labelISO) window.textbgcolor = TFT_DARKGREEN; else window.textbgcolor = TFT_DARKGREY;
   window.drawCentreString(String(labelISO).c_str(), 160, 126);
   window.drawCentreString("NATIVE", 160, 149, &Lato_Regular5pt7b);
 
@@ -771,8 +788,8 @@ void Screen_ShutterAngle(bool forceRefresh = false)
 
   // Shutter Angle label
   window.setTextColor(TFT_WHITE);
-  window.drawString("DEGREES", 265, 9, &Lato_Regular5pt7b);
-  window.drawString("SHUTTER ANGLE", 30, 9);
+  window.drawString("DEGREES", 265, 9, &AgencyFB_Regular7pt7b);
+  window.drawString("SHUTTER ANGLE", 30, 9, &AgencyFB_Bold9pt7b);
 
   // 15
   int labelShutterAngle = 1500;
@@ -1075,6 +1092,7 @@ void Screen_WBTint(bool forceRefresh = false)
       }
     }
   }
+  
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
   if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
@@ -1090,8 +1108,8 @@ void Screen_WBTint(bool forceRefresh = false)
 
   // ISO label
   window.setTextColor(TFT_WHITE);
-  window.drawString("WHITE BALANCE", 30, 9);
-  window.drawCentreString("TINT", 54, 132);
+  window.drawString("WHITE BALANCE", 30, 9, &AgencyFB_Bold9pt7b);
+  window.drawCentreString("TINT", 54, 132, &AgencyFB_Bold9pt7b);
 
   // Bright, 5600K
   int lblWBKelvin = 5600;
@@ -1144,8 +1162,8 @@ void Screen_WBTint(bool forceRefresh = false)
 
   // Current White Balance Kelvin
   window.fillSmoothRoundRect(160, 75, 90, 40, 3, TFT_DARKGREEN);
-  window.drawCentreString(String(currentWB), 205, 82);
-  window.drawCentreString("KELVIN", 205, 104, &Lato_Regular5pt7b);
+  window.drawCentreString(String(currentWB), 205, 80);
+  window.drawCentreString("KELVIN", 205, 103, &Lato_Regular5pt7b);
 
   // WB Adjust Right >
   window.fillSmoothRoundRect(255, 75, 60, 40, 3, TFT_DARKGREY);
@@ -1334,7 +1352,7 @@ void Screen_Codec4K6K(bool forceRefresh = false)
 
   // Codec label
   window.setTextColor(TFT_WHITE);
-  window.drawString("CODEC", 30, 9);
+  window.drawString("CODEC", 30, 9, &AgencyFB_Bold9pt7b);
 
   // BRAW and ProRes selector buttons
 
@@ -1363,12 +1381,12 @@ void Screen_Codec4K6K(bool forceRefresh = false)
 
     // Constant Bitrate
     window.fillSmoothRoundRect(20, 75, 145, 40, 3, (isConstantBitrate ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("BITRATE", 93, 83);
+    window.drawCentreString("BITRATE", 93, 80);
     window.drawCentreString("CONSTANT", 93, 102, &Lato_Regular5pt7b);
 
     // Constant Quality
     window.fillSmoothRoundRect(170, 75, 145, 40, 3, (!isConstantBitrate ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("QUALITY", 242, 83);
+    window.drawCentreString("QUALITY", 242, 80);
     window.drawCentreString("CONSTANT", 242, 102, &Lato_Regular5pt7b);
 
     // Setting 1 of 4
@@ -1625,38 +1643,38 @@ void Screen_Resolution4K(bool forceRefresh = false)
   {
     // Main label
     window.setTextColor(TFT_WHITE);
-    window.drawString("BRAW RESOLUTION", 30, 9);
+    window.drawString("BRAW RESOLUTION", 30, 9, &AgencyFB_Bold9pt7b);
 
     String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "4K DCI", "4K 2.4:1", "4K UHD", "2.8K Ana", "2.6K 16:9", "HD"
 
     // 4K DCI
     String labelRes = "4K DCI";
     window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("4K", 65, 36);
+    window.drawCentreString("4K", 65, 35);
     window.drawCentreString("DCI", 65, 58, &Lato_Regular5pt7b);
 
     // 4K 2.4:1
     labelRes = "4K 2.4:1";
     window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("4K", 160, 36);
+    window.drawCentreString("4K", 160, 35);
     window.drawCentreString("2.4:1", 160, 58, &Lato_Regular5pt7b);
 
     // 4K UHD
     labelRes = "4K UHD";
     window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("4K", 260, 36);
+    window.drawCentreString("4K", 260, 35);
     window.drawCentreString("UHD", 260, 58, &Lato_Regular5pt7b);
 
     // 2.8K Ana
     labelRes = "2.8K Ana";
     window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("2.8K", 65, 82);
+    window.drawCentreString("2.8K", 65, 81);
     window.drawCentreString("ANAMORPHIC", 65, 104, &Lato_Regular5pt7b);
 
     // 2.6K 16:9
     labelRes = "2.6K 16:9";
     window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("2.6K", 160, 82);
+    window.drawCentreString("2.6K", 160, 81);
     window.drawCentreString("16:9", 160, 104, &Lato_Regular5pt7b);
 
     // HD
@@ -1669,13 +1687,13 @@ void Screen_Resolution4K(bool forceRefresh = false)
     // Pocket 4K all are Windowed except 4K
     // window.drawSmoothRoundRect(20, 120, 5, 3, 290, 40, TFT_DARKGREY); // Optionally draw a rectangle around this info.
     window.drawCentreString(currentRes == "4K" ? "FULL SENSOR" :"SENSOR WINDOWED", 165, 129);
-    window.drawCentreString(currentRecordingFormat.frameWidthHeight_string().c_str(), 165, 148, &Lato_Regular5pt7b);
+    window.drawCentreString(currentRecordingFormat.frameWidthHeight_string().c_str(), 165, 150, &Lato_Regular5pt7b);
   }
   else if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes)
   {
     // Main label
     window.setTextColor(TFT_WHITE);
-    window.drawString("ProRes RESOLUTION", 30, 9);
+    window.drawString("ProRes RESOLUTION", 30, 9, &AgencyFB_Bold9pt7b);
 
     String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "4K DCI", "4K UHD", "HD"
 
@@ -1700,28 +1718,28 @@ void Screen_Resolution4K(bool forceRefresh = false)
     // 4K DCI is Scaled from 5.7K, Ultra HD is Scaled from Full or 5.7K, HD is Scaled from Full, 5.7K, or 2.8K (however we can't change the 5.7K or 2.8K)
 
     window.drawString(currentRecordingFormat.frameWidthHeight_string().c_str(), 30, 90, &Lato_Regular5pt7b);
-    window.drawString("SCALED FROM SENSOR AREA", 30, 105);
+    window.drawString("SCALED / SENSOR AREA", 30, 105);
 
     if(currentRes == "4K DCI")
     {
       // Full sensor area only]
-      window.fillSmoothRoundRect(20, 120, 90, 40, 3, TFT_DARKGREEN);
-      window.drawCentreString("FULL", 65, 131);
+      window.fillSmoothRoundRect(20, 135, 90, 40, 3, TFT_DARKGREEN);
+      window.drawCentreString("FULL", 65, 145);
     }
     else if(currentRes == "4K UHD")
     {
       // Full sensor area only]
-      window.fillSmoothRoundRect(20, 120, 90, 40, 3, TFT_DARKGREEN);
-      window.drawCentreString("WINDOW", 65, 131);
+      window.fillSmoothRoundRect(20, 135, 120, 40, 3, TFT_DARKGREEN);
+      window.drawCentreString("WINDOW", 80, 145);
     }
     else
     {
       // HD
 
       // Scaled from Full, 2.6K or Windowed (however we can't tell which)
-      window.fillSmoothRoundRect(20, 120, 290, 40, 3, TFT_DARKGREEN);
-      window.drawCentreString("FULL / 2.6K / WINDOW", 165, 129);
-      window.drawCentreString("CHECK/SET ON CAMERA", 165, 146, &Lato_Regular5pt7b);
+      window.fillSmoothRoundRect(20, 135, 290, 40, 3, TFT_DARKGREEN);
+      window.drawCentreString("FULL / 2.6K / WINDOW", 165, 140);
+      window.drawCentreString("CHECK/SET ON CAMERA", 165, 161, &Lato_Regular5pt7b);
     }
   }
   else
@@ -2138,14 +2156,14 @@ void Screen_Media4K6K(bool forceRefresh = false)
 
     // Media label
   window.setTextColor(TFT_WHITE);
-  window.drawString("MEDIA", 30, 9);
+  window.drawString("MEDIA", 30, 9, &AgencyFB_Bold9pt7b);
 
   // CFAST
   BMDCamera::MediaSlot cfast = camera->getMediaSlots()[0];
   window.fillSmoothRoundRect(20, 30, 295, 40, 3, (cfast.active ? TFT_DARKGREEN : TFT_DARKGREY));
   if(cfast.StatusIsError()) window.drawRoundRect(20, 30, 295, 40, 3, (cfast.active ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawString("CFAST", 28, 50);
-  if(cfast.status != CCUPacketTypes::MediaStatus::None) window.drawString(cfast.remainingRecordTimeString.c_str(), 155, 50);
+  window.drawString("CFAST", 28, 47);
+  if(cfast.status != CCUPacketTypes::MediaStatus::None) window.drawString(cfast.remainingRecordTimeString.c_str(), 155, 47);
 
   if(cfast.status != CCUPacketTypes::MediaStatus::None) window.drawString("REMAINING TIME", 155, 35, &Lato_Regular5pt7b);
   window.drawString("1", 300, 35, &Lato_Regular5pt7b);
@@ -2155,8 +2173,8 @@ void Screen_Media4K6K(bool forceRefresh = false)
   BMDCamera::MediaSlot sd = camera->getMediaSlots()[1];
   window.fillSmoothRoundRect(20, 75, 295, 40, 3, (sd.active ? TFT_DARKGREEN : TFT_DARKGREY));
   if(sd.StatusIsError()) window.drawRoundRect(20, 75, 295, 40, 3, (sd.active ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawString("SD", 28, 95);
-  if(sd.status != CCUPacketTypes::MediaStatus::None) window.drawString(sd.remainingRecordTimeString.c_str(), 155, 95);
+  window.drawString("SD", 28, 92);
+  if(sd.status != CCUPacketTypes::MediaStatus::None) window.drawString(sd.remainingRecordTimeString.c_str(), 155, 92);
 
   if(sd.status != CCUPacketTypes::MediaStatus::None) window.drawString("REMAINING TIME", 155, 80, &Lato_Regular5pt7b);
   window.drawString("2", 300, 80, &Lato_Regular5pt7b);
@@ -2167,8 +2185,8 @@ void Screen_Media4K6K(bool forceRefresh = false)
   BMDCamera::MediaSlot usb = camera->getMediaSlots()[2];
   window.fillSmoothRoundRect(20, 120, 295, 40, 3, (usb.active ? TFT_DARKGREEN : TFT_DARKGREY));
   if(usb.StatusIsError()) window.drawRoundRect(20, 120, 295, 40, 3, (usb.active ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawString("USB", 28, 140);
-  if(usb.status != CCUPacketTypes::MediaStatus::None) window.drawString(usb.remainingRecordTimeString.c_str(), 155, 140);
+  window.drawString("USB", 28, 137);
+  if(usb.status != CCUPacketTypes::MediaStatus::None) window.drawString(usb.remainingRecordTimeString.c_str(), 155, 137);
   
   if(usb.status != CCUPacketTypes::MediaStatus::None) window.drawString("REMAINING TIME", 155, 125, &Lato_Regular5pt7b);
   window.drawString("3", 300, 125, &Lato_Regular5pt7b);
@@ -2230,6 +2248,69 @@ void Screen_Media(bool forceRefresh = false)
     Screen_Media4K6K(forceRefresh); // If we don't have any media info, we show the 4K/6K screen that shows no media
 
 }
+
+void Screen_Lens(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Lens;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // If we have a tap, we should determine if it is on anything
+  bool tappedAction = false;
+  if(tapped_x != -1 && camera->hasTransportMode())
+  {
+    if(tapped_x >= 200 && tapped_y <= 120)
+    {
+      // Focus button
+      PacketWriter::writeAutoFocus(&cameraConnection);
+
+      DEBUG_DEBUG("Instantaneous Autofocus");
+      
+      tappedAction = true;
+    }
+  }
+
+    // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+
+  DEBUG_DEBUG("Screen Lens Refreshed.");
+
+  window.fillSprite(TFT_BLACK);
+
+  Screen_Common_Connected(); // Common elements
+
+  // M5GFX, set font here rather than on each drawString line
+  window.setFont(&Lato_Regular11pt7b);
+
+  // Focus button
+  window.drawCircle(257, 63, 57, TFT_BLUE); // Outer
+  window.fillSmoothCircle(257, 63, 54, TFT_SKYBLUE); // Inner
+  window.setTextColor(TFT_WHITE);
+  window.drawCentreString("FOCUS", 257, 50);
+
+  if(camera->hasFocalLengthMM())
+  {
+    auto focalLength = camera->getFocalLengthMM();
+    std::string focalLengthMM = std::to_string(focalLength);
+    std::string combined = focalLengthMM + "mm";
+
+    window.drawString(combined.c_str(), 30, 25, &Lato_Regular12pt7b);
+  }
+
+  if(camera->hasApertureFStopString())
+  {
+      window.drawString(camera->getApertureFStopString().c_str(), 30, 50, &Lato_Regular12pt7b);
+  }
+
+  window.pushSprite(0, 0);
+}
+
 
 void setup() {
 
@@ -2401,6 +2482,9 @@ void loop() {
         case Screens::Media:
           Screen_Media();
           break;
+        case Screens::Lens:
+          Screen_Lens();
+          break;
       }
     }
     else
@@ -2474,5 +2558,5 @@ void loop() {
     }
   }
 
-  delay(10);
+  delay(5);
 }

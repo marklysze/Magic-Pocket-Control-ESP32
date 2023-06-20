@@ -721,6 +721,7 @@ class CCUPacketTypes
                 }
 
                 // When sending commands, debug.
+                /*
                 if(buffer[PacketFormatIndex::OperationType] == static_cast<int>(CCUPacketTypes::OperationType::AssignValue))
                 {
                     DEBUG_VERBOSE("Command Serialize - Assign Value: ");
@@ -730,6 +731,7 @@ class CCUPacketTypes
                         
                     }
                 }
+                */
                
                 return buffer;
             }

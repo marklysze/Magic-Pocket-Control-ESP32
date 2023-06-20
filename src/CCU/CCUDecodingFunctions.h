@@ -38,6 +38,7 @@ public:
     static void DecodeApertureNormalised(std::vector<byte> inData);
     static void DecodeAutoFocus(std::vector<byte> inData);
     static void DecodeZoom(std::vector<byte> inData);
+    static void DecodeImageStabilisation(std::vector<byte> inData);
 
     static void DecodeVideoCategory(byte parameter, std::vector<byte> payloadData);
     static void DecodeSensorGainISO(std::vector<byte> inData);

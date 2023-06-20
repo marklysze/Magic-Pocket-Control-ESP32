@@ -94,6 +94,10 @@ public:
     bool hasFocalLengthMM();
     ccu_fixed_t getFocalLengthMM();
 
+    void OnImageStabilisationReceived(bool inImageStabilisation);
+    bool hasImageStabilisation();
+    bool getImageStabilisation();
+
     void onAutoFocusPressed(); // When auto focus button is pressed
 
     const std::vector<BMDCamera::MediaSlot> getMediaSlots();
@@ -299,6 +303,7 @@ private:
     std::shared_ptr<std::string> aperturefStopString;
     std::shared_ptr<int> apertureNormalised;
     std::shared_ptr<ccu_fixed_t> focalLengthMM;
+    std::shared_ptr<bool> imageStabilisation;
 
 
     // Video Attributes

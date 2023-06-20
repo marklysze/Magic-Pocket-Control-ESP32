@@ -239,7 +239,7 @@ std::string BMDCamera::getApertureUnitsString()
 void BMDCamera::onApertureFStopStringReceived(std::string inApertureFStopString)
 {
     if(aperturefStopString)
-        aperturefStopString->assign(inApertureFStopString);
+        *aperturefStopString = inApertureFStopString;
     else
         aperturefStopString = std::make_shared<std::string>(inApertureFStopString);
 
@@ -284,7 +284,7 @@ void BMDCamera::onFocalLengthMMReceived(ccu_fixed_t inFocalLengthMM)
         *focalLengthMM = inFocalLengthMM;
     else
         focalLengthMM = std::make_shared<ccu_fixed_t>(inFocalLengthMM);
-    
+
     modified();
 }
 bool BMDCamera::hasFocalLengthMM()
@@ -297,6 +297,29 @@ ccu_fixed_t BMDCamera::getFocalLengthMM()
         return *focalLengthMM;
     else
         throw std::runtime_error("Focal Length MM not assigned to.");
+}
+
+void BMDCamera::OnImageStabilisationReceived(bool inImageStabilisation)
+{
+    if(imageStabilisation)
+        *imageStabilisation = inImageStabilisation;
+    else
+        imageStabilisation = std::make_shared<bool>(inImageStabilisation);
+
+    DEBUG_DEBUG("Image Stabilisation Set: %s", (inImageStabilisation ? "Yes" : "No"));
+
+    modified();
+}
+bool BMDCamera::hasImageStabilisation()
+{
+    return static_cast<bool>(imageStabilisation);
+}
+bool BMDCamera::getImageStabilisation()
+{
+    if(imageStabilisation)
+        return *imageStabilisation;
+    else
+        throw std::runtime_error("Image Stabilisation not assigned to.");
 }
 
 // When auto focus button is pressed

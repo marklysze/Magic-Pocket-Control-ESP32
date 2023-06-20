@@ -24,6 +24,8 @@ class PacketWriter
         static void writeISO(int iso, BMDCameraConnection* connection);
         static void writeTransportInfo(TransportInfo transportInfo, BMDCameraConnection* connection);
         static void writeCodec(CodecInfo codecInfo, BMDCameraConnection* connection);
+        static void writeAutoFocus(BMDCameraConnection* connection);
+        static void writeFocusPosition(short focusPosition, BMDCameraConnection* connection);
 };
 
 #endif

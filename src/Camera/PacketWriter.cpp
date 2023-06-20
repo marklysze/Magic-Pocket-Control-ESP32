@@ -83,3 +83,17 @@ void PacketWriter::writeCodec(CodecInfo codecInfo, BMDCameraConnection* connecti
     CCUPacketTypes::Command command = CCUEncodingFunctions::CreateCodecCommand(codecInfo);
     validateAndSendCCUCommand(command, connection);
 }
+
+void PacketWriter::writeAutoFocus(BMDCameraConnection* connection)
+{
+    CCUPacketTypes::Command command = CCUEncodingFunctions::CreateVoidCommand(CCUPacketTypes::Category::Lens, (byte)CCUPacketTypes::LensParameter::AutoFocus);
+    validateAndSendCCUCommand(command, connection);
+}
+
+// Focus Position is 0 (near) to 2048 (far)
+void PacketWriter::writeFocusPosition(short focusPosition, BMDCameraConnection* connection)
+{
+    CCUPacketTypes::Command command = CCUEncodingFunctions::CreateFixed16Command(focusPosition, CCUPacketTypes::Category::Lens, (byte)CCUPacketTypes::LensParameter::Focus);
+
+    validateAndSendCCUCommand(command, connection);
+}

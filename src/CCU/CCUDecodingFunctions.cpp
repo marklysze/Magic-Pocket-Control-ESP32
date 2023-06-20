@@ -66,7 +66,29 @@ void CCUDecodingFunctions::DecodePayloadData(CCUPacketTypes::Category category, 
             break;
         case CCUPacketTypes::Category::Display:
             DecodeDisplayCategory(parameter, payloadData);
-        default:
+            break;
+        case CCUPacketTypes::Category::Audio:
+            DEBUG_VERBOSE("DecodePayloadData, Audio Category Not Supported Yet");
+            break;
+        case CCUPacketTypes::Category::Output:
+            DEBUG_VERBOSE("DecodePayloadData, Output Category Not Supported Yet");
+            break;
+        case CCUPacketTypes::Category::Tally:
+            DEBUG_VERBOSE("DecodePayloadData, Tally Category Not Supported Yet");
+            break;
+        case CCUPacketTypes::Category::Reference:
+            DEBUG_VERBOSE("DecodePayloadData, Reference Category Not Supported Yet");
+            break;
+        case CCUPacketTypes::Category::Configuration:
+            DEBUG_VERBOSE("DecodePayloadData, Configuration Category Not Supported Yet");
+            break;
+        case CCUPacketTypes::Category::ColorCorrection:
+            DEBUG_VERBOSE("DecodePayloadData, ColorCorrection Category Not Supported Yet");
+            break;
+        case CCUPacketTypes::Category::ExternalDeviceControl:
+            DEBUG_VERBOSE("DecodePayloadData, ExternalDeviceControl Category Not Supported Yet");
+            break;
+        default:            
             break;
     }
 }
@@ -108,8 +130,7 @@ void CCUDecodingFunctions::DecodeLensCategory(byte parameter, std::vector<byte> 
             DEBUG_VERBOSE("DecodeLensCategory, ParameterType Focus not catered for: %i", static_cast<byte>(parameterType));
             break;
         case CCUPacketTypes::LensParameter::ImageStabilisation:
-            // Not catered for
-            DEBUG_VERBOSE("DecodeLensCategory, ParameterType ImageStabilisation not catered for: %i", static_cast<byte>(parameterType));
+            DecodeImageStabilisation(payloadData);
             break;
         case CCUPacketTypes::LensParameter::Zoom:
             DecodeZoom(payloadData);
@@ -119,6 +140,7 @@ void CCUDecodingFunctions::DecodeLensCategory(byte parameter, std::vector<byte> 
             DEBUG_VERBOSE("DecodeLensCategory, ParameterType ZoomNormalised not catered for: %i", static_cast<byte>(parameterType));
             break;
         default:
+            DEBUG_VERBOSE("DecodeLensCategory, ParameterType #%i not catered for", static_cast<byte>(parameterType));
             break;
         }
     }
@@ -268,8 +290,6 @@ void CCUDecodingFunctions::DecodeZoom(std::vector<byte> inData)
 
     if(focalLengthMM != 0)
     {
-        // Serial.print("Decode Zoom Focal Length: "); Serial.println(focalLengthMM);
-
         BMDControlSystem::getInstance()->getCamera()->onHasLens(true); // A lens is attached
 
         BMDControlSystem::getInstance()->getCamera()->onFocalLengthMMReceived(focalLengthMM);
@@ -278,6 +298,15 @@ void CCUDecodingFunctions::DecodeZoom(std::vector<byte> inData)
     {
         // Serial.println("Decode Zoom: No Lens Information");
     }
+}
+
+void CCUDecodingFunctions::DecodeImageStabilisation(std::vector<byte> inData)
+{
+    bool imageStabilisationOn = inData[0] == 1;
+
+    DEBUG_DEBUG("Received Image Stabilisation: %s", (imageStabilisationOn ? "YES" : "NO"));
+
+    BMDControlSystem::getInstance()->getCamera()->OnImageStabilisationReceived(imageStabilisationOn);
 }
 
 
@@ -321,8 +350,9 @@ void CCUDecodingFunctions::DecodeVideoCategory(byte parameter, std::vector<byte>
             case CCUPacketTypes::VideoParameter::DisplayLUT:
                 DecodeDisplayLUT(payloadData);
                 break;
-        default:
-            break;
+            default:
+                DEBUG_VERBOSE("DecodeVideoCategory, ParameterType #%i not catered for", static_cast<byte>(parameterType));
+                break;
         }
     }
     else
@@ -395,6 +425,7 @@ void CCUDecodingFunctions::DecodeRecordingFormat(std::vector<byte> inData)
         Serial.println("Frame Rate will be 29.97");
     */
 
+    /*
     DEBUG_DEBUG("Recording Format, Width x Height [Windowed] [interlaced] [mrate] [sensor mrate] [offspeed]: %i x %i [%s] [%s] [%s] [%s] [%s]", recordingFormatData.width, recordingFormatData.height, recordingFormatData.windowedModeEnabled ? "Yes" : "No", recordingFormatData.interlacedEnabled ? "Yes" : "No", recordingFormatData.mRateEnabled ? "Yes" : "No", recordingFormatData.sensorMRateEnabled ? "Yes" : "No", recordingFormatData.offSpeedEnabled ? "Yes" : "No");
 
     // When sending commands, debug.
@@ -404,7 +435,7 @@ void CCUDecodingFunctions::DecodeRecordingFormat(std::vector<byte> inData)
         DEBUG_DEBUG("%i: %i", index, data[index]);
         
     }
-
+    */
 
    BMDControlSystem::getInstance()->getCamera()->onRecordingFormatReceived(recordingFormatData);
 }
@@ -501,8 +532,9 @@ void CCUDecodingFunctions::DecodeStatusCategory(byte parameter, std::vector<byte
             case CCUPacketTypes::StatusParameter::NewParameterTBD:
                 DEBUG_VERBOSE("DecodeStatusCategory, ParameterType ID %i is new. Payload Byte Count is %i. Two bytes are %i and %i", static_cast<byte>(parameterType), GetCount<byte>(payloadData), payloadData[0], payloadData[1]);
                 break;
-        default:
-            break;
+            default:
+                DEBUG_VERBOSE("DecodeStatusCategory, ParameterType #%i not catered for", static_cast<byte>(parameterType));
+                break;
         }
     }
     else
@@ -734,7 +766,6 @@ void CCUDecodingFunctions::DecodeMetadataCategory(byte parameter, std::vector<by
         switch (parameterType)
         {
             case CCUPacketTypes::MetadataParameter::Reel:
-                DEBUG_VERBOSE("DecodeMetadataCategory - Reel");
                 DecodeReel(payloadData);
                 break;
             case CCUPacketTypes::MetadataParameter::SceneTags:
@@ -779,9 +810,9 @@ void CCUDecodingFunctions::DecodeMetadataCategory(byte parameter, std::vector<by
             case CCUPacketTypes::MetadataParameter::LensIris:
                 DecodeLensIris(payloadData);
                 break;
-        default:
-            DEBUG_WARNING("DecodeMetadataCategory, ParameterType not known: %i", static_cast<byte>(parameterType));
-            break;
+            default:
+                DEBUG_VERBOSE("DecodeMetadataCategory, ParameterType not known: %i", static_cast<byte>(parameterType));
+                break;
         }
     }
     else
@@ -808,14 +839,6 @@ void CCUDecodingFunctions::DecodeReel(std::vector<byte> inData)
         bool editable = data[1] != 0;
 
         BMDControlSystem::getInstance()->getCamera()->onReelNumberReceived(reelNumber, editable);
-    }
-
-    try
-    {
-    }
-    catch(const std::exception& ex)
-    {
-        DEBUG_ERROR("CCUDecodingFunctions::DecodeReel - Caught exception: %s", ex.what());
     }
 }
 
@@ -914,6 +937,7 @@ void CCUDecodingFunctions::DecodeLensFocalLength(std::vector<byte> inData)
     std::string lensFocalLength = CCUDecodingFunctions::ConvertPayloadDataToString(inData);
 
     // DecodeLensFocalLength Lens Focal Length: 65mm
+    DEBUG_DEBUG("DecodeLensFocalLength %s", lensFocalLength.c_str());
 
     BMDControlSystem::getInstance()->getCamera()->onLensFocalLengthReceived(lensFocalLength);
 }
@@ -924,6 +948,7 @@ void CCUDecodingFunctions::DecodeLensDistance(std::vector<byte> inData)
 
     // DecodeLensFocalDistance Lens Distance: Inf
     // DecodeLensFocalDistance Lens Distance: 26100mm to 41310mm
+    DEBUG_DEBUG("DecodeLensDistance %s", lensDistance.c_str());
 
     BMDControlSystem::getInstance()->getCamera()->onLensDistanceReceived(lensDistance);
 }
@@ -935,6 +960,8 @@ void CCUDecodingFunctions::DecodeLensType(std::vector<byte> inData)
     // DecodeLensType Lens Type: Canon EF-S 55-250mm f/4-5.6 IS
     // "DecodeLensType Lens Type:" <-- this shows when there's no info between camera and lens.
 
+    DEBUG_DEBUG("DecodeLensType %s", lensType.c_str());
+
     BMDControlSystem::getInstance()->getCamera()->onLensTypeReceived(lensType);
 }
 
@@ -942,8 +969,7 @@ void CCUDecodingFunctions::DecodeLensIris(std::vector<byte> inData)
 {
     std::string lensIris = ConvertPayloadDataToString(inData);
 
-    // DecodeLensType Lens Type: Canon EF-S 55-250mm f/4-5.6 IS
-    // "DecodeLensType Lens Type:" <-- this shows when there's no info between camera and lens.
+    DEBUG_DEBUG("DecodeLensIris %s", lensIris.c_str());
 
     BMDControlSystem::getInstance()->getCamera()->onLensIrisReceived(lensIris);
 }
@@ -976,9 +1002,9 @@ void CCUDecodingFunctions::DecodeDisplayCategory(byte parameter, std::vector<byt
             case CCUPacketTypes::DisplayParameter::FocusAssist:
                 // Not handled.
                 break;
-        default:
-            DEBUG_WARNING("DecodeDisplayCategory, ParameterType not known: %i", static_cast<byte>(parameterType));
-            break;
+            default:
+                DEBUG_VERBOSE("DecodeDisplayCategory, ParameterType not known: %i", static_cast<byte>(parameterType));
+                break;
         }
     }
     else
