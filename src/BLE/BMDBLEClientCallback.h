@@ -2,7 +2,7 @@
 #define BMDBLECLIENTCALLBACK_H
 
 #include <BLEClient.h>
-#include <Camera\BMDCameraConnection.h>
+#include <Camera/BMDCameraConnection.h>
 
 class BMDCameraConnection; // forward declaration as both header files include each other.
 

@@ -2,7 +2,7 @@
 #define TRANSPORTINFO_H
 
 #include <Arduino.h>
-#include "CCU\CCUPacketTypes.h"
+#include "CCU/CCUPacketTypes.h"
 #include <vector>
 
 class TransportInfo

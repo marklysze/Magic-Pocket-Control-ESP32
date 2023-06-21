@@ -5,7 +5,7 @@
 #include <Arduino.h>
 #include <vector>
 #include "Arduino_DebugUtils.h"
-#include "Camera\ConstantsTypes.h"
+#include "Camera/ConstantsTypes.h"
 
 // Packet Format Index
 struct PacketFormatIndex {

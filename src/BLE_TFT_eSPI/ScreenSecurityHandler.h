@@ -4,9 +4,9 @@
 #include <BLEDevice.h>
 #include <Arduino.h>
 #include "Arduino_DebugUtils.h"
-#include "Camera\BMDCameraConnection.h"
+#include "Camera/BMDCameraConnection.h"
 #include <TFT_eSPI.h>
-#include "ESP32\CST816S\CST816S.h"
+#include "ESP32/CST816S/CST816S.h"
 
 class BMDCameraConnection;
 

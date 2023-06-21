@@ -2,7 +2,7 @@
 #define CCUPACKETTYPESSTRING_H
 
 #include "CCUPacketTypes.h"
-#include "Config\LensConfig.h"
+#include "Config/LensConfig.h"
 
 class CCUPacketTypesString
 {

@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include <stdint.h>
-#include "Camera\ConstantsTypes.h"
+#include "Camera/ConstantsTypes.h"
 
 class CCUUtility
 {

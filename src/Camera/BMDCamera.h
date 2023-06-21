@@ -5,13 +5,13 @@
 #include <vector>
 #include <memory>
 #include "Arduino_DebugUtils.h"
-#include "Camera\ConstantsTypes.h"
-#include "CCU\CCUPacketTypes.h"
-#include "CCU\CCUPacketTypesString.h"
-#include "Config\LensConfig.h"
-#include "Camera\CodecInfo.h"
-#include "Camera\TransportInfo.h"
-#include "Camera\CameraModels.h"
+#include "Camera/BMDCamera.h"
+#include "CCU/CCUPacketTypes.h"
+#include "CCU/CCUPacketTypesString.h"
+#include "Config/LensConfig.h"
+#include "Camera/CodecInfo.h"
+#include "Camera/TransportInfo.h"
+#include "Camera/CameraModels.h"
 
 class BMDCamera
 {

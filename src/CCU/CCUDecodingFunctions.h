@@ -9,12 +9,12 @@
 #include "CCUPacketTypes.h"
 #include "CCUValidationFunctions.h"
 #include "CCUUtility.h"
-#include "Camera\BMDCamera.h"
-#include "Config\LensConfig.h"
-#include "Config\VideoConfig.h"
-#include "Camera\CodecInfo.h"
-#include "Camera\CameraModels.h"
-#include "Camera\TransportInfo.h"
+#include "Camera/BMDCamera.h"
+#include "Config/LensConfig.h"
+#include "Config/VideoConfig.h"
+#include "Camera/CodecInfo.h"
+#include "Camera/CameraModels.h"
+#include "Camera/TransportInfo.h"
 
 class CCUDecodingFunctions
 {

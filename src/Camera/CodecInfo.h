@@ -1,7 +1,7 @@
 ﻿#ifndef CODECINFO_H
 #define CODECINFO_H
 
-#include "CCU\CCUPacketTypes.h"
+#include "CCU/CCUPacketTypes.h"
 
 class CodecInfo
 {

@@ -3,8 +3,8 @@
 
 #include "CCUPacketTypes.h"
 #include "CCUUtility.h"
-#include "Camera\TransportInfo.h"
-#include "Camera\CodecInfo.h"
+#include "Camera/TransportInfo.h"
+#include "Camera/CodecInfo.h"
 
 class CCUEncodingFunctions
 {

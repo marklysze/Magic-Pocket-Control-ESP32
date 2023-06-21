@@ -4,7 +4,7 @@
 #include <BLEDevice.h>
 #include <Arduino.h>
 #include "Arduino_DebugUtils.h"
-#include "Camera\BMDCameraConnection.h"
+#include "Camera/BMDCameraConnection.h"
 
 class BMDCameraConnection;
 

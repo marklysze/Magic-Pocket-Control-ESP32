@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <vector>
 #include "Arduino_DebugUtils.h"
-#include "Camera\ConstantsTypes.h"
+#include "Camera/ConstantsTypes.h"
 #include "CCUUtility.h"
 #include "CCUPacketTypes.h"
 

@@ -2,9 +2,9 @@
 #define PACKETWRITER_H
 
 #include "Arduino_DebugUtils.h"
-#include "CCU\CCUEncodingFunctions.h"
-#include "CCU\CCUPacketTypes.h"
-#include "CCU\CCUValidationFunctions.h"
+#include "CCU/CCUEncodingFunctions.h"
+#include "CCU/CCUPacketTypes.h"
+#include "CCU/CCUValidationFunctions.h"
 #include "BMDCamera.h"
 #include "BMDCameraConnection.h"
 

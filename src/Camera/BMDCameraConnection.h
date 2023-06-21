@@ -7,23 +7,23 @@
 // Include screen and screen security handler only if we're using TFT_eSPI
 #if USING_TFT_ESPI == 1
     #include <TFT_eSPI.h>
-    #include "BLE_TFT_eSPI\ScreenSecurityHandler.h"
+    #include "BLE_TFT_eSPI/ScreenSecurityHandler.h"
 #elif USING_M5GFX == 1
-    #include "BLE_M5GFX\ScreenSecurityHandler.h"
+    #include "BLE_M5GFX/ScreenSecurityHandler.h"
 #endif
 
-#include "BLE\SerialSecurityHandler.h"
-#include "BLE\BMDBLEClientCallback.h"
+#include "BLE/SerialSecurityHandler.h"
+#include "BLE/BMDBLEClientCallback.h"
 #include "BMDCamera.h"
-#include "CCU\CCUUtility.h"
+#include "CCU/CCUUtility.h"
 #include "BMDControlSystem.h"
 
 #if USING_TFT_ESPI == 1
-    #include "ESP32\CST816S\CST816S.h"
+    #include "ESP32/CST816S/CST816S.h"
 #endif
 
-#include "CCU\CCUDecodingFunctions.h"
-#include "Config\Versions.h"
+#include "CCU/CCUDecodingFunctions.h"
+#include "Config/Versions.h"
 #include "PowerControl.h"
 
 class BMDCameraConnection
