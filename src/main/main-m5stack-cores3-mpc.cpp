@@ -61,19 +61,19 @@ LGFX_Sprite spriteWBIncandescentBG;
 LGFX_Sprite spriteWBMixedLightBG;
 
 // Images
-#include "Images\MPCSplash-M5Stack-CoreS3.h"
-#include "Images\ImageBluetooth.h"
-#include "Images\ImagePocket4k.h"
-#include "Images\WBBright.h"
-#include "Images\WBCloud.h"
-#include "Images\WBFlourescent.h"
-#include "Images\WBIncandescent.h"
-#include "Images\WBMixedLight.h"
-#include "Images\WBBrightBG.h"
-#include "Images\WBCloudBG.h"
-#include "Images\WBFlourescentBG.h"
-#include "Images\WBIncandescentBG.h"
-#include "Images\WBMixedLightBG.h"
+#include "Images/MPCSplash-M5Stack-CoreS3.h"
+#include "Images/ImageBluetooth.h"
+#include "Images/ImagePocket4k.h"
+#include "Images/WBBright.h"
+#include "Images/WBCloud.h"
+#include "Images/WBFlourescent.h"
+#include "Images/WBIncandescent.h"
+#include "Images/WBMixedLight.h"
+#include "Images/WBBrightBG.h"
+#include "Images/WBCloudBG.h"
+#include "Images/WBFlourescentBG.h"
+#include "Images/WBIncandescentBG.h"
+#include "Images/WBMixedLightBG.h"
 
 BMDCameraConnection cameraConnection;
 std::shared_ptr<BMDControlSystem> BMDControlSystem::instance = nullptr; // Required for Singleton pattern and the constructor for BMDControlSystem
