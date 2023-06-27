@@ -3,7 +3,7 @@
 
 #include <memory>
 #include <stdio.h>
-#include "Camera\BMDCamera.h"
+#include "Camera/BMDCamera.h"
 
 class BMDControlSystem {
 public:
