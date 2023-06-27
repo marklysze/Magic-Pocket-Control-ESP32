@@ -4,13 +4,13 @@
 #include "Arduino_DebugUtils.h" // Debugging to Serial - https://github.com/arduino-libraries/Arduino_DebugUtils
 
 // Main BMD Libraries
-#include "Camera\ConstantsTypes.h"
-#include "Camera\PacketWriter.h"
-#include "CCU\CCUUtility.h"
-#include "CCU\CCUPacketTypes.h"
-#include "CCU\CCUValidationFunctions.h"
-#include "Camera\BMDCameraConnection.h"
-#include "Camera\BMDCamera.h"
+#include "Camera/ConstantsTypes.h"
+#include "Camera/PacketWriter.h"
+#include "CCU/CCUUtility.h"
+#include "CCU/CCUPacketTypes.h"
+#include "CCU/CCUValidationFunctions.h"
+#include "Camera/BMDCameraConnection.h"
+#include "Camera/BMDCamera.h"
 #include "BMDControlSystem.h"
 
 BMDCameraConnection cameraConnection;

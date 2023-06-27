@@ -12,16 +12,16 @@
 #undef min
 
 // Main BMD Libraries
-#include "Camera\PacketWriter.h"
-#include "Camera\BMDCameraConnection.h"
+#include "Camera/PacketWriter.h"
+#include "Camera/BMDCameraConnection.h"
 
 // Bluetooth for bonding support
 #include <BLEUtils.h>
 #include <BLEServer.h>
 
 // Images
-#include "Images\MPCSplash-M5StickC-Plus.h"
-#include "Images\ImageBluetooth.h"
+#include "Images/MPCSplash-M5StickC-Plus.h"
+#include "Images/ImageBluetooth.h"
 
 
 

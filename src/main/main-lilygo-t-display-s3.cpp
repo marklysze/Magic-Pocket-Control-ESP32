@@ -20,40 +20,40 @@ OneButton sleepButton(SLEEP_BUTTON_PIN, true);
 // https://github.com/fbiego/CST816S
 // Touch with Gesture for the touch controller on the T-Display-S3
 // Also integrated code from here to read touch points properly from the entire screen: // https://github.com/fbiego/CST816S/issues/1
-#include "ESP32\CST816S\CST816S.h"
-#include "ESP32\PinConfig.h"
+#include "ESP32/CST816S\CST816S.h"
+#include "ESP32/PinConfig.h"
 
 // Main BMD Libraries
-#include "Camera\ConstantsTypes.h"
-#include "Camera\PacketWriter.h"
-#include "CCU\CCUUtility.h"
-#include "CCU\CCUPacketTypes.h"
-#include "CCU\CCUValidationFunctions.h"
-#include "Camera\BMDCameraConnection.h"
-#include "Camera\BMDCamera.h"
+#include "Camera/ConstantsTypes.h"
+#include "Camera/PacketWriter.h"
+#include "CCU/CCUUtility.h"
+#include "CCU/CCUPacketTypes.h"
+#include "CCU/CCUValidationFunctions.h"
+#include "Camera/BMDCameraConnection.h"
+#include "Camera/BMDCamera.h"
 #include "BMDControlSystem.h"
 
 // Images
-#include "Images\MPCSplash.h"
-#include "Images\ImageBluetooth.h"
-#include "Images\ImagePocket4k.h"
-#include "Images\WBBright.h"
-#include "Images\WBCloud.h"
-#include "Images\WBFlourescent.h"
-#include "Images\WBIncandescent.h"
-#include "Images\WBMixedLight.h"
-#include "Images\WBBrightBG.h"
-#include "Images\WBCloudBG.h"
-#include "Images\WBFlourescentBG.h"
-#include "Images\WBIncandescentBG.h"
-#include "Images\WBMixedLightBG.h"
+#include "Images/MPCSplash.h"
+#include "Images/ImageBluetooth.h"
+#include "Images/ImagePocket4k.h"
+#include "Images/WBBright.h"
+#include "Images/WBCloud.h"
+#include "Images/WBFlourescent.h"
+#include "Images/WBIncandescent.h"
+#include "Images/WBMixedLight.h"
+#include "Images/WBBrightBG.h"
+#include "Images/WBCloudBG.h"
+#include "Images/WBFlourescentBG.h"
+#include "Images/WBIncandescentBG.h"
+#include "Images/WBMixedLightBG.h"
 
 // Include the watchdog library so we can stop it timing out while pass key entry.
 #include "esp_task_wdt.h"
 
 // Fonts
 // Within the "Setup206_LilyGo_T_Display_S3.h" file under TFT_eSPI add to the end: #define LOAD_GFXFF
-#include "Fonts\Free_Fonts.h"
+#include "Fonts/Free_Fonts.h"
 
 // https://github.com/fbiego/CST816S
 // Touch with Gesture for the touch controller on the T-Display-S3

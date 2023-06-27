@@ -7,13 +7,13 @@
 #include "Arduino_DebugUtils.h" // Debugging to Serial - https://github.com/arduino-libraries/Arduino_DebugUtils
 
 // Main BMD Libraries
-#include "Camera\ConstantsTypes.h"
-#include "Camera\PacketWriter.h"
-#include "CCU\CCUUtility.h"
-#include "CCU\CCUPacketTypes.h"
-#include "CCU\CCUValidationFunctions.h"
-#include "Camera\BMDCameraConnection.h"
-#include "Camera\BMDCamera.h"
+#include "Camera/ConstantsTypes.h"
+#include "Camera/PacketWriter.h"
+#include "CCU/CCUUtility.h"
+#include "CCU/CCUPacketTypes.h"
+#include "CCU/CCUValidationFunctions.h"
+#include "Camera/BMDCameraConnection.h"
+#include "Camera/BMDCamera.h"
 #include "BMDControlSystem.h"
 
 // Include the watchdog library so we can stop it timing out while pass key entry.
@@ -34,7 +34,8 @@ static M5Canvas spritePassKey(&M5.Display);
 // Rather than using font sizes, we use specific fonts for each size as it renders better on screen
 #include "Lato_Regular12pt7b.h" // Slightly larger version
 #include "Lato_Regular11pt7b.h" // Standard font
-#include "Lato_Regular5pt7b.h" // Small version
+#include "Lato_Regular6pt7b.h" // Small version for camera address
+#include "Lato_Regular5pt7b.h" // Smallest version
 #include "AgencyFB_Regular7pt7b.h" // Agency FB for tiny text
 #include "AgencyFB_Bold9pt7b.h" // Agency FB small for above buttons
 #include "AgencyFB_Regular9pt7b.h" // Agency FB small-medium for above buttons
@@ -239,7 +240,7 @@ void Screen_NoConnection()
 
     spritePocket4k.pushSprite(&window, 33 + (count * 125) + (count * 10), 69);
 
-    window.drawString(cameraConnection.cameraAddresses[count].toString().c_str(), 33 + (count * 125) + (count * 10), 144, &Lato_Regular5pt7b);
+    window.drawString(cameraConnection.cameraAddresses[count].toString().c_str(), 33 + (count * 125) + (count * 10), 144, &Lato_Regular6pt7b);
   }
 
   // If there's more than one camera, check for a tap to see if they have nominated one to connect to
