@@ -5,6 +5,8 @@ Designed for the Pocket 4K, Pocket 6K/G2/Pro, USRA G2 4.6K, URSA 12K.
 
 Coding is in C++ and setup for development in Visual Studio Code with the PlatformIO extension.
 
+*NOTE*: If you're using Mac or Linux and recently cloned the repository and were not able to get it running then please try again as all backslashes in the #includes have been changed to forward slashes.
+
 ![Magic Pocket Control](Documents/RepositorySplash.webp)
 
 Video with demos:
