@@ -1,6 +1,9 @@
 #define USING_TFT_ESPI 0    // Not using the TFT_eSPI graphics library <-- must include this in every main file, 0 = not using, 1 = using
 #define USING_M5GFX 1       // Using the M5GFX library
 
+// PlatformIO: m5stack-grey settings are defined here: https://github.com/platformio/platform-espressif32/blob/master/boards/m5stack-grey.json
+// Includes the definition of: ARDUINO_M5Stack_Core_ESP32
+
 #include <Arduino.h>
 #include <string.h>
 
@@ -2318,24 +2321,8 @@ void setup() {
   // Allow a timeout of 20 seconds for time for the pass key entry.
   esp_task_wdt_init(20, true);
 
-  // M5CoreS3 Demo
-  esp_err_t ret = nvs_flash_init();
-  if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
-      ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-      ESP_ERROR_CHECK(nvs_flash_erase());
-      ret = nvs_flash_init();
-  }
-
-  USBSerial.begin(15200);
+  Serial.begin(15200);
   M5.begin();
-
-  // BM8563 Init (clear INT)
-  M5.In_I2C.writeRegister8(0x51, 0x00, 0x00, 100000L);
-  M5.In_I2C.writeRegister8(0x51, 0x01, 0x00, 100000L);
-  M5.In_I2C.writeRegister8(0x51, 0x0D, 0x00, 100000L);
-
-  // AW9523 Control BOOST
-  M5.In_I2C.bitOn(AW9523_ADDR, 0x03, 0b10000000, 100000L);  // BOOST_EN
 
   M5.Display.setBrightness(100);
 
@@ -2343,7 +2330,7 @@ void setup() {
   M5.Display.setSwapBytes(true);
 
   // SET DEBUG LEVEL
-  Debug.setDebugOutputStream(&USBSerial); // M5CoreS3 uses this serial output
+  Debug.setDebugOutputStream(&Serial); // M5CoreS3 uses this serial output
   Debug.setDebugLevel(DBG_VERBOSE);
   Debug.timestampOn();
 
