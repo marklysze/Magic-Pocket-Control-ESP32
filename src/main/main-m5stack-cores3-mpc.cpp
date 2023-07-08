@@ -32,13 +32,13 @@ static M5Canvas spritePassKey(&M5.Display);
 // Lato font from Google Fonts
 // Agency FB font is free for commercial use, copied from Windows fonts
 // Rather than using font sizes, we use specific fonts for each size as it renders better on screen
-#include "Lato_Regular12pt7b.h" // Slightly larger version
-#include "Lato_Regular11pt7b.h" // Standard font
-#include "Lato_Regular6pt7b.h" // Small version for camera address
-#include "Lato_Regular5pt7b.h" // Smallest version
-#include "AgencyFB_Regular7pt7b.h" // Agency FB for tiny text
-#include "AgencyFB_Bold9pt7b.h" // Agency FB small for above buttons
-#include "AgencyFB_Regular9pt7b.h" // Agency FB small-medium for above buttons
+#include "Fonts/Lato_Regular12pt7b.h" // Slightly larger version
+#include "Fonts/Lato_Regular11pt7b.h" // Standard font
+#include "Fonts/Lato_Regular6pt7b.h" // Small version for camera address
+#include "Fonts/Lato_Regular5pt7b.h" // Smallest version
+#include "Fonts/AgencyFB_Regular7pt7b.h" // Agency FB for tiny text
+#include "Fonts/AgencyFB_Bold9pt7b.h" // Agency FB small for above buttons
+#include "Fonts/AgencyFB_Regular9pt7b.h" // Agency FB small-medium for above buttons
 
 
 // Screen width and height
