@@ -89,7 +89,8 @@ enum class Screens : byte
   Recording = 101,
   ISO = 102,
   ShutterAngleSpeed = 103,
-  WhiteBalanceTint = 104,
+  WhiteBalanceTintWB = 104, // Editing White Balance
+  WhiteBalanceTintT = 124, // Editing Tint
   Codec = 105,
   Framerate = 106,
   Resolution = 107,
@@ -106,17 +107,20 @@ Screens connectedScreenIndex = Screens::NoConnection; // The index of the screen
 // 101 is Recording
 // 102 is ISO
 // 103 is Shutter Angle & Shutter Speed
-// 104 is WB / Tint
+// 104 is WB / Tint - Edit WB
 // 105 is Codec
 // 106 is Framerate
 // 107 is Resolution (one for each camera group, 4K, 6K/G2/Pro, Mini Pro G2, Mini Pro 12K)
 // 108 is Media
 // 109 is Lens
+// 124 is WB / Tint - Edit Tint
 
 // Keep track of the last camera modified time that we refreshed a screen so we don't keep refreshing a screen when the camera object remains unchanged.
 static unsigned long lastRefreshedScreen = 0;
 
+// Button pressed indications for use in each individual page
 bool btnAPressed = false;
+bool btnBPressed = false;
 
 // Display elements on the screen common to all pages
 void Screen_Common(int sideBarColour)
@@ -131,20 +135,67 @@ void Screen_Common(int sideBarColour)
     {
       auto camera = BMDControlSystem::getInstance()->getCamera();
 
-      // Bottom Buttons
-      window.fillSmoothRoundRect(30, 210, 80, 40, 3, TFT_DARKCYAN);
       window.setTextColor(TFT_WHITE);
-      window.drawCenterString("TBD", 70, 217, &AgencyFB_Bold9pt7b);
 
-      if(camera->isRecording)
-        window.fillSmoothCircle(IWIDTH / 2, 240, 30, TFT_RED);
+      if(connectedScreenIndex == Screens::Dashboard)
+      {
+        // Dashboard Bottom Buttons
+        window.fillSmoothRoundRect(30, 210, 80, 40, 3, TFT_DARKCYAN);
+        window.drawCenterString("TBD", 70, 217, &AgencyFB_Bold9pt7b);
+
+        if(camera->isRecording)
+          window.fillSmoothCircle(IWIDTH / 2, 240, 30, TFT_RED);
+        else
+        {
+          // Two outlines to make it a bit thicker
+          window.drawCircle(IWIDTH / 2, 240, 30, TFT_RED);
+          window.drawCircle(IWIDTH / 2, 240, 29, TFT_RED);
+        }
+      }
+      else if(connectedScreenIndex == Screens::Recording)
+      {
+        // Recording Screen Bottom Buttons
+        window.fillSmoothRoundRect(30, 210, 80, 40, 3, TFT_DARKCYAN);
+        window.drawCenterString("TBD", 70, 217, &AgencyFB_Bold9pt7b);
+
+        if(camera->isRecording)
+          window.fillSmoothCircle(IWIDTH / 2, 240, 30, TFT_RED);
+        else
+        {
+          // Two outlines to make it a bit thicker
+          window.drawCircle(IWIDTH / 2, 240, 30, TFT_RED);
+          window.drawCircle(IWIDTH / 2, 240, 29, TFT_RED);
+        }
+      }
       else
       {
-        // Two outlines to make it a bit thicker
-        window.drawCircle(IWIDTH / 2, 240, 30, TFT_RED);
-        window.drawCircle(IWIDTH / 2, 240, 29, TFT_RED);
+        // Other Screens Bottom Buttons
+
+        switch(connectedScreenIndex)
+        {
+          case Screens::ISO:
+          case Screens::ShutterAngleSpeed:
+          case Screens::WhiteBalanceTintT:
+          case Screens::Codec:
+          case Screens::Resolution:
+          case Screens::Media:
+          case Screens::Lens:
+            window.fillSmoothRoundRect(30, 210, 170, 40, 3, TFT_DARKCYAN);
+            window.fillTriangle(60, 235, 70, 215, 50, 215, TFT_WHITE); // Up Arrow
+            window.fillTriangle(150, 235, 170, 235, 160, 215, TFT_WHITE); // Down Arrow
+            break;
+          case Screens::WhiteBalanceTintWB:
+            // White Balance shows Presets or increment
+            window.fillSmoothRoundRect(30, 210, 80, 40, 3, TFT_DARKCYAN);
+            window.drawCenterString("PRESET", 70, 217, &AgencyFB_Bold9pt7b);
+
+            window.fillSmoothRoundRect(130, 210, 80, 40, 3, TFT_DARKCYAN);
+            window.drawCenterString("+100", 160, 217, &AgencyFB_Bold9pt7b);
+            break;
+        }
       }
 
+      // Common Next Button
       window.fillSmoothRoundRect(210, 210, 80, 40, 3, TFT_DARKCYAN);
       window.drawCenterString("NEXT", 250, 217, &AgencyFB_Bold9pt7b);
     }
@@ -383,12 +434,12 @@ void Screen_Dashboard(bool forceRefresh = false)
 
   // Shutter
   xshift = 80;
-  if(camera->hasShutterAngle())
+  if(camera->hasShutterAngle() || camera->hasShutterSpeed())
   {
     window.fillSmoothRoundRect(20 + xshift, 5, 75, 65, 3, TFT_DARKGREY);
     window.setTextColor(TFT_WHITE);
 
-    if(camera->shutterValueIsAngle)
+    if(camera->shutterValueIsAngle && camera->hasShutterAngle())
     {
       // Shutter Angle
       int currentShutterAngle = camera->getShutterAngle();
@@ -396,7 +447,7 @@ void Screen_Dashboard(bool forceRefresh = false)
 
       window.drawCentreString(String(ShutterAngleFloat, (currentShutterAngle % 100 == 0 ? 0 : 1)), 58 + xshift, 23);
     }
-    else
+    else if(camera->hasShutterSpeed())
     {
       // Shutter Speed
       int currentShutterSpeed = camera->getShutterSpeed();
@@ -606,51 +657,53 @@ void Screen_ISO(bool forceRefresh = false)
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
 
-  // ISO Values, 200 / 400 / 1250 / 3200 / 8000
-
-  // If we have a tap, we should determine if it is on anything
-  /*
+  // If we have an up/down button press
   bool tappedAction = false;
-  if(tapped_x != -1)
+  std::vector<int> Options_ISO = {200, 400, 640, 800, 1250, 3200, 8000, 12800};
+  int Options_ISO_SelectingIndex = -1; // when using up/down buttons keeps track of what option you are navigating to
+  if(btnAPressed || btnBPressed)
   {
-    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 160)
+    if(camera->hasSensorGainISOValue()) // Ensure we have the ISO value before allowing it to be changed
     {
-      // Tapped within the area
-      int newISO = 0;
+      int currentValue = camera->getSensorGainISOValue();
 
-      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
-        newISO = 200;
-      else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
-        newISO = 400;
-      else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
-        newISO = 8000;
+      bool up = btnBPressed; // up = true, down = false
 
-      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 110 && tapped_y <= 115)
-        newISO = 640;
-      else if(tapped_x >= 115 && tapped_y >= 75 && tapped_x <= 205 && tapped_y <= 115)
-        newISO = 800;
-      else if(tapped_x >= 210 && tapped_y >= 75 && tapped_x <= 310 && tapped_y <= 115)
-        newISO = 12800;
-
-      else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 110 && tapped_y <= 160)
-        newISO = 1250;
-      else if(tapped_x >= 115 && tapped_y >= 120 && tapped_x <= 205 && tapped_y <= 160)
-        newISO = 3200;
-
-      if(newISO != 0)
+      // If we don't have a selected value yet, set to the current one
+      if(Options_ISO_SelectingIndex == -1)
       {
+        auto iter = std::find(Options_ISO.begin(), Options_ISO.end(), currentValue);
+        int index = (iter != Options_ISO.end()) ? std::distance(Options_ISO.begin(), iter) : -1;
+
+        if(index != -1)
+          Options_ISO_SelectingIndex = index;
+      }
+
+      if(Options_ISO_SelectingIndex != -1)
+      {
+        Options_ISO_SelectingIndex = Options_ISO_SelectingIndex + (up ? 1 : -1); // Move the selected option
+
+        if(Options_ISO_SelectingIndex < 0)
+        {
+          // Down button on the first option, go to the last option
+          Options_ISO_SelectingIndex = Options_ISO.size() -1;
+        }
+        else if(Options_ISO_SelectingIndex > (Options_ISO.size() - 1))
+        {
+          // Up button on the last option, go to the first option
+          Options_ISO_SelectingIndex = 0;
+        }
+
         // ISO selected, send it to the camera
-        PacketWriter::writeISO(newISO, &cameraConnection);
+        PacketWriter::writeISO(Options_ISO[Options_ISO_SelectingIndex], &cameraConnection);
 
         tappedAction = true;
       }
     }
   }
-  */
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
-  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
@@ -678,42 +731,50 @@ void Screen_ISO(bool forceRefresh = false)
   // 200
   int labelISO = 200;
   window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(Options_ISO_SelectingIndex == 0) window.drawRoundRect(20, 30, 90, 40, 1, TFT_WHITE);
   window.drawCentreString(String(labelISO).c_str(), 65, 41);
 
   // 400
   labelISO = 400;
   window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(Options_ISO_SelectingIndex == 1) window.drawRoundRect(115, 30, 90, 40, 1, TFT_WHITE);
   window.drawCentreString(String(labelISO).c_str(), 160, 36);
   window.drawCentreString("NATIVE", 160, 59, &Lato_Regular5pt7b);
 
   // 8000
   labelISO = 8000;
   window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(Options_ISO_SelectingIndex == 6) window.drawRoundRect(210, 30, 100, 40, 1, TFT_WHITE);
   window.drawCentreString(String(labelISO).c_str(), 260, 41);
 
   // 640
   labelISO = 640;
   window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(Options_ISO_SelectingIndex == 2) window.drawRoundRect(20, 75, 90, 40, 1, TFT_WHITE);
   window.drawCentreString(String(labelISO).c_str(), 65, 87);
 
   // 800
   labelISO = 800;
   window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(Options_ISO_SelectingIndex == 3) window.drawRoundRect(115, 75, 90, 40, 1, TFT_WHITE);
   window.drawCentreString(String(labelISO).c_str(), 160, 87);
 
   // 12800
   labelISO = 12800;
   window.fillSmoothRoundRect(210, 75, 100, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(Options_ISO_SelectingIndex == 7) window.drawRoundRect(210, 75, 100, 40, 1, TFT_WHITE);
   window.drawCentreString(String(labelISO).c_str(), 260, 87);
 
   // 1250
   labelISO = 1250;
   window.fillSmoothRoundRect(20, 120, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(Options_ISO_SelectingIndex == 4) window.drawRoundRect(20, 120, 90, 40, 1, TFT_WHITE);
   window.drawCentreString(String(labelISO).c_str(), 65, 131);
 
   // 3200
   labelISO = 3200;
   window.fillSmoothRoundRect(115, 120, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(Options_ISO_SelectingIndex == 5) window.drawRoundRect(115, 120, 90, 40, 1, TFT_WHITE);
   window.drawCentreString(String(labelISO).c_str(), 160, 126);
   window.drawCentreString("NATIVE", 160, 149, &Lato_Regular5pt7b);
 
@@ -740,52 +801,91 @@ void Screen_ShutterAngle(bool forceRefresh = false)
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
 
-  // Shutter Angle Values: 15, 60, 90, 120, 150, 180, 270, 360, CUSTOM
-  // Note that the protocol takes shutter angle times 100, so 180 = 180 x 100 = 18000. This is so it can accommodate decimal places, like 172.8 degrees = 17280 for the protocol.
-
-  // If we have a tap, we should determine if it is on anything
-  /*
+  // If we have an up/down button press
   bool tappedAction = false;
-  if(tapped_x != -1)
+  std::vector<int> Options_ShutterAngle = {1500, 6000, 9000, 12000, 15000, 18000, 27000, 36000}; // Values are X100
+  int Options_ShutterAngle_SelectingIndex = -1; // when using up/down buttons keeps track of what option you are navigating to
+  if(btnAPressed || btnBPressed)
   {
-    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 160)
+    DEBUG_DEBUG("Shutter Angle Screen: Btn A/B pressed");
+
+    if(camera->hasShutterAngle()) // Ensure we have a value before allowing it to be changed
     {
-      // Tapped within the area
-      int newShutterAngle = 0;
+      // Get the current Shutter Angle (comes through X100, so 180 degrees = 18000)
+      int currentValue = camera->getShutterAngle();
 
-      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
-        newShutterAngle = 1500;
-      else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
-        newShutterAngle = 6000;
-      else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
-        newShutterAngle = 9000;
+      bool up = btnBPressed; // up = true, down = false
 
-      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 110 && tapped_y <= 115)
-        newShutterAngle = 12000;
-      else if(tapped_x >= 115 && tapped_y >= 75 && tapped_x <= 205 && tapped_y <= 115)
-        newShutterAngle = 15000;
-      else if(tapped_x >= 210 && tapped_y >= 75 && tapped_x <= 310 && tapped_y <= 115)
-        newShutterAngle = 18000;
-
-      else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 110 && tapped_y <= 160)
-        newShutterAngle = 27000;
-      else if(tapped_x >= 115 && tapped_y >= 120 && tapped_x <= 205 && tapped_y <= 160)
-        newShutterAngle = 36000;
-
-      if(newShutterAngle != 0)
+      // If we don't have a selected value yet, set to the current one
+      if(Options_ShutterAngle_SelectingIndex == -1)
       {
+        auto iter = std::find(Options_ShutterAngle.begin(), Options_ShutterAngle.end(), currentValue);
+        int index = (iter != Options_ShutterAngle.end()) ? std::distance(Options_ShutterAngle.begin(), iter) : -1;
+
+        if(index != -1)
+          Options_ShutterAngle_SelectingIndex = index;
+        else // Custom Shutter Angle, use the latest one
+        {
+          int closestIndex = -1;
+          int closestValue = std::numeric_limits<int>::min();  // Initialize with the lowest possible value
+
+          for (int i = 0; i < Options_ShutterAngle.size(); ++i) {
+              int optionValue = Options_ShutterAngle[i];
+
+              if (optionValue <= currentValue && optionValue > closestValue) {
+                  closestIndex = i;
+                  closestValue = optionValue;
+              }
+          }
+
+          if (closestIndex != -1)
+          {
+            if(up)
+              Options_ShutterAngle_SelectingIndex = closestIndex; // Pressing up, closest one lower is right
+            else
+            {
+              if(closestIndex < Options_ShutterAngle.size() - 1)
+                Options_ShutterAngle_SelectingIndex = closestIndex + 1; // Pressing down, go up
+              else
+                Options_ShutterAngle_SelectingIndex = 0; // Already at the top, so go back to the start
+            }
+          }
+          else // Lower than the lowest, so set to lowest in options
+          {
+            if(up)
+              Options_ShutterAngle_SelectingIndex = Options_ShutterAngle.size() - 1; // Pressing up on a number lower than the lowest, put on the highest so we can go back around to the lowest in the set
+            else
+              Options_ShutterAngle_SelectingIndex = 0; // Otherwise pressing down and keep at the lowest and we'll be going to the highest
+          }
+        }
+      }
+
+      // Move to the next option and send it to the camera
+      if(Options_ShutterAngle_SelectingIndex != -1)
+      {
+        Options_ShutterAngle_SelectingIndex = Options_ShutterAngle_SelectingIndex + (up ? 1 : -1); // Move the selected option
+
+        if(Options_ShutterAngle_SelectingIndex < 0)
+        {
+          // Down button on the first option, go to the last option
+          Options_ShutterAngle_SelectingIndex = Options_ShutterAngle.size() -1;
+        }
+        else if(Options_ShutterAngle_SelectingIndex > (Options_ShutterAngle.size() - 1))
+        {
+          // Up button on the last option, go to the first option
+          Options_ShutterAngle_SelectingIndex = 0;
+        }
+
         // Shutter Angle selected, send it to the camera
-        PacketWriter::writeShutterAngle(newShutterAngle, &cameraConnection);
+        PacketWriter::writeShutterAngle(Options_ShutterAngle[Options_ShutterAngle_SelectingIndex], &cameraConnection);
 
         tappedAction = true;
       }
     }
   }
-  */
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
-  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
@@ -809,42 +909,50 @@ void Screen_ShutterAngle(bool forceRefresh = false)
   // 15
   int labelShutterAngle = 1500;
   window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(Options_ShutterAngle_SelectingIndex == 0) window.drawRoundRect(20, 30, 90, 40, 1, TFT_WHITE);
   window.drawCentreString(String(labelShutterAngle / 100).c_str(), 65, 41);
 
   // 60
   labelShutterAngle = 6000;
   window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(Options_ShutterAngle_SelectingIndex == 1) window.drawRoundRect(115, 30, 90, 40, 1, TFT_WHITE);
   window.drawCentreString(String(labelShutterAngle / 100).c_str(), 160, 41);
 
   // 90
   labelShutterAngle = 9000;
   window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(Options_ShutterAngle_SelectingIndex == 2) window.drawRoundRect(210, 30, 100, 40, 1, TFT_WHITE);
   window.drawCentreString(String(labelShutterAngle / 100).c_str(), 260, 41);
 
   // 120
   labelShutterAngle = 12000;
   window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(Options_ShutterAngle_SelectingIndex == 3) window.drawRoundRect(20, 75, 90, 40, 1, TFT_WHITE);
   window.drawCentreString(String(labelShutterAngle / 100).c_str(), 65, 87);
 
   // 150
   labelShutterAngle = 15000;
   window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(Options_ShutterAngle_SelectingIndex == 4) window.drawRoundRect(115, 75, 90, 40, 1, TFT_WHITE);
   window.drawCentreString(String(labelShutterAngle / 100).c_str(), 160, 87);
 
   // 180 (with a border around it)
   labelShutterAngle = 18000;
   window.fillSmoothRoundRect(210, 75, 100, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawRoundRect(210, 75, 100, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  window.drawRoundRect(210, 75, 100, 40, 3, TFT_DARKGREEN);
+  if(Options_ShutterAngle_SelectingIndex == 5) window.drawRoundRect(210, 75, 100, 40, 1, TFT_WHITE);
   window.drawCentreString(String(labelShutterAngle / 100).c_str(), 260, 87);
 
   // 270
   labelShutterAngle = 27000;
   window.fillSmoothRoundRect(20, 120, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(Options_ShutterAngle_SelectingIndex == 6) window.drawRoundRect(20, 120, 90, 40, 1, TFT_WHITE);
   window.drawCentreString(String(labelShutterAngle / 100).c_str(), 65, 131);
 
   // 360
   labelShutterAngle = 36000;
   window.fillSmoothRoundRect(115, 120, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(Options_ShutterAngle_SelectingIndex == 7) window.drawRoundRect(115, 120, 90, 40, 1, TFT_WHITE);
   window.drawCentreString(String(labelShutterAngle / 100).c_str(), 160, 131);
 
   // Custom Shutter Angle - show if not one of the above values
@@ -874,49 +982,91 @@ void Screen_ShutterSpeed(bool forceRefresh = false)
   // Shutter Speed Values: 1/30, 1/50, 1/60, 1/125, 1/200, 1/250, 1/500, 1/2000, CUSTOM
   // Note that the protocol takes the denominator as its parameter value. So for 1/60 we'll pass 60.
 
-  // If we have a tap, we should determine if it is on anything
-  /*
+  // If we have an up/down button press
   bool tappedAction = false;
-  if(tapped_x != -1)
+  std::vector<int> Options_ShutterSpeed = {30, 50, 60, 125, 200, 250, 500, 2000};
+  int Options_ShutterSpeed_SelectingIndex = -1; // when using up/down buttons keeps track of what option you are navigating to
+  if(btnAPressed || btnBPressed)
   {
-    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 160)
+    DEBUG_DEBUG("Shutter Speed Screen: Btn A/B pressed");
+
+    if(camera->hasShutterSpeed()) // Ensure we have a value before allowing it to be changed
     {
-      // Tapped within the area
-      int newShutterSpeed = 0;
+      // Get the current Shutter Speed (denominator, e.g. 1/60 will return 60)
+      int currentValue = camera->getShutterSpeed();
 
-      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
-        newShutterSpeed = 30;
-      else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
-        newShutterSpeed = 50;
-      else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
-        newShutterSpeed = 60;
+      bool up = btnBPressed; // up = true, down = false
 
-      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 110 && tapped_y <= 115)
-        newShutterSpeed = 125;
-      else if(tapped_x >= 115 && tapped_y >= 75 && tapped_x <= 205 && tapped_y <= 115)
-        newShutterSpeed = 200;
-      else if(tapped_x >= 210 && tapped_y >= 75 && tapped_x <= 310 && tapped_y <= 115)
-        newShutterSpeed = 250;
-
-      else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 110 && tapped_y <= 160)
-        newShutterSpeed = 500;
-      else if(tapped_x >= 115 && tapped_y >= 120 && tapped_x <= 205 && tapped_y <= 160)
-        newShutterSpeed = 2000;
-
-      if(newShutterSpeed != 0)
+      // If we don't have a selected value yet, set to the current one
+      if(Options_ShutterSpeed_SelectingIndex == -1)
       {
+        auto iter = std::find(Options_ShutterSpeed.begin(), Options_ShutterSpeed.end(), currentValue);
+        int index = (iter != Options_ShutterSpeed.end()) ? std::distance(Options_ShutterSpeed.begin(), iter) : -1;
+
+        if(index != -1)
+          Options_ShutterSpeed_SelectingIndex = index;
+        else // Custom Shutter Speed, use the latest one
+        {
+          int closestIndex = -1;
+          int closestValue = std::numeric_limits<int>::min();  // Initialize with the lowest possible value
+
+          for (int i = 0; i < Options_ShutterSpeed.size(); ++i) {
+              int optionValue = Options_ShutterSpeed[i];
+
+              if (optionValue <= currentValue && optionValue > closestValue) {
+                  closestIndex = i;
+                  closestValue = optionValue;
+              }
+          }
+
+          if (closestIndex != -1)
+          {
+            if(up)
+              Options_ShutterSpeed_SelectingIndex = closestIndex; // Pressing up, closest one lower is right
+            else
+            {
+              if(closestIndex < Options_ShutterSpeed.size() - 1)
+                Options_ShutterSpeed_SelectingIndex = closestIndex + 1; // Pressing down, go up
+              else
+                Options_ShutterSpeed_SelectingIndex = 0; // Already at the top, so go back to the start
+            }
+          }
+          else // Lower than the lowest, so set to lowest in options
+          {
+            if(up)
+              Options_ShutterSpeed_SelectingIndex = Options_ShutterSpeed.size() - 1; // Pressing up on a number lower than the lowest, put on the highest so we can go back around to the lowest in the set
+            else
+              Options_ShutterSpeed_SelectingIndex = 0; // Otherwise pressing down and keep at the lowest and we'll be going to the highest
+          }
+        }
+      }
+
+      // Move to the next option and send it to the camera
+      if(Options_ShutterSpeed_SelectingIndex != -1)
+      {
+        Options_ShutterSpeed_SelectingIndex = Options_ShutterSpeed_SelectingIndex + (up ? 1 : -1); // Move the selected option
+
+        if(Options_ShutterSpeed_SelectingIndex < 0)
+        {
+          // Down button on the first option, go to the last option
+          Options_ShutterSpeed_SelectingIndex = Options_ShutterSpeed.size() -1;
+        }
+        else if(Options_ShutterSpeed_SelectingIndex > (Options_ShutterSpeed.size() - 1))
+        {
+          // Up button on the last option, go to the first option
+          Options_ShutterSpeed_SelectingIndex = 0;
+        }
+
         // Shutter Speed selected, send it to the camera
-        PacketWriter::writeShutterSpeed(newShutterSpeed, &cameraConnection);
+        PacketWriter::writeShutterSpeed(Options_ShutterSpeed[Options_ShutterSpeed_SelectingIndex], &cameraConnection);
 
         tappedAction = true;
       }
     }
   }
-  */
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
-  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
@@ -943,7 +1093,7 @@ void Screen_ShutterSpeed(bool forceRefresh = false)
     window.drawRightString(camera->getRecordingFormat().frameRate_string().c_str() + String(" fps"), 310, 9, &Lato_Regular5pt7b);
   }
 
-  window.drawString("SHUTTER SPEED", 30, 9);
+  window.drawString("SHUTTER SPEED", 30, 9, &AgencyFB_Bold9pt7b);
 
   // 1/30
   int labelShutterSpeed = 30;
@@ -998,12 +1148,12 @@ void Screen_ShutterSpeed(bool forceRefresh = false)
   }
 }
 
-void Screen_WBTint(bool forceRefresh = false)
+void Screen_WBTint(bool editWB, bool forceRefresh = false) // editWB indicates editing White Balance when true, editing Tint when false
 {
   if(!BMDControlSystem::getInstance()->hasCamera())
     return;
 
-  connectedScreenIndex = Screens::WhiteBalanceTint;
+  connectedScreenIndex = editWB ? Screens::WhiteBalanceTintWB : Screens::WhiteBalanceTintT;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
 
@@ -1020,98 +1170,187 @@ void Screen_WBTint(bool forceRefresh = false)
   if(camera->hasTint())
     currentTint = camera->getTint();
 
-  // If we have a tap, we should determine if it is on anything
-  /*
+  // If we have an up/down button press
   bool tappedAction = false;
-  if(tapped_x != -1)
+  if((btnAPressed || btnBPressed) && camera->hasWhiteBalance() && camera->hasTint())
   {
-    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 160)
+    DEBUG_DEBUG("White Balance Screen: Btn A/B pressed");
+
+    if(editWB) // White Balance Edit
     {
-      // Tapped within the area
-      int newWB = 0;
-      int newTint = 0;
+      if(btnAPressed)
+      {
+        // White Balance Presets
 
-      // Check Preset Clicks
-      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 90 && tapped_y <= 70)
-      {
-        // Bright
-        newWB = 5600;
-        newTint = 10;
-      }
-      else if(tapped_x >= 95 && tapped_y >= 30 && tapped_x <= 165 && tapped_y <= 70)
-      {
-        // Incandescent
-        newWB = 3200;
-        newTint = 0;
-      }
-      else if(tapped_x >= 170 && tapped_y >= 30 && tapped_x <= 240 && tapped_y <= 70)
-      {
-        // Fluorescent
-        newWB = 4000;
-        newTint = 15;
-      }
-      else if(tapped_x >= 245 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 70)
-      {
-        // Mixed Light
-        newWB = 4500;
-        newTint = 15;
-      }
-      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 90 && tapped_y <= 115)
-      {
-        // Cloud
-        newWB = 6500;
-        newTint = 10;
-      }
+        std::vector<int> Options_WB = {5600, 3200, 4000, 4500, 6500};
+        std::vector<int> Options_WB_Tint = {10, 0, 15, 15, 10}; // Corresponding Tints for WB presets
+        int Options_WB_SelectingIndex = -1; // when using up/down buttons keeps track of what option you are navigating to
 
-      // Preset clicked
-      if(newWB != 0)
-      {
-        // Send preset to camera
-        PacketWriter::writeWhiteBalance(newWB, newTint, &cameraConnection);
+        // Get the current White Balance
+        int currentValue = currentWB;
 
-        tappedAction = true;
+        bool up = true;
+
+        // If we don't have a selected value yet, set to the current one
+        if(Options_WB_SelectingIndex == -1)
+        {
+          auto iter = std::find(Options_WB.begin(), Options_WB.end(), currentValue);
+          int index = (iter != Options_WB.end()) ? std::distance(Options_WB.begin(), iter) : -1;
+
+          if(index != -1)
+            Options_WB_SelectingIndex = index;
+          else // Custom Shutter Speed, use the latest one
+          {
+            int closestIndex = -1;
+            int closestValue = std::numeric_limits<int>::min();  // Initialize with the lowest possible value
+
+            for (int i = 0; i < Options_WB.size(); ++i) {
+                int optionValue = Options_WB[i];
+
+                if (optionValue <= currentValue && optionValue > closestValue) {
+                    closestIndex = i;
+                    closestValue = optionValue;
+                }
+            }
+
+            if (closestIndex != -1)
+            {
+              if(up)
+                Options_WB_SelectingIndex = closestIndex; // Pressing up, closest one lower is right
+              else
+              {
+                if(closestIndex < Options_WB.size() - 1)
+                  Options_WB_SelectingIndex = closestIndex + 1; // Pressing down, go up
+                else
+                  Options_WB_SelectingIndex = 0; // Already at the top, so go back to the start
+              }
+            }
+            else // Lower than the lowest, so set to lowest in options
+            {
+              if(up)
+                Options_WB_SelectingIndex = Options_WB.size() - 1; // Pressing up on a number lower than the lowest, put on the highest so we can go back around to the lowest in the set
+              else
+                Options_WB_SelectingIndex = 0; // Otherwise pressing down and keep at the lowest and we'll be going to the highest
+            }
+          }
+        }
+
+        // Move to the next option and send it to the camera
+        if(Options_WB_SelectingIndex != -1)
+        {
+          Options_WB_SelectingIndex = Options_WB_SelectingIndex + (up ? 1 : -1); // Move the selected option
+
+          if(Options_WB_SelectingIndex < 0)
+          {
+            // Down button on the first option, go to the last option
+            Options_WB_SelectingIndex = Options_WB.size() -1;
+          }
+          else if(Options_WB_SelectingIndex > (Options_WB.size() - 1))
+          {
+            // Up button on the last option, go to the first option
+            Options_WB_SelectingIndex = 0;
+          }
+
+          // Shutter Speed selected, send it to the camera
+          PacketWriter::writeWhiteBalance(Options_WB[Options_WB_SelectingIndex], Options_WB_Tint[Options_WB_SelectingIndex], &cameraConnection);
+
+          tappedAction = true;
+        }
       }
       else
       {
-        // Not a preset
+        // White Balance +100
+        int newWB = currentWB + 100;
 
-        // WB Left
-        if(currentWB != 0 && currentWB >= 2550 && tapped_x >= 95 && tapped_y >= 75 && tapped_x <= 155 && tapped_y <= 115)
-        {
-          // Adjust down by 50
-          PacketWriter::writeWhiteBalance(currentWB - 50, currentTint, &cameraConnection);
+        if(newWB > 10000)
+          newWB = 2500;
 
-          tappedAction = true;
-        }
-        else if(currentWB != 0 && currentWB <= 9950 && tapped_x >= 255 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
-        {
-          // Adjust up by 50
-          PacketWriter::writeWhiteBalance(currentWB + 50, currentTint, &cameraConnection);
+          // Shutter Speed selected, send it to the camera
+          PacketWriter::writeWhiteBalance(newWB, currentTint, &cameraConnection);
 
           tappedAction = true;
-        }
-        else if(currentWB != 0 && currentTint > -50 && tapped_x >= 95 && tapped_y >= 120 && tapped_x <= 155 && tapped_y <= 160)
-        {
-          // Adjust down by 1
-          PacketWriter::writeWhiteBalance(currentWB, currentTint - 1, &cameraConnection);
+      }
+    }
+    else if(!editWB && camera->hasTint())
+    {
+      std::vector<int> Options_Tint = {-50, -40, -30, -20, -15, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50};
+      int Options_Tint_SelectingIndex = -1; // when using up/down buttons keeps track of what option you are navigating to
 
-          tappedAction = true;
-        }
-        else if(currentWB != 0 && currentWB <= 9950 && tapped_x >= 255 && tapped_y >= 120 && tapped_x <= 315 && tapped_y <= 160)
-        {
-          // Adjust up by 1
-          PacketWriter::writeWhiteBalance(currentWB, currentTint + 1, &cameraConnection);
+      // Get the current Tint
+      int currentValue = currentTint;
 
-          tappedAction = true;
+      bool up = btnBPressed; // up = true, down = false
+
+      // If we don't have a selected value yet, set to the current one
+      if(Options_Tint_SelectingIndex == -1)
+      {
+        auto iter = std::find(Options_Tint.begin(), Options_Tint.end(), currentValue);
+        int index = (iter != Options_Tint.end()) ? std::distance(Options_Tint.begin(), iter) : -1;
+
+        if(index != -1)
+          Options_Tint_SelectingIndex = index;
+        else // Custom Shutter Speed, use the latest one
+        {
+          int closestIndex = -1;
+          int closestValue = std::numeric_limits<int>::min();  // Initialize with the lowest possible value
+
+          for (int i = 0; i < Options_Tint.size(); ++i) {
+              int optionValue = Options_Tint[i];
+
+              if (optionValue <= currentValue && optionValue > closestValue) {
+                  closestIndex = i;
+                  closestValue = optionValue;
+              }
+          }
+
+          if (closestIndex != -1)
+          {
+            if(up)
+              Options_Tint_SelectingIndex = closestIndex; // Pressing up, closest one lower is right
+            else
+            {
+              if(closestIndex < Options_Tint.size() - 1)
+                Options_Tint_SelectingIndex = closestIndex + 1; // Pressing down, go up
+              else
+                Options_Tint_SelectingIndex = 0; // Already at the top, so go back to the start
+            }
+          }
+          else // Lower than the lowest, so set to lowest in options
+          {
+            if(up)
+              Options_Tint_SelectingIndex = Options_Tint.size() - 1; // Pressing up on a number lower than the lowest, put on the highest so we can go back around to the lowest in the set
+            else
+              Options_Tint_SelectingIndex = 0; // Otherwise pressing down and keep at the lowest and we'll be going to the highest
+          }
         }
+      }
+
+      // Move to the next option and send it to the camera
+      if(Options_Tint_SelectingIndex != -1)
+      {
+        Options_Tint_SelectingIndex = Options_Tint_SelectingIndex + (up ? 1 : -1); // Move the selected option
+
+        if(Options_Tint_SelectingIndex < 0)
+        {
+          // Down button on the first option, go to the last option
+          Options_Tint_SelectingIndex = Options_Tint.size() -1;
+        }
+        else if(Options_Tint_SelectingIndex > (Options_Tint.size() - 1))
+        {
+          // Up button on the last option, go to the first option
+          Options_Tint_SelectingIndex = 0;
+        }
+
+        // Shutter Speed selected, send it to the camera
+        PacketWriter::writeWhiteBalance(currentWB, Options_Tint[Options_Tint_SelectingIndex], &cameraConnection);
+
+        tappedAction = true;
       }
     }
   }
-  */
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
-  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
@@ -1124,7 +1363,7 @@ void Screen_WBTint(bool forceRefresh = false)
 
   // ISO label
   window.setTextColor(TFT_WHITE);
-  window.drawString("WHITE BALANCE", 30, 9, &AgencyFB_Bold9pt7b);
+  window.drawString(editWB ? "WHITE BALANCE" : "TINT", 30, 9, &AgencyFB_Bold9pt7b);
   window.drawCentreString("TINT", 54, 132, &AgencyFB_Bold9pt7b);
 
   // Bright, 5600K
@@ -1172,30 +1411,36 @@ void Screen_WBTint(bool forceRefresh = false)
   else
     window.pushImage(40, 80, 30, 30, WBCloud);
 
-  // WB Adjust Left <
-  window.fillSmoothRoundRect(95, 75, 60, 40, 3, TFT_DARKGREY);
-  window.drawCentreString("<", 125, 87);
-
   // Current White Balance Kelvin
   window.fillSmoothRoundRect(160, 75, 90, 40, 3, TFT_DARKGREEN);
   window.drawCentreString(String(currentWB), 205, 80);
   window.drawCentreString("KELVIN", 205, 103, &Lato_Regular5pt7b);
 
-  // WB Adjust Right >
-  window.fillSmoothRoundRect(255, 75, 60, 40, 3, TFT_DARKGREY);
-  window.drawCentreString(">", 284, 87);
+  if(editWB)
+  {
+    // WB Adjust Left <
+    window.fillSmoothRoundRect(95, 75, 60, 40, 3, TFT_DARKGREY);
+    window.drawCentreString("<", 125, 87);
 
-  // Tint Adjust Left <
-  window.fillSmoothRoundRect(95, 120, 60, 40, 3, TFT_DARKGREY);
-  window.drawCentreString("<", 125, 132);
+    // WB Adjust Right >
+    window.fillSmoothRoundRect(255, 75, 60, 40, 3, TFT_DARKGREY);
+    window.drawCentreString(">", 284, 87);
+  }
 
   // Current Tint
   window.fillSmoothRoundRect(160, 120, 90, 40, 3, TFT_DARKGREEN);
   window.drawCentreString(String(currentTint), 205, 132);
 
-  // Tint Adjust Right >
-  window.fillSmoothRoundRect(255, 120, 60, 40, 3, TFT_DARKGREY);
-  window.drawCentreString(">", 284, 132);
+  if(!editWB)
+  {
+    // Tint Adjust Left <
+    window.fillSmoothRoundRect(95, 120, 60, 40, 3, TFT_DARKGREY);
+    window.drawCentreString("<", 125, 132);
+
+    // Tint Adjust Right >
+    window.fillSmoothRoundRect(255, 120, 60, 40, 3, TFT_DARKGREY);
+    window.drawCentreString(">", 284, 132);
+  }
 }
 
 // Codec Screen for Pocket 4K and 6K + Variants
@@ -2435,8 +2680,9 @@ void loop() {
           else
             Screen_ShutterSpeed();
           break;
-        case Screens::WhiteBalanceTint:
-          Screen_WBTint();
+        case Screens::WhiteBalanceTintWB:
+        case Screens::WhiteBalanceTintT:
+          Screen_WBTint(connectedScreenIndex == Screens::WhiteBalanceTintWB);
           break;
         case Screens::Codec:
           Screen_Codec();
@@ -2464,9 +2710,7 @@ void loop() {
     cameraConnection.connect(cameraConnection.cameraAddresses[0]);
 
     if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::FailedPassKey)
-    {
       DEBUG_DEBUG("Loop - Failed Pass Key");
-    }
 
     // Clear the screen so we can show the dashboard cleanly
     window.fillScreen(BLACK);
@@ -2491,12 +2735,12 @@ void loop() {
   */
 
   // Buttons
+  btnAPressed = false;
+  btnBPressed = false;
   M5.update();
 
   if(M5.BtnA.wasPressed() || M5.BtnB.wasPressed() || M5.BtnC.wasPressed())
   {
-    DEBUG_DEBUG("Button Pressed");
-
     // Left button function changes on context
     // Only handle dashboard here
     if(M5.BtnA.wasPressed())
@@ -2513,7 +2757,8 @@ void loop() {
         case Screens::Recording:
         case Screens::ISO:
         case Screens::ShutterAngleSpeed:
-        case Screens::WhiteBalanceTint:
+        case Screens::WhiteBalanceTintWB:
+        case Screens::WhiteBalanceTintT:
         case Screens::Codec:
         case Screens::Resolution:
         case Screens::Media:
@@ -2525,29 +2770,52 @@ void loop() {
     }
     else if(M5.BtnB.wasPressed())
     {
-      // RECORD START/STOP
-      // Do we have a camera instance created (happens when connected)
-      if(BMDControlSystem::getInstance()->hasCamera())
+      DEBUG_DEBUG("Button B");
+
+      switch(connectedScreenIndex)
       {
-          // Get the camera instance so we can check the state of it
-          auto camera = BMDControlSystem::getInstance()->getCamera();
+        case Screens::Dashboard:
+        case Screens::Recording:
 
-          // Only hit record if we have the Transport Mode info (knowing if it's recording) and we're not already recording.
-          if(camera->hasTransportMode())
+          // RECORD START/STOP FOR DASHBOARD AND RECORDING SCREEN
+          if(connectedScreenIndex == Screens::Dashboard || connectedScreenIndex == Screens::Recording)
           {
-              // Record button
-              DEBUG_VERBOSE("Record Start/Stop");
+            // Do we have a camera instance created (happens when connected)
+            if(BMDControlSystem::getInstance()->hasCamera())
+            {
+                // Get the camera instance so we can check the state of it
+                auto camera = BMDControlSystem::getInstance()->getCamera();
 
-              auto transportInfo = camera->getTransportMode();
+                // Only hit record if we have the Transport Mode info (knowing if it's recording) and we're not already recording.
+                if(camera->hasTransportMode())
+                {
+                    // Record button
+                    DEBUG_VERBOSE("Record Start/Stop");
 
-              if(!camera->isRecording)
-                transportInfo.mode = CCUPacketTypes::MediaTransportMode::Record;
-              else
-                transportInfo.mode = CCUPacketTypes::MediaTransportMode::Preview;
+                    auto transportInfo = camera->getTransportMode();
 
-              // Send the packet to the camera to start recording
-              PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
+                    if(!camera->isRecording)
+                      transportInfo.mode = CCUPacketTypes::MediaTransportMode::Record;
+                    else
+                      transportInfo.mode = CCUPacketTypes::MediaTransportMode::Preview;
+
+                    // Send the packet to the camera to start recording
+                    PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
+                }
+            }
           }
+          break;
+        case Screens::ISO:
+        case Screens::ShutterAngleSpeed:
+        case Screens::WhiteBalanceTintWB:
+        case Screens::WhiteBalanceTintT:
+        case Screens::Codec:
+        case Screens::Resolution:
+        case Screens::Media:
+        case Screens::Lens:
+          // Indicate to the other screens the second button has been pressed
+          btnBPressed = true;
+          break;
       }
     }
     else if(M5.BtnC.wasPressed())
@@ -2566,9 +2834,12 @@ void loop() {
           connectedScreenIndex = Screens::ShutterAngleSpeed;
           break;
         case Screens::ShutterAngleSpeed:
-          connectedScreenIndex = Screens::WhiteBalanceTint;
+          connectedScreenIndex = Screens::WhiteBalanceTintWB;
           break;
-        case Screens::WhiteBalanceTint:
+        case Screens::WhiteBalanceTintWB:
+          connectedScreenIndex = Screens::WhiteBalanceTintT;
+          break;
+        case Screens::WhiteBalanceTintT:
           connectedScreenIndex = Screens::Codec;
           break;
         case Screens::Codec:

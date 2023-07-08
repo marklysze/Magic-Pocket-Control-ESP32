@@ -57,7 +57,11 @@
 			"streambuf": "cpp",
 			"cinttypes": "cpp",
 			"typeinfo": "cpp",
-			"*.tpp": "cpp"
+			"*.tpp": "cpp",
+			"chrono": "cpp",
+			"list": "cpp",
+			"ratio": "cpp",
+			"thread": "cpp"
 		}
 	}
 }
