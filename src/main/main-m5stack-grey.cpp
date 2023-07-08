@@ -1,8 +1,6 @@
-#define USING_TFT_ESPI 0    // Not using the TFT_eSPI graphics library <-- must include this in every main file, 0 = not using, 1 = using
-#define USING_M5GFX 1       // Using the M5GFX library
-
-// PlatformIO: m5stack-grey settings are defined here: https://github.com/platformio/platform-espressif32/blob/master/boards/m5stack-grey.json
-// Includes the definition of: ARDUINO_M5Stack_Core_ESP32
+#define USING_TFT_ESPI 0        // Not using the TFT_eSPI graphics library <-- must include this in every main file, 0 = not using, 1 = using
+#define USING_M5GFX 0           // Using the M5GFX library with touch screen
+#define USING_M5GFX_BUTTONS 1   // Using the M5GFX library with the 3 buttons (buttons A, B, C)
 
 #include <Arduino.h>
 #include <string.h>
@@ -22,33 +20,33 @@
 // Include the watchdog library so we can stop it timing out while pass key entry.
 #include "esp_task_wdt.h"
 
-// Based on M5CoreS3 Demo - M5 libraries
-#include <nvs_flash.h>
-#include "config.h"
+// M5
 #include "M5GFX.h"
 #include "M5Unified.h"
-#include "lgfx/v1/Touch.hpp"
-static M5GFX display;
-static M5Canvas window(&M5.Display);
-static M5Canvas spritePassKey(&M5.Display);
+// static M5GFX display;
+// M5Canvas window(&display);
+M5GFX& window = M5.Display; // We'll directly use the display for writing rather than a sprite/M5Canvas, we'll use the alias window so code can remain similar between other devices
+// static M5Canvas spritePassKey(&display);
 
 // Lato font from Google Fonts
 // Agency FB font is free for commercial use, copied from Windows fonts
 // Rather than using font sizes, we use specific fonts for each size as it renders better on screen
-#include "Lato_Regular12pt7b.h" // Slightly larger version
-#include "Lato_Regular11pt7b.h" // Standard font
-#include "Lato_Regular6pt7b.h" // Small version for camera address
-#include "Lato_Regular5pt7b.h" // Smallest version
-#include "AgencyFB_Regular7pt7b.h" // Agency FB for tiny text
-#include "AgencyFB_Bold9pt7b.h" // Agency FB small for above buttons
-#include "AgencyFB_Regular9pt7b.h" // Agency FB small-medium for above buttons
-
+#include "Fonts/Lato_Regular12pt7b.h" // Slightly larger version
+#include "Fonts/Lato_Regular11pt7b.h" // Standard font
+#include "Fonts/Lato_Regular6pt7b.h" // Small version for camera address
+#include "Fonts/Lato_Regular5pt7b.h" // Smallest version
+#include "Fonts/AgencyFB_Regular7pt7b.h" // Agency FB for tiny text
+#include "Fonts/AgencyFB_Bold9pt7b.h" // Agency FB small for above buttons
+#include "Fonts/AgencyFB_Regular9pt7b.h" // Agency FB small-medium for above buttons
 
 // Screen width and height
 #define IWIDTH 320
 #define IHEIGHT 240
 
 // Sprites for Images
+// Not using sprites, writing directly to M5.Display (aka "window")
+// This causes flashing on the display, so we need to address this
+/*
 LGFX_Sprite spriteMPCSplash;
 LGFX_Sprite spriteBluetooth;
 LGFX_Sprite spritePocket4k;
@@ -62,6 +60,7 @@ LGFX_Sprite spriteWBCloudBG;
 LGFX_Sprite spriteWBFlourescentBG;
 LGFX_Sprite spriteWBIncandescentBG;
 LGFX_Sprite spriteWBMixedLightBG;
+*/
 
 // Images
 #include "Images/MPCSplash-M5Stack-CoreS3.h"
@@ -117,12 +116,13 @@ Screens connectedScreenIndex = Screens::NoConnection; // The index of the screen
 // Keep track of the last camera modified time that we refreshed a screen so we don't keep refreshing a screen when the camera object remains unchanged.
 static unsigned long lastRefreshedScreen = 0;
 
-int tapped_x = -1;
-int tapped_y = -1;
+bool btnAPressed = false;
 
 // Display elements on the screen common to all pages
 void Screen_Common(int sideBarColour)
 {
+    DEBUG_DEBUG("Screen_Common");
+
     // Sidebar colour
     window.fillRect(0, 0, 13, IHEIGHT, sideBarColour);
     window.fillRect(13, 0, 2, IHEIGHT, TFT_DARKGREY);
@@ -134,7 +134,7 @@ void Screen_Common(int sideBarColour)
       // Bottom Buttons
       window.fillSmoothRoundRect(30, 210, 80, 40, 3, TFT_DARKCYAN);
       window.setTextColor(TFT_WHITE);
-      window.drawCenterString("DASH", 70, 217, &AgencyFB_Bold9pt7b);
+      window.drawCenterString("TBD", 70, 217, &AgencyFB_Bold9pt7b);
 
       if(camera->isRecording)
         window.fillSmoothCircle(IWIDTH / 2, 240, 30, TFT_RED);
@@ -146,8 +146,7 @@ void Screen_Common(int sideBarColour)
       }
 
       window.fillSmoothRoundRect(210, 210, 80, 40, 3, TFT_DARKCYAN);
-      window.drawCenterString("CODEC", 250, 217, &AgencyFB_Bold9pt7b); //fonts::FreeMono9pt7b);
-
+      window.drawCenterString("NEXT", 250, 217, &AgencyFB_Bold9pt7b);
     }
 }
 
@@ -166,22 +165,24 @@ void Screen_Common_Connected()
   }
 }
 
-
 // Screen for when there's no connection, it's scanning, and it's trying to connect.
 void Screen_NoConnection()
 {
+  DEBUG_DEBUG("Screen_NoConnection");
+
   // The camera to connect to.
   int connectToCameraIndex = -1;
 
   connectedScreenIndex = Screens::NoConnection;
 
-  spriteMPCSplash.pushSprite(&window, 0, 0);
+  // Background 
+  window.pushImage(0, 0, IWIDTH, IHEIGHT, MPCSplash_M5Stack_CoreS3);
 
   // Black background for text and Bluetooth Logo
   window.fillRect(0, 3, IWIDTH, 51, TFT_BLACK);
 
   // Bluetooth Image
-  spriteBluetooth.pushSprite(&window, 26, 6);
+  window.pushImage(26, 6, 30, 46, Wikipedia_Bluetooth_30x46);
 
   switch(cameraConnection.status)
   {
@@ -216,6 +217,7 @@ void Screen_NoConnection()
       window.drawString("Wrong Pass Key", 70, 20);
       break;
     case BMDCameraConnection::Disconnected:
+      DEBUG_DEBUG("NoConnection - Disconnected");
       Screen_Common(TFT_RED); // Common elements
       window.drawString("Disconnected (wait)", 70, 20);
       break;
@@ -241,12 +243,13 @@ void Screen_NoConnection()
       window.drawRoundRect(25 + (count * 125) + (count * 10), 60, 5, 2, TFT_GREEN);
     }
 
-    spritePocket4k.pushSprite(&window, 33 + (count * 125) + (count * 10), 69);
+    window.pushImage(33 + (count * 125) + (count * 10), 69, 110, 61, blackmagic_pocket_4k_110x61);
 
     window.drawString(cameraConnection.cameraAddresses[count].toString().c_str(), 33 + (count * 125) + (count * 10), 144, &Lato_Regular6pt7b);
   }
 
   // If there's more than one camera, check for a tap to see if they have nominated one to connect to
+  /*
   if(cameras > 1 && tapped_x != -1)
   {
       if(tapped_x >= 25 && tapped_y >= 60 && tapped_x <= 150 && tapped_y <= 160)
@@ -260,8 +263,7 @@ void Screen_NoConnection()
         connectToCameraIndex = 1;
       }
   }
-
-  window.pushSprite(0, 0);
+  */
 
   if(connectToCameraIndex != -1)
   {
@@ -282,6 +284,7 @@ void Screen_Dashboard(bool forceRefresh = false)
   int xshift = 0;
 
   // If we have a tap, we should determine if it is on anything
+  /*
   bool tappedAction = false;
   if(tapped_x != -1)
   {
@@ -343,16 +346,19 @@ void Screen_Dashboard(bool forceRefresh = false)
       }
     }
   }
+  */
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
+  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
   
   DEBUG_DEBUG("Screen Dashboard Refreshing.");
 
-  window.fillSprite(TFT_BLACK);
+  if(cameraConnection.getInitialPayloadTime() != ULONG_MAX)
+    window.fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
@@ -505,10 +511,7 @@ void Screen_Dashboard(bool forceRefresh = false)
       window.drawString(camera->getApertureFStopString().c_str(), 100, 174);
     }
   }
-
-  window.pushSprite(0, 0);
 }
-
 
 void Screen_Recording(bool forceRefresh = false)
 {
@@ -520,6 +523,7 @@ void Screen_Recording(bool forceRefresh = false)
   auto camera = BMDControlSystem::getInstance()->getCamera();
 
   // If we have a tap, we should determine if it is on anything
+  /*
   bool tappedAction = false;
   if(tapped_x != -1 && camera->hasTransportMode())
   {
@@ -544,16 +548,18 @@ void Screen_Recording(bool forceRefresh = false)
       tappedAction = true;
     }
   }
+  */
 
-    // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
+  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
 
   DEBUG_DEBUG("Screen Recording Refreshed.");
 
-  window.fillSprite(TFT_BLACK);
+  window.fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
@@ -561,7 +567,7 @@ void Screen_Recording(bool forceRefresh = false)
   window.setFont(&Lato_Regular11pt7b);
 
   // Record button
-  if(camera->isRecording) window.fillSmoothCircle(257, 63, 58, Constants::DARK_RED); // Recording solid
+  if(camera->isRecording) window.fillSmoothCircle(257, 63, 58, TFT_RED); // Recording solid
   window.drawCircle(257, 63, 57, (camera->isRecording ? TFT_RED : TFT_LIGHTGREY)); // Outer
   window.fillSmoothCircle(257, 63, 38, camera->isRecording ? TFT_RED : TFT_LIGHTGREY); // Inner
 
@@ -584,8 +590,6 @@ void Screen_Recording(bool forceRefresh = false)
       window.drawString("RECORD ERROR", 30, 20);
     }
   }
-
-  window.pushSprite(0, 0);
 }
 
 void Screen_ISO(bool forceRefresh = false)
@@ -600,6 +604,7 @@ void Screen_ISO(bool forceRefresh = false)
   // ISO Values, 200 / 400 / 1250 / 3200 / 8000
 
   // If we have a tap, we should determine if it is on anything
+  /*
   bool tappedAction = false;
   if(tapped_x != -1)
   {
@@ -635,18 +640,19 @@ void Screen_ISO(bool forceRefresh = false)
         tappedAction = true;
       }
     }
-
   }
+  */
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
+  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
   
   DEBUG_DEBUG("Screen ISO Refreshed.");
 
-  window.fillSprite(TFT_BLACK);
+  window.fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
@@ -718,10 +724,7 @@ void Screen_ISO(bool forceRefresh = false)
       window.drawCentreString("CUSTOM", 260, 149, &Lato_Regular5pt7b);
     }
   }
-
-  window.pushSprite(0, 0);
 }
-
 
 void Screen_ShutterAngle(bool forceRefresh = false)
 {
@@ -736,6 +739,7 @@ void Screen_ShutterAngle(bool forceRefresh = false)
   // Note that the protocol takes shutter angle times 100, so 180 = 180 x 100 = 18000. This is so it can accommodate decimal places, like 172.8 degrees = 17280 for the protocol.
 
   // If we have a tap, we should determine if it is on anything
+  /*
   bool tappedAction = false;
   if(tapped_x != -1)
   {
@@ -772,16 +776,18 @@ void Screen_ShutterAngle(bool forceRefresh = false)
       }
     }
   }
+  */
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
+  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
   
   DEBUG_DEBUG("Screen Shutter Angle Refreshed.");
 
-  window.fillSprite(TFT_BLACK);
+  window.fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
@@ -849,8 +855,6 @@ void Screen_ShutterAngle(bool forceRefresh = false)
       window.drawCentreString("CUSTOM", 260, 149, &Lato_Regular5pt7b);
     }
   }
-
-  window.pushSprite(0, 0);
 }
 
 void Screen_ShutterSpeed(bool forceRefresh = false)
@@ -866,6 +870,7 @@ void Screen_ShutterSpeed(bool forceRefresh = false)
   // Note that the protocol takes the denominator as its parameter value. So for 1/60 we'll pass 60.
 
   // If we have a tap, we should determine if it is on anything
+  /*
   bool tappedAction = false;
   if(tapped_x != -1)
   {
@@ -902,9 +907,11 @@ void Screen_ShutterSpeed(bool forceRefresh = false)
       }
     }
   }
+  */
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
+  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
@@ -912,7 +919,7 @@ void Screen_ShutterSpeed(bool forceRefresh = false)
   DEBUG_DEBUG("Screen Shutter Speed Refreshed.");
 
 
-  window.fillSprite(TFT_BLACK);
+  window.fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
@@ -984,8 +991,6 @@ void Screen_ShutterSpeed(bool forceRefresh = false)
       window.drawCentreString("CUSTOM", 260, 149, &Lato_Regular5pt7b);
     }
   }
-
-  window.pushSprite(0, 0);
 }
 
 void Screen_WBTint(bool forceRefresh = false)
@@ -1011,6 +1016,7 @@ void Screen_WBTint(bool forceRefresh = false)
     currentTint = camera->getTint();
 
   // If we have a tap, we should determine if it is on anything
+  /*
   bool tappedAction = false;
   if(tapped_x != -1)
   {
@@ -1096,17 +1102,18 @@ void Screen_WBTint(bool forceRefresh = false)
       }
     }
   }
-  
+  */
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
+  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
   
   DEBUG_DEBUG("Screen WB Tint Refreshed.");
 
-  window.fillSprite(TFT_BLACK);
+  window.fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
@@ -1120,45 +1127,45 @@ void Screen_WBTint(bool forceRefresh = false)
   int lblTint = 10;
   window.fillSmoothRoundRect(20, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
   if(currentWB == lblWBKelvin && currentTint == lblTint)
-    spriteWBBrightBG.pushSprite(&window, 40, 35);
+    window.pushImage(40, 35, 30, 30, WBBrightBG);
   else
-    spriteWBBright.pushSprite(&window, 40, 35);
+    window.pushImage(40, 35, 30, 30, WBBright);
 
   // Incandescent, 3200K
   lblWBKelvin = 3200;
   lblTint = 0;
   window.fillSmoothRoundRect(95, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
   if(currentWB == lblWBKelvin && currentTint == lblTint)
-    spriteWBIncandescentBG.pushSprite(&window, 115, 35);
+    window.pushImage(115, 35, 30, 30, WBIncandescentBG);
   else
-    spriteWBIncandescent.pushSprite(&window, 115, 35);
+    window.pushImage(115, 35, 30, 30, WBIncandescent);
 
   // Fluorescent, 4000K
   lblWBKelvin = 4000;
   lblTint = 15;
   window.fillSmoothRoundRect(170, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
   if(currentWB == lblWBKelvin && currentTint == lblTint)
-    spriteWBFlourescentBG.pushSprite(&window, 190, 35);
+    window.pushImage(190, 35, 30, 30, WBFlourescentBG);
   else
-    spriteWBFlourescent.pushSprite(&window, 190, 35);
+    window.pushImage(190, 35, 30, 30, WBFlourescent);
 
   // Mixed Light, 4500K
   lblWBKelvin = 4500;
   lblTint = 15;
   window.fillSmoothRoundRect(245, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
   if(currentWB == lblWBKelvin && currentTint == lblTint)
-    spriteWBMixedLightBG.pushSprite(&window, 265, 35);
+    window.pushImage(265, 35, 30, 30, WBMixedLightBG);
   else
-    spriteWBMixedLight.pushSprite(&window, 265, 35);
+    window.pushImage(265, 35, 30, 30, WBMixedLight);
 
   // Cloud, 6500K
   lblWBKelvin = 6500;
   lblTint = 10;
   window.fillSmoothRoundRect(20, 75, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
   if(currentWB == lblWBKelvin && currentTint == lblTint)
-    spriteWBCloudBG.pushSprite(&window, 40, 80);
+    window.pushImage(40, 80, 30, 30, WBCloudBG);
   else
-    spriteWBCloud.pushSprite(&window, 40, 80);
+    window.pushImage(40, 80, 30, 30, WBCloud);
 
   // WB Adjust Left <
   window.fillSmoothRoundRect(95, 75, 60, 40, 3, TFT_DARKGREY);
@@ -1184,8 +1191,6 @@ void Screen_WBTint(bool forceRefresh = false)
   // Tint Adjust Right >
   window.fillSmoothRoundRect(255, 120, 60, 40, 3, TFT_DARKGREY);
   window.drawCentreString(">", 284, 132);
-
-  window.pushSprite(0, 0);
 }
 
 // Codec Screen for Pocket 4K and 6K + Variants
@@ -1204,6 +1209,7 @@ void Screen_Codec4K6K(bool forceRefresh = false)
   // Codec: BRAW and ProRes
 
   // If we have a tap, we should determine if it is on anything
+  /*
   bool tappedAction = false;
   if(tapped_x != -1 && camera->hasCodec())
   {
@@ -1328,18 +1334,19 @@ void Screen_Codec4K6K(bool forceRefresh = false)
           }
       }
     }
-
   }
+  */
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
+  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
   
   DEBUG_DEBUG("Screen Codec 4K/6K Refreshed.");
 
-  window.fillSprite(TFT_BLACK);
+  window.fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
@@ -1348,8 +1355,6 @@ void Screen_Codec4K6K(bool forceRefresh = false)
   {
     window.setTextColor(TFT_WHITE);
     window.drawString("NO CODEC INFO.", 30, 9);
-
-    window.pushSprite(0, 0);
 
     return;
   }
@@ -1442,8 +1447,6 @@ void Screen_Codec4K6K(bool forceRefresh = false)
     window.fillSmoothRoundRect(170, 120, 145, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
     window.drawCentreString(proResLabel.c_str(), 242, 131);
   }
-
-  window.pushSprite(0, 0);
 }
 
 // Codec Screen for URSA Mini Pro G2
@@ -1520,6 +1523,7 @@ void Screen_Resolution4K(bool forceRefresh = false)
   CodecInfo currentCodec = camera->getCodec();
 
   // If we have a tap, we should determine if it is on anything
+  /*
   bool tappedAction = false;
   if(tapped_x != -1)
   {
@@ -1608,14 +1612,12 @@ void Screen_Resolution4K(bool forceRefresh = false)
       }
 
       // Windowed options
-      /*
-      else if(currentRes == "HD" && tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 310 && tapped_y <= 160)
-      {
+      // else if(currentRes == "HD" && tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 310 && tapped_y <= 160)
+      // {
         // HD - Scaled from Full sensor, 2.6K, or Windowed, can't distinguish
-        width = currentRecordingFormat.width; height = currentRecordingFormat.height;
-        window = true;
-      }
-      */
+        // width = currentRecordingFormat.width; height = currentRecordingFormat.height;
+        // window = true;
+      // }
 
       if(width != 0)
       {
@@ -1630,16 +1632,18 @@ void Screen_Resolution4K(bool forceRefresh = false)
       }
     }
   }
+  */
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
+  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
   
   DEBUG_DEBUG("Screen Resolution Pocket 4K Refreshed.");
 
-  window.fillSprite(TFT_BLACK);
+  window.fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
@@ -1748,8 +1752,6 @@ void Screen_Resolution4K(bool forceRefresh = false)
   }
   else
     DEBUG_ERROR("Resolution Pocket 4K - Codec not catered for.");
-
-  window.pushSprite(0, 0);
 }
 
 // Resolution screen for Pocket 6K
@@ -1773,6 +1775,7 @@ void Screen_Resolution6K(bool forceRefresh = false)
   CodecInfo currentCodec = camera->getCodec();
 
   // If we have a tap, we should determine if it is on anything
+  /*
   bool tappedAction = false;
   if(tapped_x != -1)
   {
@@ -1899,16 +1902,18 @@ void Screen_Resolution6K(bool forceRefresh = false)
       }
     }
   }
+  */
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
+  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
   
   DEBUG_DEBUG("Screen Resolution Pocket 6K Refreshed.");
 
-  window.fillSprite(TFT_BLACK);
+  window.fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
@@ -2025,8 +2030,6 @@ void Screen_Resolution6K(bool forceRefresh = false)
   }
   else
     DEBUG_ERROR("Resolution Pocket 6K - Codec not catered for.");
-
-  window.pushSprite(0, 0);
 }
 
 // Resolution Screen for URSA Mini Pro G2
@@ -2095,6 +2098,7 @@ void Screen_Media4K6K(bool forceRefresh = false)
   // 3 Media Slots - CFAST, SD, USB
 
   // If we have a tap, we should determine if it is on anything
+  /*
   bool tappedAction = false;
   if(tapped_x != -1 && camera->getMediaSlots().size() != 0)
   {
@@ -2145,16 +2149,18 @@ void Screen_Media4K6K(bool forceRefresh = false)
       }
     }
   }
+  */
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
+  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
   
   DEBUG_DEBUG("Screen Media Pocket 4K/6K Refreshed.");
 
-  window.fillSprite(TFT_BLACK);
+  window.fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
@@ -2196,8 +2202,6 @@ void Screen_Media4K6K(bool forceRefresh = false)
   window.drawString("3", 300, 125, &Lato_Regular5pt7b);
   window.drawString(usb.GetStatusString().c_str(), 28, 125, &Lato_Regular5pt7b);
   if(usb.StatusIsError()) window.setTextColor(TFT_WHITE);
-
-  window.pushSprite(0, 0);
 }
 
 // Media Screen for URSA Mini Pro G2
@@ -2263,6 +2267,7 @@ void Screen_Lens(bool forceRefresh = false)
   auto camera = BMDControlSystem::getInstance()->getCamera();
 
   // If we have a tap, we should determine if it is on anything
+  /*
   bool tappedAction = false;
   if(tapped_x != -1 && camera->hasTransportMode())
   {
@@ -2276,16 +2281,18 @@ void Screen_Lens(bool forceRefresh = false)
       tappedAction = true;
     }
   }
+  */
 
-    // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
+  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
 
   DEBUG_DEBUG("Screen Lens Refreshed.");
 
-  window.fillSprite(TFT_BLACK);
+  window.fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
@@ -2311,106 +2318,41 @@ void Screen_Lens(bool forceRefresh = false)
   {
       window.drawString(camera->getApertureFStopString().c_str(), 30, 50, &Lato_Regular12pt7b);
   }
-
-  window.pushSprite(0, 0);
 }
 
-
 void setup() {
+
+  M5.begin();
+  M5.Power.begin();
+
+  Serial.begin(115200);
+
+  // SET DEBUG LEVEL
+  Debug.setDebugLevel(DBG_VERBOSE);
+  Debug.timestampOn();
 
   // Allow a timeout of 20 seconds for time for the pass key entry.
   esp_task_wdt_init(20, true);
 
-  Serial.begin(15200);
-  M5.begin();
-
-  M5.Display.setBrightness(100);
-
-  // MS
   M5.Display.setSwapBytes(true);
 
-  // SET DEBUG LEVEL
-  Debug.setDebugOutputStream(&Serial); // M5CoreS3 uses this serial output
-  Debug.setDebugLevel(DBG_VERBOSE);
-  Debug.timestampOn();
-
-  window.createSprite(IWIDTH, IHEIGHT);
-
-  // Load sprites
-  spriteMPCSplash.createSprite(IWIDTH, IHEIGHT);
-  spriteMPCSplash.setSwapBytes(true);
-  spriteMPCSplash.pushImage(0, 0, IWIDTH, IHEIGHT, MPCSplash_M5Stack_CoreS3);
-
-  // Images, store them in sprites ready to be used when we need them
-  spriteBluetooth.createSprite(30, 46);
-  spriteBluetooth.setSwapBytes(true);
-  spriteBluetooth.pushImage(0, 0, 30, 46, Wikipedia_Bluetooth_30x46);
-
-  spritePocket4k.createSprite(110, 61);
-  spritePocket4k.setSwapBytes(true);
-  spritePocket4k.pushImage(0, 0, 110, 61, blackmagic_pocket_4k_110x61);
-
-  // White Balance images
-  spriteWBBright.createSprite(30, 30);
-  spriteWBBright.setSwapBytes(true);
-  spriteWBBright.pushImage(0, 0, 30, 30, WBBright);
-
-  spriteWBCloud.createSprite(30, 30);
-  spriteWBCloud.setSwapBytes(true);
-  spriteWBCloud.pushImage(0, 0, 30, 30, WBCloud);
-
-  spriteWBFlourescent.createSprite(30, 30);
-  spriteWBFlourescent.setSwapBytes(true);
-  spriteWBFlourescent.pushImage(0, 0, 30, 30, WBFlourescent);
-
-  spriteWBIncandescent.createSprite(30, 30);
-  spriteWBIncandescent.setSwapBytes(true);
-  spriteWBIncandescent.pushImage(0, 0, 30, 30, WBIncandescent);
-
-  spriteWBMixedLight.createSprite(30, 30);
-  spriteWBMixedLight.setSwapBytes(true);
-  spriteWBMixedLight.pushImage(0, 0, 30, 30, WBMixedLight);
-
-  spriteWBBrightBG.createSprite(30, 30);
-  spriteWBBrightBG.setSwapBytes(true);
-  spriteWBBrightBG.pushImage(0, 0, 30, 30, WBBrightBG);
-
-  spriteWBCloudBG.createSprite(30, 30);
-  spriteWBCloudBG.setSwapBytes(true);
-  spriteWBCloudBG.pushImage(0, 0, 30, 30, WBCloudBG);
-
-  spriteWBFlourescentBG.createSprite(30, 30);
-  spriteWBFlourescentBG.setSwapBytes(true);
-  spriteWBFlourescentBG.pushImage(0, 0, 30, 30, WBFlourescentBG);
-
-  spriteWBIncandescentBG.createSprite(30, 30);
-  spriteWBIncandescentBG.setSwapBytes(true);
-  spriteWBIncandescentBG.pushImage(0, 0, 30, 30, WBIncandescentBG);
-
-  spriteWBMixedLightBG.createSprite(30, 30);
-  spriteWBMixedLightBG.setSwapBytes(true);
-  spriteWBMixedLightBG.pushImage(0, 0, 30, 30, WBMixedLightBG);
-
-  spritePassKey.createSprite(IWIDTH, IHEIGHT);
+  // Standand Font
+  M5.Display.setTextSize(1);
+  M5.Display.setFont(&Lato_Regular11pt7b);
 
   // Splash screen
-  M5.Display.pushImage(0,0,320,240,MPCSplash_M5Stack_CoreS3);
+  M5.Display.pushImage(0, 0, 320, 170, MPCSplash_M5Stack_CoreS3);
 
-  // Set main font
-  window.setFont(&Lato_Regular11pt7b);
-
-  // Get and pass pointer to touch object specifically for passkey entry
-  lgfx::v1::ITouch* touch = M5.Display.panel()->getTouch();
+  // From this point forward we'll use "window" instead of M5.Display (window is just a reference to M5.Display)
 
   // Prepare for Bluetooth connections and start scanning for cameras
-  cameraConnection.initialise(touch, &window, &spritePassKey, IWIDTH, IHEIGHT); // Screen Pass Key entry
+  cameraConnection.initialise(); // Serial pin code entry, not touch screen
 }
 
 int memoryLoopCounter;
+bool hitRecord = false; // Let's just hit record once.
 
 void loop() {
-
-  memoryLoopCounter++;
 
   static unsigned long lastConnectedTime = 0;
   const unsigned long reconnectInterval = 5000;  // 5 seconds (milliseconds)
@@ -2431,6 +2373,34 @@ void loop() {
   }
   else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::Connected)
   {
+    /*
+    if(M5.BtnA.wasReleased())
+    {
+      // Example of hitting record once we know the state of the camera
+      DEBUG_DEBUG("We're connected! Let's hit record once we have the TransportInfo back from the camera as to the state of the camera.");
+
+      // Do we have a camera instance created (happens when connected)
+      if(BMDControlSystem::getInstance()->hasCamera())
+      {
+          // Get the camera instance so we can check the state of it
+          auto camera = BMDControlSystem::getInstance()->getCamera();
+
+          // Only hit record if we have the Transport Mode info (knowing if it's recording) and we're not already recording.
+          if(camera->hasTransportMode() && !camera->isRecording)
+          {
+              // Record button
+              auto transportInfo = camera->getTransportMode();
+
+              DEBUG_VERBOSE("Record Start");
+              transportInfo.mode = CCUPacketTypes::MediaTransportMode::Record;
+
+              // Send the packet to the camera to start recording
+              PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
+          }
+      }
+    }
+    */
+
     auto camera = BMDControlSystem::getInstance()->getCamera();
 
     if(static_cast<byte>(connectedScreenIndex) >= 100)
@@ -2480,7 +2450,12 @@ void loop() {
   }
   else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::ScanningFound)
   {
-    Screen_NoConnection();
+    DEBUG_DEBUG("Cameras found!");
+
+    cameraConnection.connect(cameraConnection.cameraAddresses[0]);
+
+    // Clear the screen so we can show the dashboard cleanly
+    window.fillScreen(BLACK);
 
     lastConnectedTime = currentTime;
   }
@@ -2492,55 +2467,111 @@ void loop() {
 
     Screen_NoConnection();
   }
-  else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::FailedPassKey)
+
+  // Keep track of the memory use to check that there aren't memory leaks (or significant memory leaks)
+  /*
+  if(Debug.getDebugLevel() >= DBG_VERBOSE && memoryLoopCounter++ % 400 == 0)
   {
-    // Pass Key failed, so show it and then delay for 2 seconds and reset status to disconnected.
-    Screen_NoConnection();
-
-    delay(2000);
-
-    cameraConnection.status == BMDCameraConnection::ConnectionStatus::Disconnected;
+    DEBUG_VERBOSE("Heap Size Free: %d of %d", ESP.getFreeHeap(), ESP.getHeapSize());
   }
+  */
 
-  // Reset tapped point
-  tapped_x = -1;
-  tapped_y = -1;
+  // Buttons
+  M5.update();
 
-  // Touch
-  lgfx::touch_point_t tp[3];
-  int nums = M5.Display.getTouchRaw(tp, 3);
-
-  // Is there a touch event available?
-  if (nums)
+  if(M5.BtnA.wasPressed() || M5.BtnB.wasPressed() || M5.BtnC.wasPressed())
   {
-    for (int i = 0; i < nums; ++i)
-    {
-      // Save the tapped position for the screens to pick up and process
-      tapped_x = tp[i].x;
-      tapped_y = tp[i].y;
+    DEBUG_DEBUG("Button Pressed");
 
-      // Uncomment these lines to show the coordinates of the tap on screen
-      // M5.Display.setCursor(16, 16 + i * 24);
-      // M5.Display.printf("Raw X:%03d  Y:%03d", tp[i].x, tp[i].y);
+    // Left button function changes on context
+    // Only handle dashboard here
+    if(M5.BtnA.wasPressed())
+    {
+      DEBUG_DEBUG("Button A");
 
-      break; // Taking the first finger only and taps (not gestures)
+      switch(connectedScreenIndex)
+      {
+        case Screens::Dashboard:
+          DEBUG_DEBUG("Button A > CODEC SCREEN");
+          connectedScreenIndex = Screens::Codec;
+          lastRefreshedScreen = 0; // Forces a refresh
+          break;
+        case Screens::Recording:
+        case Screens::ISO:
+        case Screens::ShutterAngleSpeed:
+        case Screens::WhiteBalanceTint:
+        case Screens::Codec:
+        case Screens::Resolution:
+        case Screens::Media:
+        case Screens::Lens:
+          // Indicate to the other screens the first button has been pressed
+          btnAPressed = true;
+          break;
+      }
     }
+    else if(M5.BtnB.wasPressed())
+    {
+      // RECORD START/STOP
+      // Do we have a camera instance created (happens when connected)
+      if(BMDControlSystem::getInstance()->hasCamera())
+      {
+          // Get the camera instance so we can check the state of it
+          auto camera = BMDControlSystem::getInstance()->getCamera();
 
-    // If they have tapped on the bottom left button area, then take them to the dashboard
-    if(tapped_x > 0 && tapped_x <= 100 && tapped_y > 220)
-    {
-        connectedScreenIndex = Screens::Dashboard;
-        lastRefreshedScreen = 0; // Forces a refresh
+          // Only hit record if we have the Transport Mode info (knowing if it's recording) and we're not already recording.
+          if(camera->hasTransportMode())
+          {
+              // Record button
+              DEBUG_VERBOSE("Record Start/Stop");
+
+              auto transportInfo = camera->getTransportMode();
+
+              if(!camera->isRecording)
+                transportInfo.mode = CCUPacketTypes::MediaTransportMode::Record;
+              else
+                transportInfo.mode = CCUPacketTypes::MediaTransportMode::Preview;
+
+              // Send the packet to the camera to start recording
+              PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
+          }
+      }
     }
-    else if(tapped_x > 100 && tapped_x <= 220 && tapped_y > 220) // Recording page
+    else if(M5.BtnC.wasPressed())
     {
-        connectedScreenIndex = Screens::Recording;
-        lastRefreshedScreen = 0; // Forces a refresh
-    }
-    else if(tapped_x > 220 && tapped_x <= 320 && tapped_y > 220) // Codec Page
-    {
-        connectedScreenIndex = Screens::Codec;
-        lastRefreshedScreen = 0; // Forces a refresh
+      DEBUG_DEBUG("Button C > NEXT SCREEN");
+
+      switch(connectedScreenIndex)
+      {
+        case Screens::Dashboard:
+          connectedScreenIndex = Screens::Recording;
+          break;
+        case Screens::Recording:
+          connectedScreenIndex = Screens::ISO;
+          break;
+        case Screens::ISO:
+          connectedScreenIndex = Screens::ShutterAngleSpeed;
+          break;
+        case Screens::ShutterAngleSpeed:
+          connectedScreenIndex = Screens::WhiteBalanceTint;
+          break;
+        case Screens::WhiteBalanceTint:
+          connectedScreenIndex = Screens::Codec;
+          break;
+        case Screens::Codec:
+          connectedScreenIndex = Screens::Resolution;
+          break;
+        case Screens::Resolution:
+          connectedScreenIndex = Screens::Media;
+          break;
+        case Screens::Media:
+          connectedScreenIndex = Screens::Lens;
+          break;
+        case Screens::Lens:
+          connectedScreenIndex = Screens::Dashboard;
+          break;
+      }
+
+      lastRefreshedScreen = 0; // Forces a refresh
     }
   }
 
