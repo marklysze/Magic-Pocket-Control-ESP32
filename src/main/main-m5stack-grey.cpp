@@ -1,6 +1,6 @@
 #define USING_TFT_ESPI 0        // Not using the TFT_eSPI graphics library <-- must include this in every main file, 0 = not using, 1 = using
 #define USING_M5GFX 0           // Using the M5GFX library with touch screen
-#define USING_M5GFX_BUTTONS 1   // Using the M5GFX library with the 3 buttons (buttons A, B, C)
+#define USING_M5_BUTTONS 1   // Using the M5GFX library with the 3 buttons (buttons A, B, C)
 
 #include <Arduino.h>
 #include <string.h>
@@ -269,6 +269,11 @@ void Screen_NoConnection()
   {
     cameraConnection.connect(cameraConnection.cameraAddresses[connectToCameraIndex]);
     connectToCameraIndex = -1;
+
+    if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::FailedPassKey)
+    {
+      DEBUG_DEBUG("NoConnection - Failed Pass Key");
+    }
   }
 }
 
@@ -2331,8 +2336,8 @@ void setup() {
   Debug.setDebugLevel(DBG_VERBOSE);
   Debug.timestampOn();
 
-  // Allow a timeout of 20 seconds for time for the pass key entry.
-  esp_task_wdt_init(20, true);
+  // Allow a timeout of 30 seconds for time for the pass key entry. It's slower with buttons
+  esp_task_wdt_init(35, true);
 
   M5.Display.setSwapBytes(true);
 
@@ -2346,7 +2351,7 @@ void setup() {
   // From this point forward we'll use "window" instead of M5.Display (window is just a reference to M5.Display)
 
   // Prepare for Bluetooth connections and start scanning for cameras
-  cameraConnection.initialise(); // Serial pin code entry, not touch screen
+  cameraConnection.initialise(&M5.Display, IWIDTH, IHEIGHT); // Screen Pass Key entry
 }
 
 int memoryLoopCounter;
@@ -2359,8 +2364,12 @@ void loop() {
 
   unsigned long currentTime = millis();
 
-  if (cameraConnection.status == BMDCameraConnection::ConnectionStatus::Disconnected && currentTime - lastConnectedTime >= reconnectInterval) {
-    DEBUG_VERBOSE("Disconnected for too long, trying to reconnect");
+  if ((cameraConnection.status == BMDCameraConnection::ConnectionStatus::Disconnected || cameraConnection.status == BMDCameraConnection::ConnectionStatus::FailedPassKey) && currentTime - lastConnectedTime >= reconnectInterval) {
+    
+    if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::Disconnected)
+      DEBUG_VERBOSE("Disconnected for too long, trying to reconnect");
+    else
+      DEBUG_VERBOSE("Failed Pass Key, trying to reconnect");
 
     // Set the status to Scanning and then show the NoConnection screen to render the Scanning page before starting the scan (which blocks so it can't render the Scanning page before it finishes)
     cameraConnection.status = BMDCameraConnection::ConnectionStatus::Scanning;
@@ -2453,6 +2462,11 @@ void loop() {
     DEBUG_DEBUG("Cameras found!");
 
     cameraConnection.connect(cameraConnection.cameraAddresses[0]);
+
+    if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::FailedPassKey)
+    {
+      DEBUG_DEBUG("Loop - Failed Pass Key");
+    }
 
     // Clear the screen so we can show the dashboard cleanly
     window.fillScreen(BLACK);

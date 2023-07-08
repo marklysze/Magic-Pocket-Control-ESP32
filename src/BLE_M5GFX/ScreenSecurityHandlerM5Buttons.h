@@ -1,12 +1,11 @@
-#ifndef PASSKEYSCREEN_H
-#define PASSKEYSCREEN_H
+#ifndef PASSKEYSCREENM5BUTTONS_H
+#define PASSKEYSCREENM5BUTTONS_H
 
 #include <BLEDevice.h>
 #include <Arduino.h>
 #include "Arduino_DebugUtils.h"
 #include "Camera/BMDCameraConnection.h"
 #include "M5GFX.h"
-// #include "ESP32/CST816S/CST816S.h"
 
 class BMDCameraConnection;
 
@@ -16,7 +15,7 @@ class BMDCameraConnection;
 class ScreenSecurityHandlerM5Buttons : public BLESecurityCallbacks
 {
   public:
-    ScreenSecurityHandlerM5Buttons(BMDCameraConnection* bmdCameraConnectionPtr, LGFX_Sprite* windowPtr, LGFX_Sprite* spritePassKeyPtr, int screenWidth, int screenHeight);
+    ScreenSecurityHandlerM5Buttons(BMDCameraConnection* bmdCameraConnectionPtr, M5GFX* displayPtr, int screenWidth, int screenHeight);
 
     uint32_t onPassKeyRequest();
     void onPassKeyNotify(uint32_t pass_key);
@@ -25,16 +24,13 @@ class ScreenSecurityHandlerM5Buttons : public BLESecurityCallbacks
     void onAuthenticationComplete(esp_ble_auth_cmpl_t auth_cmpl);
 
   private:
-    int KeyPressed(int x, int y);
-    uint_fast8_t getTouchRaw(lgfx::v1::touch_point_t* tp, uint_fast8_t count); // Replicating the touch function to get touches while on the security page
+    // uint_fast8_t getTouchRaw(lgfx::v1::touch_point_t* tp, uint_fast8_t count); // Replicating the touch function to get touches while on the security page
 
     BMDCameraConnection* _bmdCameraConnectionPtr;
-    LGFX_Sprite* _windowPtr;
-    LGFX_Sprite* _spritePassKeyPtr;
-    // lgfx::v1::ITouch* _touchPtr;
-    // CST816S* _touchPtr;
+    M5GFX* _displayPtr;
     int _screenWidth;
     int _screenHeight;
+    const int timeAllowance = 30; // 30 seconds
 };
 
 #endif

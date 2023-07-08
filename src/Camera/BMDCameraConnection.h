@@ -8,7 +8,8 @@
 #if USING_TFT_ESPI == 1
     #include <TFT_eSPI.h>
     #include "BLE_TFT_eSPI/ScreenSecurityHandler.h"
-#elif USING_M5GFX_BUTTONS == 1
+#elif USING_M5_BUTTONS == 1
+    #include "M5GFX.h"
     #include "BLE_M5GFX/ScreenSecurityHandlerM5Buttons.h"
 #elif USING_M5GFX == 1
     #include "BLE_M5GFX/ScreenSecurityHandler.h"
@@ -94,10 +95,10 @@ class BMDCameraConnection
                 initialised = true;
             }
 
-        #elif USING_M5GFX_BUTTONS == 1
+        #elif USING_M5_BUTTONS == 1
 
             // Defined in here as wouldn't link when in the cpp file and using the preprocessor directive
-            void initialise(LGFX_Sprite* windowPtr, LGFX_Sprite* spritePassKeyPtr, int screenWidth, int screenHeight) // Screen security pass key
+            void initialise(M5GFX* displayPtr, int screenWidth, int screenHeight) // Screen security pass key
             {
                 if(initialised)
                     return;
@@ -108,7 +109,7 @@ class BMDCameraConnection
                 bleDevice.setPower(ESP_PWR_LVL_P9);
                 bleDevice.setEncryptionLevel(ESP_BLE_SEC_ENCRYPT);
 
-                ScreenSecurityHandlerM5Buttons* securityHandler = new ScreenSecurityHandlerM5Buttons(this, windowPtr, spritePassKeyPtr, screenWidth, screenHeight);
+                ScreenSecurityHandlerM5Buttons* securityHandler = new ScreenSecurityHandlerM5Buttons(this, displayPtr, screenWidth, screenHeight);
                 bleDevice.setSecurityCallbacks(securityHandler);
 
                 bleSecurity = new BLESecurity();
@@ -117,7 +118,6 @@ class BMDCameraConnection
                 bleSecurity->setRespEncryptionKey(ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK);
 
                 status = ConnectionStatus::Disconnected;
-                // disconnect();
 
                 initialised = true;
             }

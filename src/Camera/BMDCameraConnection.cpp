@@ -283,7 +283,11 @@ void BMDCameraConnection::connect(BLEAddress cameraAddress)
 
         // Check if we failed the pass key entry and return if so.
         if(status == ConnectionStatus::FailedPassKey)
+        {
+            DEBUG_VERBOSE("Failed Pass Key, Disconnecting");
+            bleClient->disconnect();
             return;
+        }
 
         // Create Camera
         BMDControlSystem::getInstance()->activateCamera();

@@ -1,5 +1,6 @@
 #define USING_TFT_ESPI 0    // Not using the TFT_eSPI graphics library <-- must include this in every main file, 0 = not using, 1 = using
 #define USING_M5GFX 1       // Using the M5GFX library
+#define USING_M5_BUTTONS 0  // Not using M5 physical buttons (uses touch screen)
 
 #include <Arduino.h>
 #include <string.h>

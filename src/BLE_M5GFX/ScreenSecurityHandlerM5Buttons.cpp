@@ -1,12 +1,14 @@
 #include "ScreenSecurityHandlerM5Buttons.h"
-#include "Lato_Regular11pt7b.h" // Standard font
+#include "Fonts/Lato_Regular11pt7b.h" // Standard font
+#include "Fonts/Lato_Regular12pt7b.h"
+#include "Fonts/AgencyFB_Bold9pt7b.h" // Agency FB small for above buttons
+#include "M5Unified.h"
 
 // Take in all the pointers we need access to to render the screen and handle touch
-ScreenSecurityHandlerM5Buttons::ScreenSecurityHandlerM5Buttons(BMDCameraConnection* bmdCameraConnectionPtr, LGFX_Sprite* windowPtr, LGFX_Sprite* spritePassKeyPtr, int screenWidth, int screenHeight)
+ScreenSecurityHandlerM5Buttons::ScreenSecurityHandlerM5Buttons(BMDCameraConnection* bmdCameraConnectionPtr, M5GFX* displayPtr, int screenWidth, int screenHeight)
 {
   _bmdCameraConnectionPtr = bmdCameraConnectionPtr;
-  _windowPtr = windowPtr;
-  _spritePassKeyPtr = spritePassKeyPtr;
+  _displayPtr = displayPtr;
   _screenWidth = screenWidth;
   _screenHeight = screenHeight;
 }
@@ -17,127 +19,124 @@ uint32_t ScreenSecurityHandlerM5Buttons::onPassKeyRequest()
     // Update the connection status to requesting PassKey
     _bmdCameraConnectionPtr->status = BMDCameraConnection::NeedPassKey;
 
-    // Allow 15 seconds to enter the pass key.
+    // Allow X seconds to enter the pass key.
     unsigned long startTime = millis();
     unsigned long currentTime = 0;
 
     // Draw the screen
-    _spritePassKeyPtr->fillSprite(TFT_BLACK);
+    _displayPtr->fillScreen(TFT_BLACK);
 
     // Left side
-    _spritePassKeyPtr->fillRect(0, 0, 13, _screenHeight, TFT_ORANGE);
-    _spritePassKeyPtr->fillRect(13, 0, 2, _screenHeight, TFT_DARKGREY);
+    _displayPtr->fillRect(0, 0, 13, _screenHeight, TFT_ORANGE);
+    _displayPtr->fillRect(13, 0, 2, _screenHeight, TFT_DARKGREY);
 
-    // _spritePassKeyPtr->setTextSize(2);
-    _spritePassKeyPtr->setTextColor(TFT_WHITE);
-    _spritePassKeyPtr->drawString("Code:", 24, 7, &Lato_Regular11pt7b);
+    // Physical Button Labels
+    _displayPtr->setTextColor(TFT_WHITE);
+    _displayPtr->fillSmoothRoundRect(30, 210, 80, 40, 3, TFT_DARKCYAN);
+    _displayPtr->drawCenterString("+1", 70, 217, &AgencyFB_Bold9pt7b);
 
-    // Draw the 11 buttons, left to right, top to bottom
-    _spritePassKeyPtr->fillSmoothRoundRect(20, 30, 70, 60, 5, TFT_YELLOW); // 7
-    _spritePassKeyPtr->fillSmoothRoundRect(95, 30, 70, 60, 5, TFT_YELLOW); // 8
-    _spritePassKeyPtr->fillSmoothRoundRect(170, 30, 70, 60, 5, TFT_YELLOW); // 9
-    _spritePassKeyPtr->fillSmoothRoundRect(245, 30, 70, 60, 5, TFT_RED); // Back
+    _displayPtr->fillSmoothRoundRect(120, 210, 80, 40, 3, TFT_DARKCYAN);
+    _displayPtr->drawCenterString("NEXT", 160, 217, &AgencyFB_Bold9pt7b);
 
-    _spritePassKeyPtr->setTextColor(TFT_BLACK);
-    _spritePassKeyPtr->drawString("7", 50, 53, &Lato_Regular11pt7b);
-    _spritePassKeyPtr->drawString("8", 125, 53, &Lato_Regular11pt7b);
-    _spritePassKeyPtr->drawString("9", 200, 53, &Lato_Regular11pt7b);
-    _spritePassKeyPtr->fillTriangle(269, 60, 289, 45, 289, 73, TFT_BLACK);
+    // Text description
+    _displayPtr->drawString("Enter 6 digit passcode", 24, 7, &Lato_Regular11pt7b);
 
-    _spritePassKeyPtr->fillSmoothRoundRect(20, 95, 70, 60, 5, TFT_YELLOW); // 4
-    _spritePassKeyPtr->fillSmoothRoundRect(95, 95, 70, 60, 5, TFT_YELLOW); // 5
-    _spritePassKeyPtr->fillSmoothRoundRect(170, 95, 70, 60, 5, TFT_YELLOW); // 6
-    _spritePassKeyPtr->fillSmoothRoundRect(245, 95, 70, 125, 5, TFT_YELLOW); // 0
-
-    _spritePassKeyPtr->drawString("4", 50, 118, &Lato_Regular11pt7b);
-    _spritePassKeyPtr->drawString("5", 125, 118, &Lato_Regular11pt7b);
-    _spritePassKeyPtr->drawString("6", 200, 118, &Lato_Regular11pt7b);
-    _spritePassKeyPtr->drawString("0", 275, 151, &Lato_Regular11pt7b);
-
-    _spritePassKeyPtr->fillSmoothRoundRect(20, 160, 70, 60, 5, TFT_YELLOW); // 1
-    _spritePassKeyPtr->fillSmoothRoundRect(95, 160, 70, 60, 5, TFT_YELLOW); // 2
-    _spritePassKeyPtr->fillSmoothRoundRect(170, 160, 70, 60, 5, TFT_YELLOW); // 3
-
-    _spritePassKeyPtr->drawString("1", 50, 174, &Lato_Regular11pt7b);
-    _spritePassKeyPtr->drawString("2", 125, 174, &Lato_Regular11pt7b);
-    _spritePassKeyPtr->drawString("3", 200, 174, &Lato_Regular11pt7b);
-
-    _spritePassKeyPtr->pushSprite(_windowPtr, 0, 0);
-    _windowPtr->pushSprite(0, 0);
+    // 6 Underlines
+    _displayPtr->drawLine(50, 100, 70, 100, TFT_WHITE);
+    _displayPtr->drawLine(80, 100, 100, 100, TFT_WHITE);
+    _displayPtr->drawLine(110, 100, 130, 100, TFT_WHITE);
+    _displayPtr->drawLine(140, 100, 160, 100, TFT_WHITE);
+    _displayPtr->drawLine(170, 100, 190, 100, TFT_WHITE);
+    _displayPtr->drawLine(200, 100, 220, 100, TFT_WHITE);
 
     bool pinComplete = false;
     std::vector<int> pinCodeArray;
 
-    // _windowPtr->setTextSize(2);
-    _windowPtr->setTextColor(TFT_WHITE);
+    pinCodeArray.push_back(1); // Start with a 1
 
     unsigned long lastTapTime = 0; // Ensure we don't count a tap as a double entry
+    bool submitNumber = false; // When they've finished, submit
+    bool refreshButtonLabels = false;
 
     do
     {  
-        // Allow up to 15 seconds to enter the pass key
+        // Allow up to 50 seconds to enter the pass key
         currentTime = millis();
 
-        if(currentTime - startTime >= 15000)
+        if(currentTime - startTime >= (timeAllowance * 1000))
         {
             // Took too long!
-            DEBUG_VERBOSE("15 seconds to enter pass key, time expired.");
+            DEBUG_VERBOSE("30 seconds to enter pass key, time expired.");
             pinComplete = true;
             break;
         }
         else
         {
             // Use the left bar to show time left
-            int reduceBar = ((currentTime - startTime) / 1000) * (_screenHeight / 15);
-            _windowPtr->fillRect(0, 0, 13, reduceBar, TFT_BLACK);
+            int reduceBar = ((currentTime - startTime) / 1000) * (_screenHeight / timeAllowance);
+            _displayPtr->fillRect(0, 0, 13, reduceBar, TFT_BLACK);
         }
 
-        // Show the pin code entered
-        _windowPtr->fillRect(95, 0, 100, 21, TFT_BLACK);
-        for(int count = 0; count < pinCodeArray.size(); count++)
+        M5.update();
+
+        if(M5.BtnA.wasPressed() || M5.BtnB.wasPressed() || M5.BtnC.wasPressed())
         {
-            _windowPtr->drawString(String(pinCodeArray[count]), 95 + (count * 15), 7, &Lato_Regular11pt7b);
-        }
+            _displayPtr->fillRect(50, 80, 200, 19, TFT_BLACK);
 
-        _windowPtr->pushSprite(0, 0);
-
-        // Wait for Touches
-        /*
-        lgfx::touch_point_t tp[3];
-        int nums = getTouchRaw(tp, 3);
-        if (nums) {
-            for (int i = 0; i < nums; ++i)
+            if(M5.BtnA.wasPressed())
             {
-                int touchx = tp[i].x;
-                int touchy = tp[i].y;
+                // Increment the current position
+                int num = pinCodeArray[pinCodeArray.size() - 1];
+                if(num < 9)
+                    pinCodeArray[pinCodeArray.size() - 1]++;
+                else
+                    pinCodeArray[pinCodeArray.size() - 1] = 0;
+            }
+            else if(M5.BtnB.wasPressed())
+            {
+                // Next number
+                if(pinCodeArray.size() < 6)
+                    pinCodeArray.push_back(1); // Move to the next number
+                else
+                    submitNumber = true;
+                
+                refreshButtonLabels = true;
+            }
+            else if(M5.BtnC.wasPressed())
+            {
+                // Go back a number
+                if(pinCodeArray.size() > 1)
+                    pinCodeArray.pop_back(); // Remove the last number
+                
+                refreshButtonLabels = true;
+            }
 
-                int pressedKey = KeyPressed(touchx, touchy);
-
-                if(pressedKey > -2 && (currentTime - lastTapTime > 400))
+            if(refreshButtonLabels)
+            {
+                _displayPtr->fillSmoothRoundRect(120, 210, 80, 40, 3, TFT_DARKCYAN);
+                _displayPtr->drawCenterString(pinCodeArray.size() < 6 ? "NEXT" : "SUBMIT", 160, 217, &AgencyFB_Bold9pt7b);
+                
+                if(pinCodeArray.size() > 1)
                 {
-                    if(pressedKey == -1)
-                    {
-                        // Backspace
-                        pinCodeArray.pop_back();
-                    }
-                    else
-                    {
-                        pinCodeArray.push_back(pressedKey);
-                    }
-
-                    lastTapTime = currentTime;
+                    _displayPtr->fillSmoothRoundRect(210, 210, 80, 40, 3, TFT_DARKCYAN);
+                    _displayPtr->drawCenterString("DEL", 250, 217, &AgencyFB_Bold9pt7b);
                 }
-
-                break; // We'll only process one touch (if they have more than one finger on screen only the first will count)
+                else
+                    _displayPtr->fillRect(210, 210, 80, 40, TFT_BLACK);
             }
         }
-        */
 
-        if(pinCodeArray.size() == 6)
+        // Display the pinCode
+        for(int i = 0; i < pinCodeArray.size(); i++)
+        {
+            _displayPtr->drawCentreString(std::to_string(pinCodeArray[i]).c_str(), 60 + (30 * i), 80, &Lato_Regular12pt7b);
+        }
+
+        if(submitNumber)
             pinComplete = true;
         }
 
-    while(!pinComplete); // && !(pinCode >= 100000 && pinCode < 999999));
+    while(!pinComplete);
 
    // Convert the vector array of 6 numbers into a number
     if(pinCodeArray.size() == 6)
@@ -178,38 +177,4 @@ void ScreenSecurityHandlerM5Buttons::onAuthenticationComplete(esp_ble_auth_cmpl_
         _bmdCameraConnectionPtr->status = BMDCameraConnection::Connected;
     else
         _bmdCameraConnectionPtr->status = BMDCameraConnection::FailedPassKey;
-}
-
-// Returns the key pressed
-// 0-9 for numbers
-// -1 for backspace
-// -2 for nothing
-int ScreenSecurityHandlerM5Buttons::KeyPressed(int x, int y)
-{
-    if(x >= 20 && x <= 90 && y >= 30 && y <= 90)
-        return 7;
-    else if(x >= 95 && x <= 165 && y >= 30 && y <= 90)
-        return 8;
-    else if(x >= 170 && x <= 240 && y >= 30 && y <= 90)
-        return 9;
-    else if(x >= 245 && y >= 30 && y <= 90)
-        return -1;
-
-    else if(x >= 20 && x <= 90 && y >= 95 && y <= 155)
-        return 4;
-    else if(x >= 95 && x <= 165 && y >= 95 && y <= 155)
-        return 5;
-    else if(x >= 170 && x <= 240 && y >= 95 && y <= 155)
-        return 6;
-    else if(x >= 245 && y >= 95 && y <= 210)
-        return 0;
-
-    else if(x >= 20 && x <= 90 && y >= 160 && y <= 220)
-        return 1;
-    else if(x >= 95 && x <= 165 && y >= 160 && y <= 220)
-        return 2;
-    else if(x >= 170 && x <= 240 && y >= 160 && y <= 220)
-        return 3;
-
-    return -2;
 }

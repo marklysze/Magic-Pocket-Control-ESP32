@@ -1,5 +1,5 @@
 #include "ScreenSecurityHandler.h"
-#include "Lato_Regular11pt7b.h" // Standard font
+#include "Fonts/Lato_Regular11pt7b.h" // Standard font
 
 // Take in all the pointers we need access to to render the screen and handle touch
 ScreenSecurityHandler::ScreenSecurityHandler(BMDCameraConnection* bmdCameraConnectionPtr, lgfx::v1::ITouch* touchPtr, LGFX_Sprite* windowPtr, LGFX_Sprite* spritePassKeyPtr, int screenWidth, int screenHeight)
