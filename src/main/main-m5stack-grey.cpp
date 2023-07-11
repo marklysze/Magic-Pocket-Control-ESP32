@@ -189,15 +189,15 @@ void Screen_Common(int sideBarColour)
             window.fillSmoothRoundRect(30, 210, 80, 40, 3, TFT_DARKCYAN);
             window.drawCenterString("PRESET", 70, 217, &AgencyFB_Bold9pt7b);
 
-            window.fillSmoothRoundRect(130, 210, 80, 40, 3, TFT_DARKCYAN);
+            window.fillSmoothRoundRect(120, 210, 80, 40, 3, TFT_DARKCYAN);
             window.drawCenterString("+100", 160, 217, &AgencyFB_Bold9pt7b);
             break;
         }
       }
 
       // Common Next Button
-      window.fillSmoothRoundRect(210, 210, 80, 40, 3, TFT_DARKCYAN);
-      window.drawCenterString("NEXT", 250, 217, &AgencyFB_Bold9pt7b);
+      window.fillSmoothRoundRect(220, 210, 70, 40, 3, TFT_DARKCYAN);
+      window.drawCenterString("NEXT", 255, 217, &AgencyFB_Bold9pt7b);
     }
 }
 
@@ -339,6 +339,12 @@ void Screen_Dashboard(bool forceRefresh = false)
   auto camera = BMDControlSystem::getInstance()->getCamera();
   int xshift = 0;
 
+  bool tappedAction = false;
+  std::vector<int> Options_ISO = {200, 400, 640, 800, 1250, 3200, 8000, 12800};
+  int Options_ISO_SelectingIndex = -1; // when using up/down buttons keeps track of what option you are navigating to
+  if(btnAPressed || btnBPressed)
+  {
+  }
   // If we have a tap, we should determine if it is on anything
   /*
   bool tappedAction = false;
@@ -2577,6 +2583,27 @@ void setup() {
 
   Serial.begin(115200);
 
+  /* To use Deep Sleep and use button B to wake up, the following code can be used.
+      However, as the device won't maintain a connection while asleep, there isn't much point. Power button on the side can be used to shutdown.
+      Power off: Quickly double-click the red power button on the left
+      If you do want to go to deep sleep in your code, you can run the following code: esp_deep_sleep_start();
+
+  pinMode(GPIO_NUM_38, INPUT_PULLUP); // Button B on M5Stack is GPIO 38, that's the one to wake up from sleep
+
+  // Check if the ESP32 woke up from a deep sleep
+  if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT0) {
+    Serial.begin(115200);
+    Serial.println("Woke up from sleep!");
+    // Additional actions can be performed here after waking up
+  } else {
+    Serial.begin(115200);
+    Serial.println("First boot!");
+    // Additional setup can be performed here on the first boot
+  }
+  // Configure wake-up source
+  esp_sleep_enable_ext0_wakeup(GPIO_NUM_38, LOW);
+  */
+
   // SET DEBUG LEVEL
   Debug.setDebugLevel(DBG_VERBOSE);
   Debug.timestampOn();
@@ -2627,34 +2654,6 @@ void loop() {
   }
   else if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::Connected)
   {
-    /*
-    if(M5.BtnA.wasReleased())
-    {
-      // Example of hitting record once we know the state of the camera
-      DEBUG_DEBUG("We're connected! Let's hit record once we have the TransportInfo back from the camera as to the state of the camera.");
-
-      // Do we have a camera instance created (happens when connected)
-      if(BMDControlSystem::getInstance()->hasCamera())
-      {
-          // Get the camera instance so we can check the state of it
-          auto camera = BMDControlSystem::getInstance()->getCamera();
-
-          // Only hit record if we have the Transport Mode info (knowing if it's recording) and we're not already recording.
-          if(camera->hasTransportMode() && !camera->isRecording)
-          {
-              // Record button
-              auto transportInfo = camera->getTransportMode();
-
-              DEBUG_VERBOSE("Record Start");
-              transportInfo.mode = CCUPacketTypes::MediaTransportMode::Record;
-
-              // Send the packet to the camera to start recording
-              PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
-          }
-      }
-    }
-    */
-
     auto camera = BMDControlSystem::getInstance()->getCamera();
 
     if(static_cast<byte>(connectedScreenIndex) >= 100)
@@ -2750,10 +2749,6 @@ void loop() {
       switch(connectedScreenIndex)
       {
         case Screens::Dashboard:
-          DEBUG_DEBUG("Button A > CODEC SCREEN");
-          connectedScreenIndex = Screens::Codec;
-          lastRefreshedScreen = 0; // Forces a refresh
-          break;
         case Screens::Recording:
         case Screens::ISO:
         case Screens::ShutterAngleSpeed:
