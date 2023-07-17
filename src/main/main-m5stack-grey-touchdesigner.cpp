@@ -2755,6 +2755,22 @@ void loop() {
         case 67:
           TouchDesignerPress = 'C';
           break;
+        case 77: // M
+        if(BMDControlSystem::getInstance()->hasCamera())
+            PacketWriter::writeISO(400, &cameraConnection);
+          break;
+        case 78: // N
+        if(BMDControlSystem::getInstance()->hasCamera())
+            PacketWriter::writeISO(800, &cameraConnection);
+          break;
+        case 79: // O
+        if(BMDControlSystem::getInstance()->hasCamera())
+            PacketWriter::writeISO(1600, &cameraConnection);
+          break;
+        case 80: // P
+        if(BMDControlSystem::getInstance()->hasCamera())
+            PacketWriter::writeISO(3200, &cameraConnection);
+          break;
       }
   }
 
