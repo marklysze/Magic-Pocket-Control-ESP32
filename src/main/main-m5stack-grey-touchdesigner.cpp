@@ -5,6 +5,43 @@
 // 3. You'll need to have the devices paired first with Bluetooth (as entry of the pincode can't be done over serial in this code)
 // Good luck!
 
+// TouchDesigner instructions:
+// Send a string through serial with a terminator value of "\n"
+// E.g. to send "B" on serial1 the command is: op('serial1').send("B", terminator="\n")
+// E.g. op('serial1').send("(ISO:2000)", terminator="\n")
+// Commands must start with a "(", have a ":" to separate the command and the value, and to end with a ")"
+// Commands are not case-sensitive (e.g. "ISO" will work and "iSo" will also work)
+// 
+// Examples:
+// 
+// (ISO:1600)
+// (ISO:999)
+// (CODEC:BRAW)
+//
+// Available commands are:
+// 
+// BUTTON:A   // same as pressing the A button on the M5Stack
+// BUTTON:B
+// BUTTON:C
+// RECORD:START
+// RECORD:STOP
+// ISO:100 up to ISO:25600
+// SHUTTERANGLE:1 up to SHUTTERANGLE:360
+// SHUTTERSPEED:24 up to SHUTTERSPEED:2000
+// WHITEBALANCE:2500 up to WHITEBALANCE:10000
+// TINT:-50 up to TINT:50
+// BRAWQ:0    // Q0
+// BRAWQ:3    // Q3
+// BRAWQ:5    // Q5
+// BRAWQ:8    // Q8
+// BRAWB:3    // 3:1
+// BRAWB:5    // 5:1
+// BRAWB:8    // 8:1
+// BRAWB:12   // 12:1
+//
+// Want to create your own commands and actions - see the function "RunTouchDesignerCommand" in this file
+
+
 #define USING_TFT_ESPI 0        // Not using the TFT_eSPI graphics library <-- must include this in every main file, 0 = not using, 1 = using
 #define USING_M5GFX 0           // Using the M5GFX library with touch screen
 #define USING_M5_BUTTONS 1   // Using the M5GFX library with the 3 buttons (buttons A, B, C)
@@ -26,6 +63,11 @@
 
 // Include the watchdog library so we can stop it timing out while pass key entry.
 #include "esp_task_wdt.h"
+
+// TouchDesigner
+std::string tdCommand = "";
+bool tdCommandComplete = false;
+int tdMaxLength = 50; // Accept up to 50 characters, including '(', ':', and ')'
 
 // M5
 #include "M5GFX.h"
@@ -2583,6 +2625,231 @@ void Screen_Lens(bool forceRefresh = false)
   }
 }
 
+// Splits the TouchDesigner string into the command and the value parts
+std::vector<std::string> splitTDCommand(const std::string& command) {
+  std::vector<std::string> parts;
+
+  // Find the index of the colon character
+  size_t colonIndex = command.find(':');
+
+  if (colonIndex != std::string::npos) {
+    // Split the command into two parts
+    std::string commandPart = command.substr(0, colonIndex);
+    std::string valuePart = command.substr(colonIndex + 1);
+
+    // Add the parts to the vector
+    parts.push_back(commandPart);
+    parts.push_back(valuePart);
+  }
+
+  return parts;
+}
+
+// Upper case a string
+std::string capitaliseString(const std::string& str) {
+  std::string result = str;
+
+  for (char& c : result) {
+    c = std::toupper(c);
+  }
+
+  return result;
+}
+
+// Check if a string is an integer (whole number)
+bool isInteger(const std::string& str) {
+  if (str.empty()) {
+    return false;
+  }
+
+  for (char c : str) {
+    if (!std::isdigit(c)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// Convert a string to an integer
+int convertToInt(const std::string& str) {
+  try {
+    return std::stoi(str);
+  } catch (const std::exception& e) {
+    return -1; // Default value
+  }
+}
+
+// Processes and runs TouchDesigner commands sent over Serial
+void RunTouchDesignerCommand(std::string commandPart, std::string valuePart)
+{
+  commandPart = capitaliseString(commandPart);
+  bool haveCamera = BMDControlSystem::getInstance()->hasCamera();
+
+  Serial.println(String("TouchDesigner Command Received: ") + commandPart.c_str() + ":" + valuePart.c_str());
+
+  if(commandPart == "RECORD" && haveCamera)
+  {
+    auto camera = BMDControlSystem::getInstance()->getCamera();
+
+    if(camera->hasTransportMode())
+    {
+      auto transportInfo = camera->getTransportMode();
+      valuePart = capitaliseString(valuePart);
+
+      if(valuePart == "START" && !camera->isRecording)
+      {
+        transportInfo.mode = CCUPacketTypes::MediaTransportMode::Record;
+        PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
+        Serial.println("Start Recording sent to camera");
+      }
+      else if(valuePart == "STOP" && camera->isRecording)
+      {
+        transportInfo.mode = CCUPacketTypes::MediaTransportMode::Preview;
+        PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
+        Serial.println("Stop Recording sent to camera");
+      }
+    }
+  }
+  else if(commandPart == "ISO" && haveCamera)
+  {
+    if(isInteger(valuePart)) // Ensure we have a whole number
+    {
+      int value = std::stoi(valuePart);
+
+      // Accepting values between 
+      if(value >= 100 and value <= 25600)
+      {
+        PacketWriter::writeISO(value, &cameraConnection); // ISO command
+        Serial.println("ISO sent to camera");
+      }
+    }
+  }
+  else if(commandPart == "SHUTTERANGLE" && haveCamera)
+  {
+    int value = std::stoi(valuePart);
+
+    if(value >= 1 and value <= 360)
+    {
+      PacketWriter::writeShutterAngle(value * 100, &cameraConnection); // Shutter angle is times 100
+      Serial.println("Shutter Angle sent to camera");
+    }
+  }
+  else if(commandPart == "SHUTTERSPEED" && haveCamera)
+  {
+    int value = std::stoi(valuePart);
+
+    if(value >= 24 and value <= 2000)
+    {
+      PacketWriter::writeShutterSpeed(value, &cameraConnection); // Shutter speed command
+      Serial.println("Shutter Speed sent to camera");
+    }
+  }
+  else if((commandPart == "TINT" || commandPart == "WHITEBALANCE") && haveCamera)
+  {
+    auto camera = BMDControlSystem::getInstance()->getCamera();
+
+    // Get the current White Balance value
+    int currentWB = 0;
+    if(camera->hasWhiteBalance())
+      currentWB = camera->getWhiteBalance();
+
+    // Get the current Tint value
+    int currentTint = 0;
+    if(camera->hasTint())
+      currentTint = camera->getTint();
+
+    if(commandPart == "WHITEBALANCE" && haveCamera)
+    {
+      int value = std::stoi(valuePart);
+
+      if(value >= 2500 and value <= 10000)
+      {
+        PacketWriter::writeWhiteBalance(value, currentTint, &cameraConnection); // White Balance command
+        Serial.println("White Balance sent to camera");
+      }
+    }
+    else if(commandPart == "TINT" && haveCamera)
+    {
+      int value = std::stoi(valuePart);
+
+      if(value >= -50 and value <= 50)
+      {
+        PacketWriter::writeWhiteBalance(currentWB, value, &cameraConnection); // Tint command
+        Serial.println("Tint sent to camera");
+      }
+    }
+  }
+  else if(commandPart == "BRAWQ" && haveCamera)
+  {
+    auto camera = BMDControlSystem::getInstance()->getCamera();
+    CodecInfo currentCodec = camera->getCodec();
+
+    if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
+    {
+      int value = std::stoi(valuePart);
+
+      switch(value)
+      {
+        case 0: // Q0
+          PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAWQ0), &cameraConnection);
+          Serial.println("BRAW Q0 sent to camera");
+          break;
+        case 1: // Q1
+          PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAWQ1), &cameraConnection);
+          Serial.println("BRAW Q1 sent to camera");
+          break;
+        case 3: // Q3
+          PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAWQ3), &cameraConnection);
+          Serial.println("BRAW Q3 sent to camera");
+          break;
+        case 5: // Q5
+          PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAWQ5), &cameraConnection);
+          Serial.println("BRAW Q5 sent to camera");
+          break;
+        default:
+          Serial.println("Unknown value for BRAW Quality");
+      }
+    }
+    else
+    Serial.println("Camera must be set to BRAW to change BRAW Quality setting");
+  }
+  else if(commandPart == "BRAWB" && haveCamera)
+  {
+    auto camera = BMDControlSystem::getInstance()->getCamera();
+    CodecInfo currentCodec = camera->getCodec();
+
+    if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
+    {
+      int value = std::stoi(valuePart);
+
+      switch(value)
+      {
+        case 3: // 3:1
+          PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAW3_1), &cameraConnection);
+          Serial.println("BRAW 3:1 sent to camera");
+          break;
+        case 5: // 5:1
+          PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAW5_1), &cameraConnection);
+          Serial.println("BRAW 5:1 sent to camera");
+          break;
+        case 8: // 8:1
+          PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAW8_1), &cameraConnection);
+          Serial.println("BRAW 8:1 sent to camera");
+          break;
+        case 12: // 12:1
+          PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAW12_1), &cameraConnection);
+          Serial.println("BRAW 12:1 sent to camera");
+          break;
+        default:
+          Serial.println("Unknown value for BRAW Bitrate");
+      }
+    }
+    else
+    Serial.println("Camera must be set to BRAW to change BRAW Quality setting");
+  }
+}
+
 void setup() {
 
   M5.begin();
@@ -2741,6 +3008,34 @@ void loop() {
   // 'A' = Button A press, 'B' = Button B press, 'C' = Button C press
   char TouchDesignerPress = ' ';
 
+  if(tdCommandComplete)
+  {
+    std::vector<std::string> commandParts = splitTDCommand(tdCommand);
+
+    std::string commandPart = commandParts[0];
+    std::string valuePart = commandParts[1];
+
+    // Process button presses
+    if(commandPart == "BUTTON")
+    {
+      if(valuePart == "A")
+        TouchDesignerPress = 'A';
+      else if(valuePart == "B")
+        TouchDesignerPress = 'B';
+      else if(valuePart == "C")
+        TouchDesignerPress = 'C';
+    }
+    else
+    {
+      // It's not a Button command, so let's process it in a separate function
+      RunTouchDesignerCommand(commandPart, valuePart);
+    }
+
+    // Reset ready for the next command
+    tdCommandComplete = false;
+  }
+
+  /*
   if (Serial.available()) {
       int ch = Serial.read();
 
@@ -2773,6 +3068,7 @@ void loop() {
           break;
       }
   }
+  */
 
   if(M5.BtnA.wasPressed() || M5.BtnB.wasPressed() || M5.BtnC.wasPressed() || TouchDesignerPress != ' ')
   {
@@ -2892,4 +3188,37 @@ void loop() {
   }
 
   delay(5);
+}
+
+void serialEvent()
+{
+  while (Serial.available()) {
+    char incomingChar = (char)Serial.read();
+
+    // Check if the incoming character is the start of the string
+    if (incomingChar == '(') {
+      tdCommand = ""; // Clear the previous string
+    }
+    // Check if the incoming character is the end of the string
+    else if (incomingChar == ')') {
+
+      // Ensure that we have a colon in the string
+      if(tdCommand.find(':') != std::string::npos)
+      {
+        tdCommandComplete = true; // We're good to go to process this command
+      }
+      else
+      {
+        // No colon, so we'll clear the command and try and start again
+        tdCommand == "";
+        tdCommandComplete = false;
+      }
+    }
+    // Append the character to the input string
+    else {
+      if (tdCommand.length() < tdMaxLength) {
+        tdCommand += incomingChar;
+      }
+    }
+  }
 }
