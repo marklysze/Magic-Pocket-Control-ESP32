@@ -2690,29 +2690,59 @@ void RunTouchDesignerCommand(std::string commandPart, std::string valuePart)
 
   if(commandPart == "RECORD" && haveCamera)
   {
+    Serial.println("[Command RECORD]: Processing RECORD");
+
     auto camera = BMDControlSystem::getInstance()->getCamera();
 
     if(camera->hasTransportMode())
     {
+      Serial.println("[Command RECORD]: Getting Transport Mode");
+
       auto transportInfo = camera->getTransportMode();
+
+      Serial.println("[Command RECORD]: Have Transport Mode");
+
       valuePart = capitaliseString(valuePart);
 
-      if(valuePart == "START" && !camera->isRecording)
+      Serial.println("[Command RECORD]: Value capitalised:");
+      Serial.println(valuePart.c_str());
+
+      if(valuePart == "START")
       {
-        transportInfo.mode = CCUPacketTypes::MediaTransportMode::Record;
-        PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
-        Serial.println("Start Recording sent to camera");
+        Serial.println("[Command RECORD]: Value part is START.");
+
+        if(!camera->isRecording)
+        {
+          transportInfo.mode = CCUPacketTypes::MediaTransportMode::Record;
+          PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
+          Serial.println("[Command RECORD]: Start Recording sent to camera");
+        }
+        else
+          Serial.println("[Command RECORD]: Camera already recording, can't send.");
       }
-      else if(valuePart == "STOP" && camera->isRecording)
+      else if(valuePart == "STOP")
       {
-        transportInfo.mode = CCUPacketTypes::MediaTransportMode::Preview;
-        PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
-        Serial.println("Stop Recording sent to camera");
+        Serial.println("[Command RECORD]: Value part is STOP.");
+
+        if(camera->isRecording)
+        {
+          transportInfo.mode = CCUPacketTypes::MediaTransportMode::Preview;
+          PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
+          Serial.println("[Command RECORD]: Stop Recording sent to camera");
+        }
+        else
+          Serial.println("[Command RECORD]: Camera was not recording, can't stop.");
       }
+      else
+        Serial.println("[Command RECORD]: Transport Mode has not been received, can't send.");
     }
+    else
+      Serial.println("[Command RECORD]: Transport Mode has not been received, can't send.");
   }
   else if(commandPart == "ISO" && haveCamera)
   {
+    Serial.println("[Command ISO]: Processing ISO");
+
     if(isInteger(valuePart)) // Ensure we have a whole number
     {
       int value = std::stoi(valuePart);
@@ -2721,9 +2751,13 @@ void RunTouchDesignerCommand(std::string commandPart, std::string valuePart)
       if(value >= 100 and value <= 25600)
       {
         PacketWriter::writeISO(value, &cameraConnection); // ISO command
-        Serial.println("ISO sent to camera");
+        Serial.println("[Command ISO]: ISO sent to camera");
       }
+      else
+        Serial.println("[Command ISO]: Value was not between 100 and 25600, can't send.");
     }
+    else
+      Serial.println("[Command ISO]: Value was not an integer number.");
   }
   else if(commandPart == "SHUTTERANGLE" && haveCamera)
   {
@@ -2846,8 +2880,10 @@ void RunTouchDesignerCommand(std::string commandPart, std::string valuePart)
       }
     }
     else
-    Serial.println("Camera must be set to BRAW to change BRAW Quality setting");
+      Serial.println("Camera must be set to BRAW to change BRAW Quality setting");
   }
+  else
+    Serial.println("[UNKNOWN TOUCHDESIGNER COMMAND");
 }
 
 void setup() {
