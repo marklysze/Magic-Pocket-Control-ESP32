@@ -1291,7 +1291,7 @@ void BMDCamera::onLensFocalLengthReceived(std::string inLensFocalLength)
     modified();
 
     #if OUTPUT_CAMERA_SETTINGS == 1
-        DEBUG_INFO(">>FocalLengthMM:%s", lensFocalLength->c_str());
+        DEBUG_INFO(">>FocalLength:%s", lensFocalLength->c_str());
     #endif
 }
 bool BMDCamera::hasLensFocalLength()

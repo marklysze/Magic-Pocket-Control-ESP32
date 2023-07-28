@@ -76,14 +76,6 @@ std::string tdCommand = "";
 bool tdCommandComplete = false;
 int tdMaxLength = 50; // Accept up to 50 characters, including '(', ':', and ')'
 
-// M5
-#include "M5GFX.h"
-#include "M5Unified.h"
-// static M5GFX display;
-// M5Canvas window(&display);
-M5GFX& window = M5.Display; // We'll directly use the display for writing rather than a sprite/M5Canvas, we'll use the alias window so code can remain similar between other devices
-// static M5Canvas spritePassKey(&display);
-
 // Lato font from Google Fonts
 // Agency FB font is free for commercial use, copied from Windows fonts
 // Rather than using font sizes, we use specific fonts for each size as it renders better on screen
@@ -3027,7 +3019,7 @@ void loop() {
       DEBUG_DEBUG("Loop - Failed Pass Key");
 
     // Clear the screen so we can show the dashboard cleanly
-    window.fillScreen(BLACK);
+    tft.fillScreen(TFT_BLACK);
 
     lastConnectedTime = currentTime;
   }
