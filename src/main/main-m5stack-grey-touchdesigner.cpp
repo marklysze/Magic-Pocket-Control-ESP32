@@ -254,13 +254,19 @@ void Screen_Common(int sideBarColour)
           case Screens::ISO:
           case Screens::ShutterAngleSpeed:
           case Screens::WhiteBalanceTintT:
-          case Screens::Codec:
           case Screens::Resolution:
           case Screens::Media:
-          case Screens::Lens:
             sprite->fillSmoothRoundRect(30, 210, 170, 40, 3, TFT_DARKCYAN);
             sprite->fillTriangle(60, 235, 70, 215, 50, 215, TFT_WHITE); // Up Arrow
             sprite->fillTriangle(150, 235, 170, 235, 160, 215, TFT_WHITE); // Down Arrow
+            break;
+          case Screens::Codec:
+            // White Balance shows Presets or increment
+            sprite->fillSmoothRoundRect(30, 210, 80, 40, 3, TFT_DARKCYAN);
+            sprite->drawCenterString("CODEC", 70, 217, &AgencyFB_Bold9pt7b);
+
+            sprite->fillSmoothRoundRect(120, 210, 80, 40, 3, TFT_DARKCYAN);
+            sprite->drawCenterString("SETTING", 160, 217, &AgencyFB_Bold9pt7b);
             break;
           case Screens::WhiteBalanceTintWB:
             // White Balance shows Presets or increment
@@ -269,6 +275,10 @@ void Screen_Common(int sideBarColour)
 
             sprite->fillSmoothRoundRect(120, 210, 80, 40, 3, TFT_DARKCYAN);
             sprite->drawCenterString("+100", 160, 217, &AgencyFB_Bold9pt7b);
+            break;
+          case Screens::Lens:
+            sprite->fillSmoothRoundRect(30, 210, 80, 40, 3, TFT_DARKCYAN);
+            sprite->drawCenterString("FOCUS", 70, 217, &AgencyFB_Bold9pt7b);
             break;
         }
       }
@@ -574,7 +584,7 @@ void Screen_Dashboard(bool forceRefresh = false)
   }
 
   // Lens
-  if(camera->hasHasLens())
+  if(camera->hasFocalLengthMM() && camera->hasApertureFStopString())
   {
     // Lens
     sprite->fillSmoothRoundRect(20, 165, 295, 40, 3, TFT_DARKGREY);
@@ -1492,138 +1502,97 @@ void Screen_Codec4K6K(bool forceRefresh = false)
 
   // Codec: BRAW and ProRes
 
-  // If we have a tap, we should determine if it is on anything
-  /*
+  // If we have an up/down button press
   bool tappedAction = false;
-  if(tapped_x != -1 && camera->hasCodec())
+  if(btnAPressed || btnBPressed)
   {
-    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 160)
+    DEBUG_DEBUG("Codec 4K/6K: Btn A/B pressed");
+
+    // Switching between BRAW and ProRes
+    if(btnAPressed)
     {
-      // Switching between BRAW and ProRes
-      if(currentCodec.basicCodec != CCUPacketTypes::BasicCodec::BRAW && tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 165 && tapped_y <= 70)
+      if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
       {
-        // Switch to BRAW (using the last known setting)
-        DEBUG_DEBUG("Changing to last unknown BRAW");
-        DEBUG_DEBUG("Changing Codecs through Bluetooth is a known bug from Blackmagic Design as of April 2023");
-
-        PacketWriter::writeCodec(camera->lastKnownBRAWIsBitrate ? camera->lastKnownBRAWBitrate : camera->lastKnownBRAWQuality, &cameraConnection);
-
-        tappedAction = true;
-      }
-      else if(currentCodec.basicCodec != CCUPacketTypes::BasicCodec::ProRes && tapped_x >= 170 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 70)
-      {
-        // Switch to ProRes (using the last known setting)
-        DEBUG_DEBUG("Changing to last unknown ProRes");
-        DEBUG_DEBUG("Changing Codecs through Bluetooth is a known bug from Blackmagic Design as of April 2023");
-
+        // Switch to ProRes
         PacketWriter::writeCodec(camera->lastKnownProRes, &cameraConnection);
-
-        tappedAction = true;
-      }
-      else if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
-      {
-        // BRAW
-
-        // Are we Constant Bitrate or Constant Quality
-        std::string currentCodecString = currentCodec.to_string();
-        auto pos = std::find(currentCodecString.begin(), currentCodecString.end(), ':');
-        bool isConstantBitrate = pos != currentCodecString.end(); // Is there a colon, :, in the string? If so, it's Constant Bitrate
-
-        // Constant Bitrate and Constant Quality
-        if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 165 && tapped_y <= 115)
-        {
-          // Change to Constant Bitrate if we're not already on Constant Bitrate. If it is we do nothing
-          if(!isConstantBitrate)
-          {
-            PacketWriter::writeCodec(camera->lastKnownBRAWBitrate, &cameraConnection);
-
-            tappedAction = true;
-          }
-        } 
-        else if(tapped_x >= 170 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
-        {
-          // Change to Constant Quality if we're not already on Constant Quality. If it is we do nothing
-          if(isConstantBitrate)
-          {
-            PacketWriter::writeCodec(camera->lastKnownBRAWQuality, &cameraConnection);
-
-            tappedAction = true;
-          }
-        } 
-        else
-        {
-          // Setting
-
-          if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 90 && tapped_y <= 160)
-          {
-            // 3:1 / Q0
-            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, isConstantBitrate ? CCUPacketTypes::CodecVariants::kBRAW3_1 : CCUPacketTypes::CodecVariants::kBRAWQ0), &cameraConnection);
-
-            tappedAction = true;
-          }
-          else if(tapped_x >= 95 && tapped_y >= 120 && tapped_x <= 165 && tapped_y <= 160)
-          {
-            // 5:1 / Q1
-            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, isConstantBitrate ? CCUPacketTypes::CodecVariants::kBRAW5_1 : CCUPacketTypes::CodecVariants::kBRAWQ1), &cameraConnection);
-
-            tappedAction = true;
-          }
-          else if(tapped_x >= 170 && tapped_y >= 120 && tapped_x <= 240 && tapped_y <= 160)
-          {
-            // 8:1 / Q3
-            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, isConstantBitrate ? CCUPacketTypes::CodecVariants::kBRAW8_1 : CCUPacketTypes::CodecVariants::kBRAWQ3), &cameraConnection);
-
-            tappedAction = true;
-          }
-          else if(tapped_x >= 245 && tapped_y >= 120 && tapped_x <= 315 && tapped_y <= 160)
-          {
-            // 12:1 / Q5
-            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, isConstantBitrate ? CCUPacketTypes::CodecVariants::kBRAW12_1 : CCUPacketTypes::CodecVariants::kBRAWQ5), &cameraConnection);
-
-            tappedAction = true;
-          }
-        }
       }
       else
       {
-        // ProRes
+        // Switch to BRAW
+        PacketWriter::writeCodec(camera->lastKnownBRAWIsBitrate ? camera->lastKnownBRAWBitrate : camera->lastKnownBRAWQuality, &cameraConnection);
+      }
 
-        if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 165 && tapped_y <= 115)
+      tappedAction = true;
+    }
+    else if(btnBPressed)
+    {
+        // Current setting
+        std::string currentCodecString = currentCodec.to_string();
+
+      // Change the setting on the current Codec
+      if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
+      {
+          if(currentCodecString == "BRAW 3:1")
           {
-            // HQ
-            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProResHQ), &cameraConnection);
-
-            tappedAction = true;
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAW5_1), &cameraConnection);
           }
-          else if(tapped_x >= 170 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
+          else if(currentCodecString == "BRAW 5:1")
           {
-            // 422
-            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProRes422), &cameraConnection);
-
-            tappedAction = true;
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAW8_1), &cameraConnection);
           }
-          else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 165 && tapped_y <= 160)
+          else if(currentCodecString == "BRAW 8:1")
           {
-            // LT
-            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProResLT), &cameraConnection);
-
-            tappedAction = true;
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAW12_1), &cameraConnection);
           }
-          else if(tapped_x >= 170 && tapped_y >= 120 && tapped_x <= 315 && tapped_y <= 160)
+          else if(currentCodecString == "BRAW 12:1")
           {
-            // PXY
-            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProResProxy), &cameraConnection);
-
-            tappedAction = true;
+            // Switch across to Constant Quality
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAWQ0), &cameraConnection);
+          }
+          else if(currentCodecString == "BRAW Q0")
+          {
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAWQ1), &cameraConnection);
+          }
+          else if(currentCodecString == "BRAW Q1")
+          {
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAWQ3), &cameraConnection);
+          }
+          else if(currentCodecString == "BRAW Q3")
+          {
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAWQ5), &cameraConnection);
+          }
+          else if(currentCodecString == "BRAW Q5")
+          {
+            // Switch across to Constant Bitrate
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAW3_1), &cameraConnection);
           }
       }
+      else
+      {
+          if(currentCodecString == "ProRes HQ")
+          {
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProRes422), &cameraConnection);
+          }
+          else if(currentCodecString == "ProRes 422")
+          {
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProResLT), &cameraConnection);
+          }
+          else if(currentCodecString == "ProRes LT")
+          {
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProResProxy), &cameraConnection);
+          }
+          else if(currentCodecString == "ProRes PXY")
+          {
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProResHQ), &cameraConnection);
+          }
+      }
+
+      tappedAction = true;
     }
   }
-  */
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
-  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
@@ -1807,52 +1776,106 @@ void Screen_Resolution4K(bool forceRefresh = false)
   // Get the current Codec values
   CodecInfo currentCodec = camera->getCodec();
 
-  // If we have a tap, we should determine if it is on anything
-  /*
   bool tappedAction = false;
-  if(tapped_x != -1)
+  if(btnAPressed || btnBPressed)
   {
+    DEBUG_DEBUG("Resolution4K: Btn A/B pressed");
+
+    String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "HD", "2.6K 16:9", "4K DCI", "4K UHD", "HD"
+
     if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
     {
       int width = 0;
       int height = 0;
       bool window = false;
 
-      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
+      if(currentRes == "4K DCI")
       {
-        // 4K DCI
-        width = 4096; height = 2160;
+        if(btnAPressed)
+        {
+          // 4K 2.4:1
+          width = 4096; height = 1720;
+          window = true;
+        }
+        else
+        {
+          // HD
+          width = 1920; height = 1080;
+          window = true;
+        }
       }
-      else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
+      else if(currentRes == "4K 2.4:1")
       {
-        // 4K 2.4:1
-        width = 4096; height = 1720;
-        window = true;
+        if(btnAPressed)
+        {
+          // 4K UHD
+          width = 3840; height = 2160;
+          window = true;
+        }
+        else
+        {
+          // 4K DCI
+          width = 4096; height = 2160;
+        }
       }
-      else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
+      else if(currentRes == "4K UHD")
       {
-        // 4K UHD
-        width = 3840; height = 2160;
-        window = true;
+        if(btnAPressed)
+        {
+          // 2.8K Ana
+          width = 2880; height = 2160;
+          window = true;
+        }
+        else
+        {
+          // 4K 2.4:1
+          width = 4096; height = 1720;
+          window = true;
+        }
       }
-
-      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 110 && tapped_y <= 115)
+      else if(currentRes == "2.8K Ana")
       {
-        // 2.8K Ana
-        width = 2880; height = 2160;
-        window = true;
+        if(btnAPressed)
+        {
+          // 2.6K 16:9
+          width = 2688; height = 1512;
+          window = true;
+        }
+        else
+        {
+          // 4K UHD
+          width = 3840; height = 2160;
+          window = true;
+        }
       }
-      else if(tapped_x >= 115 && tapped_y >= 75 && tapped_x <= 205 && tapped_y <= 115)
+      else if(currentRes == "2.6K 16:9")
       {
-        // 2.6K 16:9
-        width = 2688; height = 1512;
-        window = true;
+        if(btnAPressed)
+        {
+          // HD
+          width = 1920; height = 1080;
+          window = true;
+        }
+        else
+        {
+          // 2.8K Ana
+          width = 2880; height = 2160;
+          window = true;
+        }
       }
-      else if(tapped_x >= 210 && tapped_y >= 75 && tapped_x <= 310 && tapped_y <= 115)
+      else // HD
       {
-        // HD
-        width = 1920; height = 1080;
-        window = true;
+        if(btnAPressed)
+        {
+          // 4K DCI
+          width = 4096; height = 2160;
+        }
+        else
+        {
+          // 2.6K 16:9
+          width = 2688; height = 1512;
+          window = true;
+        }
       }
 
       if(width != 0)
@@ -1875,34 +1898,68 @@ void Screen_Resolution4K(bool forceRefresh = false)
       int height = 0;
       bool window = false;
 
-      String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "4K DCI", "4K UHD", "HD"
+      DEBUG_DEBUG("Before change:");
+      DEBUG_DEBUG(currentRecordingFormat.frameDimensionsShort_string().c_str());
+      DEBUG_DEBUG(currentRecordingFormat.frameRate_string().c_str());
+      DEBUG_DEBUG("Frame Rate: %hi", currentRecordingFormat.frameRate);
+      DEBUG_DEBUG("Off Speed Frame Rate: %hi", currentRecordingFormat.offSpeedFrameRate);
+      DEBUG_DEBUG("Width: %i", currentRecordingFormat.width);
+      DEBUG_DEBUG("Height: %i", currentRecordingFormat.height);
+      DEBUG_DEBUG("mRateEnabled: %s", currentRecordingFormat.mRateEnabled ? "Yes" : "No");
+      DEBUG_DEBUG("offSpeedEnabled: %s", currentRecordingFormat.offSpeedEnabled ? "Yes" : "No");
+      DEBUG_DEBUG("interlacedEnabled: %s", currentRecordingFormat.interlacedEnabled ? "Yes" : "No");
+      DEBUG_DEBUG("windowedModeEnabled: %s", currentRecordingFormat.windowedModeEnabled ? "Yes" : "No");
+      DEBUG_DEBUG("sensorMRateEnabled: %s", currentRecordingFormat.sensorMRateEnabled ? "Yes" : "No");
 
-      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
+      if(currentRes == "4K DCI")
       {
-        // 4K
-        width = 4096; height = 2160;
-        window = false; // true;
-      }
-      else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
-      {
-        // 4K UHD
-        width = 3840; height = 2160;
-        window = true; // currentRecordingFormat.windowedModeEnabled;
-      }
-      else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
-      {
-        // HD
-        width = 1920; height = 1080;
-        window = true; // currentRecordingFormat.windowedModeEnabled;
-      }
+        if(btnAPressed)
+        {
+          // 4K UHD
+          width = 3840; height = 2160;
+          window = false;
 
-      // Windowed options
-      // else if(currentRes == "HD" && tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 310 && tapped_y <= 160)
-      // {
-        // HD - Scaled from Full sensor, 2.6K, or Windowed, can't distinguish
-        // width = currentRecordingFormat.width; height = currentRecordingFormat.height;
-        // window = true;
-      // }
+          DEBUG_DEBUG("Trying to change to 4K UHD");
+        }
+        else
+        {
+          // HD
+          width = 1920; height = 1080;
+          window = true;
+
+          DEBUG_DEBUG("Trying to change to HD");
+        }
+      }
+      else if(currentRes == "4K UHD")
+      {
+        if(btnAPressed)
+        {
+          // HD
+          width = 1920; height = 1080;
+          window = true;
+        }
+        else
+        {
+          // 4K DCI
+          width = 4096; height = 2160;
+          window = false;
+        }
+      }
+      else // UHD
+      {
+        if(btnAPressed)
+        {
+          // 4K DCI
+          width = 4096; height = 2160;
+          window = false;
+        }
+        else
+        {
+          // 4K UHD
+          width = 3840; height = 2160;
+          window = true;
+        }
+      }
 
       if(width != 0)
       {
@@ -1911,17 +1968,29 @@ void Screen_Resolution4K(bool forceRefresh = false)
         newRecordingFormat.width = width;
         newRecordingFormat.height = height;
         newRecordingFormat.windowedModeEnabled = window;
+
+        DEBUG_DEBUG("Attempting to change to:");
+        DEBUG_DEBUG(newRecordingFormat.frameDimensionsShort_string().c_str());
+        DEBUG_DEBUG(newRecordingFormat.frameRate_string().c_str());
+        DEBUG_DEBUG("Frame Rate: %hi", newRecordingFormat.frameRate);
+        DEBUG_DEBUG("Off Speed Frame Rate: %hi", newRecordingFormat.offSpeedFrameRate);
+        DEBUG_DEBUG("Width: %i", newRecordingFormat.width);
+        DEBUG_DEBUG("Height: %i", newRecordingFormat.height);
+        DEBUG_DEBUG("mRateEnabled: %s", newRecordingFormat.mRateEnabled ? "Yes" : "No");
+        DEBUG_DEBUG("offSpeedEnabled: %s", newRecordingFormat.offSpeedEnabled ? "Yes" : "No");
+        DEBUG_DEBUG("interlacedEnabled: %s", newRecordingFormat.interlacedEnabled ? "Yes" : "No");
+        DEBUG_DEBUG("windowedModeEnabled: %s", newRecordingFormat.windowedModeEnabled ? "Yes" : "No");
+        DEBUG_DEBUG("sensorMRateEnabled: %s", newRecordingFormat.sensorMRateEnabled ? "Yes" : "No");
+
         PacketWriter::writeRecordingFormat(newRecordingFormat, &cameraConnection);
 
         tappedAction = true;
       }
     }
   }
-  */
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
-  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
@@ -2061,52 +2130,106 @@ void Screen_Resolution6K(bool forceRefresh = false)
   // Get the current Codec values
   CodecInfo currentCodec = camera->getCodec();
 
-  // If we have a tap, we should determine if it is on anything
-  /*
   bool tappedAction = false;
-  if(tapped_x != -1)
+  if(btnAPressed || btnBPressed)
   {
+    DEBUG_DEBUG("Resolution6K: Btn A/B pressed");
+
+    String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str();
+
     if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
     {
       int width = 0;
       int height = 0;
       bool window = false;
 
-      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
+      if(currentRes == "6K")
       {
-        // 6K
-        width = 6144; height = 3456;
+        if(btnAPressed)
+        {
+          // 6K 2.4:1
+          width = 6144; height = 2560;
+          window = true;
+        }
+        else
+        {
+          // 2.8K 17:9 - Note V8.1 width is 2880 not 2868
+          width = 2880; height = 1512;
+          window = true;
+        }
       }
-      else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
+      else if(currentRes == "6K 2.4:1")
       {
-        // 6K 2.4:1
-        width = 6144; height = 2560;
-        window = true;
+        if(btnAPressed)
+        {
+          // 5.7K 17:9
+          width = 5744; height = 3024;
+          window = true;
+        }
+        else
+        {
+          // 6K
+          width = 6144; height = 3456;
+        }
       }
-      else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
+      else if(currentRes == "5.7K 17:9")
       {
-        // 5.7K 17:9
-        width = 5744; height = 3024;
-        window = true;
+        if(btnAPressed)
+        {
+          // 4K DCI
+          width = 4096; height = 2160;
+          window = true;
+        }
+        else
+        {
+          // 6K 2.4:1
+          width = 6144; height = 2560;
+          window = true;
+        }
       }
-
-      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 110 && tapped_y <= 115)
+      else if(currentRes == "4K DCI")
       {
-        // 4K DCI
-        width = 4096; height = 2160;
-        window = true;
+        if(btnAPressed)
+        {
+          // 3.7K Anamorphic
+          width = 3728; height = 3104;
+          window = true;
+        }
+        else
+        {
+          // 5.7K 17:9
+          width = 5744; height = 3024;
+          window = true;
+        }
       }
-      else if(tapped_x >= 115 && tapped_y >= 75 && tapped_x <= 205 && tapped_y <= 115)
+      else if(currentRes == "3.7K 6:5A")
       {
-        // 3.7K Anamorphic
-        width = 3728; height = 3104;
-        window = true;
+        if(btnAPressed)
+        {
+          // 2.8K 17:9 - Note V8.1 width is 2880 not 2868
+          width = 2880; height = 1512;
+          window = true;
+        }
+        else
+        {
+          // 4K DCI
+          width = 4096; height = 2160;
+          window = true;
+        }
       }
-      else if(tapped_x >= 210 && tapped_y >= 75 && tapped_x <= 310 && tapped_y <= 115)
+      else // 2.8K 17:9
       {
-        // 2.8K 17:9
-        width = 2868; height = 1512;
-        window = true;
+        if(btnAPressed)
+        {
+          // 6K
+          width = 6144; height = 3456;
+        }
+        else
+        {
+          // 3.7K Anamorphic
+          width = 3728; height = 3104;
+          window = true;
+        }
       }
 
       if(width != 0)
@@ -2129,51 +2252,67 @@ void Screen_Resolution6K(bool forceRefresh = false)
       int height = 0;
       bool window = false;
 
-      String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "4K DCI", "4K UHD", "HD"
+      DEBUG_DEBUG("Before change:");
+      DEBUG_DEBUG(currentRecordingFormat.frameDimensionsShort_string().c_str());
+      DEBUG_DEBUG(currentRecordingFormat.frameRate_string().c_str());
+      DEBUG_DEBUG("Frame Rate: %hi", currentRecordingFormat.frameRate);
+      DEBUG_DEBUG("Off Speed Frame Rate: %hi", currentRecordingFormat.offSpeedFrameRate);
+      DEBUG_DEBUG("Width: %i", currentRecordingFormat.width);
+      DEBUG_DEBUG("Height: %i", currentRecordingFormat.height);
+      DEBUG_DEBUG("mRateEnabled: %s", currentRecordingFormat.mRateEnabled ? "Yes" : "No");
+      DEBUG_DEBUG("offSpeedEnabled: %s", currentRecordingFormat.offSpeedEnabled ? "Yes" : "No");
+      DEBUG_DEBUG("interlacedEnabled: %s", currentRecordingFormat.interlacedEnabled ? "Yes" : "No");
+      DEBUG_DEBUG("windowedModeEnabled: %s", currentRecordingFormat.windowedModeEnabled ? "Yes" : "No");
+      DEBUG_DEBUG("sensorMRateEnabled: %s", currentRecordingFormat.sensorMRateEnabled ? "Yes" : "No");
 
-      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
+      if(currentRes == "4K DCI")
       {
-        // 4K
-        width = 4096; height = 2160;
-        window = true;
-      }
-      else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
-      {
-        // 4K UHD
-        width = 3840; height = 2160;
-        window = currentRecordingFormat.windowedModeEnabled;
-      }
-      else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
-      {
-        // HD
-        width = 1920; height = 1080;
-        window = currentRecordingFormat.windowedModeEnabled;
-      }
+        if(btnAPressed)
+        {
+          // 4K UHD
+          width = 3840; height = 2160;
+          window = false;
 
-      // Windowed options
-      else if(currentRes == "4K UHD" && tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 110 && tapped_y <= 160)
-      {
-        // 4K UHD - Full Sensor
-        width = currentRecordingFormat.width; height = currentRecordingFormat.height;
-        window = false;
+          DEBUG_DEBUG("Trying to change to 4K UHD");
+        }
+        else
+        {
+          // HD
+          width = 1920; height = 1080;
+          window = false;
+
+          DEBUG_DEBUG("Trying to change to HD");
+        }
       }
-      else if(currentRes == "4K UHD" && tapped_x >= 115 && tapped_y >= 120 && tapped_x <= 205 && tapped_y <= 160)
+      else if(currentRes == "4K UHD")
       {
-        // 4K UHD - Windowed 5.7K
-        width = currentRecordingFormat.width; height = currentRecordingFormat.height;
-        window = true;
+        if(btnAPressed)
+        {
+          // HD
+          width = 1920; height = 1080;
+          window = false;
+        }
+        else
+        {
+          // 4K DCI
+          width = 4096; height = 2160;
+          window = true;
+        }
       }
-      else if(currentRes == "HD" && tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 110 && tapped_y <= 160)
+      else // UHD
       {
-        // HD - Full Sensor
-        width = currentRecordingFormat.width; height = currentRecordingFormat.height;
-        window = false;
-      }
-      else if(currentRes == "HD" && tapped_x >= 115 && tapped_y >= 120 && tapped_x <= 310 && tapped_y <= 160)
-      {
-        // HD - Scaled from 5.7K or 2.8K, can't distinguish which unfortunately
-        width = currentRecordingFormat.width; height = currentRecordingFormat.height;
-        window = true;
+        if(btnAPressed)
+        {
+          // 4K DCI
+          width = 4096; height = 2160;
+          window = true;
+        }
+        else
+        {
+          // 4K UHD
+          width = 3840; height = 2160;
+          window = false;
+        }
       }
 
       if(width != 0)
@@ -2183,17 +2322,29 @@ void Screen_Resolution6K(bool forceRefresh = false)
         newRecordingFormat.width = width;
         newRecordingFormat.height = height;
         newRecordingFormat.windowedModeEnabled = window;
+
+        DEBUG_DEBUG("Attempting to change to:");
+        DEBUG_DEBUG(newRecordingFormat.frameDimensionsShort_string().c_str());
+        DEBUG_DEBUG(newRecordingFormat.frameRate_string().c_str());
+        DEBUG_DEBUG("Frame Rate: %hi", newRecordingFormat.frameRate);
+        DEBUG_DEBUG("Off Speed Frame Rate: %hi", newRecordingFormat.offSpeedFrameRate);
+        DEBUG_DEBUG("Width: %i", newRecordingFormat.width);
+        DEBUG_DEBUG("Height: %i", newRecordingFormat.height);
+        DEBUG_DEBUG("mRateEnabled: %s", newRecordingFormat.mRateEnabled ? "Yes" : "No");
+        DEBUG_DEBUG("offSpeedEnabled: %s", newRecordingFormat.offSpeedEnabled ? "Yes" : "No");
+        DEBUG_DEBUG("interlacedEnabled: %s", newRecordingFormat.interlacedEnabled ? "Yes" : "No");
+        DEBUG_DEBUG("windowedModeEnabled: %s", newRecordingFormat.windowedModeEnabled ? "Yes" : "No");
+        DEBUG_DEBUG("sensorMRateEnabled: %s", newRecordingFormat.sensorMRateEnabled ? "Yes" : "No");
+
         PacketWriter::writeRecordingFormat(newRecordingFormat, &cameraConnection);
 
         tappedAction = true;
       }
     }
   }
-  */
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
-  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
@@ -2288,31 +2439,31 @@ void Screen_Resolution6K(bool forceRefresh = false)
     if(currentRes == "4K DCI")
     {
       // Full sensor area only]
-      sprite->fillSmoothRoundRect(20, 120, 90, 40, 3, TFT_DARKGREEN);
-      sprite->drawCentreString("FULL", 65, 131);
+      sprite->fillSmoothRoundRect(20, 130, 90, 40, 3, TFT_DARKGREEN);
+      sprite->drawCentreString("FULL", 65, 141);
     }
     else if(currentRes == "4K UHD")
     {
       // Scaled from Full or 5.7K
-      sprite->fillSmoothRoundRect(20, 120, 90, 40, 3, (!currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
-      sprite->drawCentreString("FULL", 65, 131);
+      sprite->fillSmoothRoundRect(20, 130, 90, 40, 3, (!currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
+      sprite->drawCentreString("FULL", 65, 141);
 
       // 5.7K
-      sprite->fillSmoothRoundRect(115, 120, 90, 40, 3, (currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
-      sprite->drawCentreString("5.7K", 160, 131);
+      sprite->fillSmoothRoundRect(115, 130, 90, 40, 3, (currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
+      sprite->drawCentreString("5.7K", 160, 141);
     }
     else
     {
       // HD
 
       // Scaled from Full, 2.8K or 5.7K (however we can't tell if it's 2.8K or 5.7K)
-      sprite->fillSmoothRoundRect(20, 120, 90, 40, 3, (!currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
-      sprite->drawCentreString("FULL", 65, 131);
+      sprite->fillSmoothRoundRect(20, 130, 90, 40, 3, (!currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
+      sprite->drawCentreString("FULL", 65, 141);
 
       // 2.8K 5.7K
-      sprite->fillSmoothRoundRect(115, 120, 195, 40, 3, (currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
-      sprite->drawCentreString("5.7K / 2.8K", 212, 126);
-      sprite->drawCentreString("CHECK/SET ON CAMERA", 212, 146, &Lato_Regular5pt7b);
+      sprite->fillSmoothRoundRect(115, 130, 195, 40, 3, (currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
+      sprite->drawCentreString("5.3K / 2.8K", 212, 136);
+      sprite->drawCentreString("CHECK/SET ON CAMERA", 212, 156, &Lato_Regular5pt7b);
     }
   }
   else
@@ -2386,63 +2537,87 @@ void Screen_Media4K6K(bool forceRefresh = false)
 
   // 3 Media Slots - CFAST, SD, USB
 
-  // If we have a tap, we should determine if it is on anything
-  /*
   bool tappedAction = false;
-  if(tapped_x != -1 && camera->getMediaSlots().size() != 0)
+  if(btnAPressed || btnBPressed)
   {
-    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 160)
+    DEBUG_DEBUG("Media Pocket 4K/6K: Btn A/B pressed");
+
+    // Make sure we have some media
+    bool hasMedia = camera->getMediaSlots()[0].status != CCUPacketTypes::MediaStatus::None || camera->getMediaSlots()[1].status != CCUPacketTypes::MediaStatus::None || camera->getMediaSlots()[2].status != CCUPacketTypes::MediaStatus::None;
+
+    if(hasMedia)
     {
-      // Tapped within the area
-      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 70)
+      TransportInfo transportInfo = camera->getTransportMode();
+
+      bool slotAvail1 = camera->getMediaSlots()[0].status != CCUPacketTypes::MediaStatus::None;
+      bool slotAvail2 = camera->getMediaSlots()[1].status != CCUPacketTypes::MediaStatus::None;
+      bool slotAvail3 = camera->getMediaSlots()[2].status != CCUPacketTypes::MediaStatus::None;
+
+      // Make sure we have more than one available slot
+      if(slotAvail1 + slotAvail2 + slotAvail3 > 1)
       {
-        // CFAST
-        if(camera->getMediaSlots()[0].status != CCUPacketTypes::MediaStatus::None && !camera->getMediaSlots()[0].active)
+        short changeToSlot = -1;
+        short slotActive = 0;
+        if(slotAvail1 && transportInfo.slots[0].active)
+          slotActive = 1;
+        else if(slotAvail2 && transportInfo.slots[1].active)
+          slotActive = 2;
+        else
+          slotActive = 3;
+
+        if(btnAPressed)
         {
-          TransportInfo transportInfo = camera->getTransportMode();
-          transportInfo.slots[0].active = true;
-          transportInfo.slots[1].active = false;
-          transportInfo.slots[2].active = false;
+          // Down to the next
+          switch(slotActive)
+          {
+            case 1:
+              changeToSlot = slotAvail2 ? 2 : 3;
+              break;
+            case 2:
+              changeToSlot = slotAvail3 ? 3 : 1;
+              break;
+            case 3:
+              changeToSlot = slotAvail1 ? 1 : 2;
+              break;
+          }
+        }
+        else
+        {
+          // Up to the previous
+          switch(slotActive)
+          {
+            case 1:
+              changeToSlot = slotAvail3 ? 3 : 2;
+              break;
+            case 2:
+              changeToSlot = slotAvail1 ? 1 : 3;
+              break;
+            case 3:
+              changeToSlot = slotAvail2 ? 2 : 1;
+              break;
+          }
+        }
+
+        // Change the media slot
+        if(changeToSlot != -1)
+        {
+          transportInfo.slots[0].active = changeToSlot == 1 ? true : false;
+          transportInfo.slots[1].active = changeToSlot == 2 ? true : false;
+          transportInfo.slots[2].active = changeToSlot == 3 ? true : false;
           PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
 
           tappedAction = true;
         }
       }
-      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
-      {
-          // Change to SD
-        if(camera->getMediaSlots()[1].status != CCUPacketTypes::MediaStatus::None && !camera->getMediaSlots()[1].active)
-        {
-          TransportInfo transportInfo = camera->getTransportMode();
-          transportInfo.slots[0].active = false;
-          transportInfo.slots[1].active = true;
-          transportInfo.slots[2].active = false;
-          PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
-
-          tappedAction = true;
-        }
-      }
-      else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 315 && tapped_y <= 160)
-      {
-          // Change to USB
-        if(camera->getMediaSlots()[2].status != CCUPacketTypes::MediaStatus::None && !camera->getMediaSlots()[2].active)
-        {
-          TransportInfo transportInfo = camera->getTransportMode();
-          transportInfo.slots[0].active = false;
-          transportInfo.slots[1].active = false;
-          transportInfo.slots[2].active = true;
-          PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
-
-          tappedAction = true;
-        }
-      }
+      else
+        DEBUG_DEBUG("Only 1 media available, can't change active media.");
     }
+    else
+      DEBUG_DEBUG("No media, can't change active media.");
   }
-  */
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
-  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
@@ -2557,12 +2732,12 @@ void Screen_Lens(bool forceRefresh = false)
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
 
-  // If we have a tap, we should determine if it is on anything
-  /*
   bool tappedAction = false;
-  if(tapped_x != -1 && camera->hasTransportMode())
+  if(btnAPressed || btnBPressed)
   {
-    if(tapped_x >= 200 && tapped_y <= 120)
+    DEBUG_DEBUG("Lens: Btn A/B pressed");
+
+    if(btnAPressed)
     {
       // Focus button
       PacketWriter::writeAutoFocus(&cameraConnection);
@@ -2572,11 +2747,9 @@ void Screen_Lens(bool forceRefresh = false)
       tappedAction = true;
     }
   }
-  */
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
-  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
-  // if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
@@ -2587,27 +2760,46 @@ void Screen_Lens(bool forceRefresh = false)
 
   Screen_Common_Connected(); // Common elements
 
+    // Media label
+  sprite->setTextColor(TFT_WHITE);
+  sprite->drawString("LENS", 30, 9, &AgencyFB_Bold9pt7b);
+
   // M5GFX, set font here rather than on each drawString line
   sprite->setFont(&Lato_Regular11pt7b);
 
-  // Focus button
-  sprite->drawCircle(257, 63, 57, TFT_BLUE); // Outer
-  sprite->fillSmoothCircle(257, 63, 54, TFT_SKYBLUE); // Inner
-  sprite->setTextColor(TFT_WHITE);
-  sprite->drawCentreString("FOCUS", 257, 50);
-
-  if(camera->hasFocalLengthMM())
+  sprite->drawString("LENS TYPE", 30, 53, &Lato_Regular5pt7b);
+  if(camera->hasLensType())
   {
-    auto focalLength = camera->getFocalLengthMM();
-    std::string focalLengthMM = std::to_string(focalLength);
-    std::string combined = focalLengthMM + "mm";
+    sprite->setTextColor(TFT_LIGHTGREY);
+    sprite->drawString(camera->getLensType().c_str(), 30, 35, &Lato_Regular6pt7b);
 
-    sprite->drawString(combined.c_str(), 30, 25, &Lato_Regular12pt7b);
+  }
+  
+  sprite->drawString("FOCAL LENGTH", 30, 98, &Lato_Regular5pt7b);
+  if(camera->hasFocalLengthMM() || camera->hasLensFocalLength())
+  {
+    if(camera->hasFocalLengthMM())
+    {
+      auto focalLength = camera->getFocalLengthMM();
+      std::string focalLengthMM = std::to_string(focalLength);
+      std::string combined = focalLengthMM + "mm";
+
+      sprite->drawString(combined.c_str(), 30, 75, &Lato_Regular12pt7b);
+    }
+    else
+      sprite->drawString(camera->getLensFocalLength().c_str(), 30, 80, &Lato_Regular12pt7b);
   }
 
+  sprite->drawString("LENS DISTANCE", 30, 143, &Lato_Regular5pt7b);
+  if(camera->hasLensDistance())
+  {
+    sprite->drawString(camera->getLensDistance().c_str(), 30, 120, &Lato_Regular12pt7b);
+  }
+
+  sprite->drawString("APERTURE", 30, 188, &Lato_Regular5pt7b);
   if(camera->hasApertureFStopString())
   {
-      sprite->drawString(camera->getApertureFStopString().c_str(), 30, 50, &Lato_Regular12pt7b);
+    sprite->drawString(camera->getApertureFStopString().c_str(), 30, 165, &Lato_Regular12pt7b);
   }
 
   sprite->pushSprite(0, 0);
@@ -2700,7 +2892,7 @@ void RunTouchDesignerCommand(std::string commandPart, std::string valuePart)
   commandPart = capitaliseString(commandPart);
   bool haveCamera = BMDControlSystem::getInstance()->hasCamera();
 
-  Serial.println(String("TouchDesigner Command Received: ") + commandPart.c_str() + ":" + valuePart.c_str());
+  Serial.println(String("TouchDesigner Command Received, ") + commandPart.c_str() + ":" + valuePart.c_str());
 
   if(commandPart == "RECORD" && haveCamera)
   {

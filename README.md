@@ -44,9 +44,9 @@ Here's the state of cameras and firmware.
 | Camera | Firmware | Status |
 | :---: | :---: | :---: |
 | Pocket 4K | 7.9.1 | $\color{green}{\textsf{OK}}$ $\color{orange}{\textsf{ (BRAW <-> ProRes change firmware bug)}}$ |
-| Pocket 4K | 8.1 | $\color{green}{\textsf{OK}}$ |
+| Pocket 4K | 8.1 | $\color{green}{\textsf{OK}}$ $\color{orange}{\textsf{ (See Known Bugs below)}}$ |
 | Pocket 6K | 7.9.1 | $\color{green}{\textsf{OK}}$ $\color{orange}{\textsf{ (BRAW <-> ProRes change firmware bug)}}$ |
-| Pocket 6K | 8.1 | $\color{green}{\textsf{OK}}$ |
+| Pocket 6K | 8.1 | $\color{green}{\textsf{OK}}$ $\color{orange}{\textsf{ (See Known Bugs below)}}$ |
 | Pocket 6K G2 | ... | Not Tested |
 | Pocket 6K Pro | ... | Not Tested |
 | URSA Mini Pro 4.6K G2 | ... | Not Tested |
@@ -56,8 +56,10 @@ Here's the state of cameras and firmware.
 If you're in Sydney, Australia, and would be able to lend me a camera I haven't tested for a day to test so we know it works, that would be amazing.
 
 # Known bugs
-- Changing Codecs between BRAW and ProRes on Camera Firmware 7.9.1 on pocket cameras not functioning
-- Changing resolutions on Camera Firmware 8.1 on pocket cameras not functioning in all cases
+- Changing Codecs between BRAW and ProRes on Camera Firmware 7.9.1 on Pocket cameras not functioning
+- Changing Codecs between BRAW and ProRes on Camera Firmware 8.1 on Pocket 4K not switching until you've manually changed them once on the camera
+- Changing Codecs between BRAW and ProRes on Camera Firmware 8.1 on Pocket 6K not switching (even if you manually change them beforehand)
+- Changing resolutions when using ProRes on Camera Firmware 8.1 on Pocket cameras not functioning in all cases (ProRes 4K DCI to UHD or HD, may require you to manually change them once on the camera)
 
 # Why?
 My primary objective was to convert a Windows-based application I had for controlling my cameras to a small portable device.

@@ -281,7 +281,7 @@ public:
     bool lastKnownBRAWIsBitrate = false;
     CodecInfo lastKnownBRAWBitrate = CodecInfo(CCUPacketTypes::BasicCodec::BRAW, static_cast<byte>(CCUPacketTypes::CodecVariants::kBRAW5_1));
     CodecInfo lastKnownBRAWQuality = CodecInfo(CCUPacketTypes::BasicCodec::BRAW, static_cast<byte>(CCUPacketTypes::CodecVariants::kBRAWQ5));
-    CodecInfo lastKnownProRes = CodecInfo(CCUPacketTypes::BasicCodec::ProRes, static_cast<byte>(CCUPacketTypes::CodecVariants::kProRes422));
+    CodecInfo lastKnownProRes = CodecInfo(CCUPacketTypes::BasicCodec::ProRes, static_cast<byte>(CCUPacketTypes::CodecVariants::kProResHQ));
 
 
 private:

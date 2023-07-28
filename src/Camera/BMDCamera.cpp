@@ -514,6 +514,11 @@ void BMDCamera::onRecordingFormatReceived(CCUPacketTypes::RecordingFormatData in
         DEBUG_INFO(">>FrameRate:%s", recordingFormat->frameRate_string().c_str());
         DEBUG_INFO(">>FrameDims:%s", recordingFormat->frameWidthHeight_string().c_str());
         DEBUG_INFO(">>FrameSize:%s", recordingFormat->frameDimensionsShort_string().c_str());
+        DEBUG_INFO(">>mRateEnabled:%s", recordingFormat->mRateEnabled ? "Yes" : "No");
+        DEBUG_INFO(">>offSpeedEnabled:%s", recordingFormat->offSpeedEnabled ? "Yes" : "No");
+        DEBUG_INFO(">>interlacedEnabled:%s", recordingFormat->interlacedEnabled ? "Yes" : "No");
+        DEBUG_INFO(">>windowedModeEnabled:%s", recordingFormat->windowedModeEnabled ? "Yes" : "No");
+        DEBUG_INFO(">>sensorMRateEnabled:%s", recordingFormat->sensorMRateEnabled ? "Yes" : "No");
     #endif
 }
 

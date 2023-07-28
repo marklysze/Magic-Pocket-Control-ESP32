@@ -594,6 +594,8 @@ class CCUPacketTypes
                 // Pocket 6K / Pro / G2 additional
                 else if(width == 2868 && height == 1512)
                     return "2.8K 17:9";
+                else if(width == 2880 && height == 1512) // Version 8.1 has width at 2880
+                    return "2.8K 17:9";
                 else if(width == 3728 && height == 3104)
                     return "3.7K 6:5A";
                 else if(width == 5744 && height == 3024)
