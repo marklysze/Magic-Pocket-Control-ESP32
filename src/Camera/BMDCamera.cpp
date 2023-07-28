@@ -1,5 +1,10 @@
 #include "BMDCamera.h"
 
+// By default let's output settings to serial
+#ifndef OUTPUT_CAMERA_SETTINGS
+    #define OUTPUT_CAMERA_SETTINGS 1
+#endif
+
 BMDCamera::BMDCamera() {
     setAsDisconnected();
 }
@@ -195,6 +200,10 @@ void BMDCamera::onHasLens(bool inHasLens)
         *hasLens = inHasLens;
     else
         hasLens = std::make_shared<bool>(inHasLens);
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>HasLens:%s", (hasLens ? "Yes" : "No"));
+    #endif
 }
 bool BMDCamera::hasHasLens()
 {
@@ -244,6 +253,10 @@ void BMDCamera::onApertureFStopStringReceived(std::string inApertureFStopString)
         aperturefStopString = std::make_shared<std::string>(inApertureFStopString);
 
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>Aperture:%s", aperturefStopString->c_str());
+    #endif
 }
 bool BMDCamera::hasApertureFStopString()
 {
@@ -265,6 +278,10 @@ void BMDCamera::onApertureNormalisedReceived(int inApertureNormalised)
         apertureNormalised = std::make_shared<int>(inApertureNormalised);
 
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>ApertureNormalised:%i", *apertureNormalised);
+    #endif
 }
 bool BMDCamera::hasApertureNormalised()
 {
@@ -286,6 +303,10 @@ void BMDCamera::onFocalLengthMMReceived(ccu_fixed_t inFocalLengthMM)
         focalLengthMM = std::make_shared<ccu_fixed_t>(inFocalLengthMM);
 
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>FocalLengthMM:%i", *focalLengthMM);
+    #endif
 }
 bool BMDCamera::hasFocalLengthMM()
 {
@@ -306,9 +327,11 @@ void BMDCamera::OnImageStabilisationReceived(bool inImageStabilisation)
     else
         imageStabilisation = std::make_shared<bool>(inImageStabilisation);
 
-    DEBUG_DEBUG("Image Stabilisation Set: %s", (inImageStabilisation ? "Yes" : "No"));
-
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>ImageStabilisation:%s", (imageStabilisation ? "Yes" : "No"));
+    #endif
 }
 bool BMDCamera::hasImageStabilisation()
 {
@@ -382,6 +405,10 @@ void BMDCamera::onSensorGainISOReceived(int inSensorGainISO)
         sensorGainISO = std::make_shared<int>(inSensorGainISO);
 
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>ISO:%i", *sensorGainISO);
+    #endif
 }
 
 bool BMDCamera::hasSensorGainISO()
@@ -405,6 +432,10 @@ void BMDCamera::onWhiteBalanceReceived(short inWhiteBalance)
         whiteBalance = std::make_shared<short>(inWhiteBalance);
 
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>WhiteBalance:%d", *whiteBalance);
+    #endif
 }
 
 bool BMDCamera::hasWhiteBalance()
@@ -428,6 +459,10 @@ void BMDCamera::onTintReceived(short inTint)
         tint = std::make_shared<short>(inTint);
 
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>Tint:%d", *tint);
+    #endif
 }
 
 bool BMDCamera::hasTint()
@@ -474,6 +509,12 @@ void BMDCamera::onRecordingFormatReceived(CCUPacketTypes::RecordingFormatData in
         recordingFormat = std::make_shared<CCUPacketTypes::RecordingFormatData>(inModelName);
 
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>FrameRate:%s", recordingFormat->frameRate_string().c_str());
+        DEBUG_INFO(">>FrameDims:%s", recordingFormat->frameWidthHeight_string().c_str());
+        DEBUG_INFO(">>FrameSize:%s", recordingFormat->frameDimensionsShort_string().c_str());
+    #endif
 }
 
 bool BMDCamera::hasRecordingFormat()
@@ -522,6 +563,10 @@ void BMDCamera::onShutterAngleReceived(int32_t inShutterAngle)
         shutterAngle = std::make_shared<int32_t>(inShutterAngle);
 
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>ShutterAngle:%i", *shutterAngle);
+    #endif
 }
 
 bool BMDCamera::hasShutterAngle()
@@ -547,6 +592,10 @@ void BMDCamera::onShutterSpeedReceived(int32_t inShutterSpeed)
         shutterSpeed = std::make_shared<int32_t>(inShutterSpeed);
 
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>ShutterSpeed:%i", *shutterSpeed);
+    #endif
 }
 
 bool BMDCamera::hasShutterSpeed()
@@ -570,6 +619,10 @@ void BMDCamera::onSensorGainDBReceived(byte inSensorGainDB)
         sensorGainDB = std::make_shared<byte>(inSensorGainDB);
     
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>SensorGainDB:%u", *sensorGainDB);
+    #endif
 }
 
 bool BMDCamera::hasSensorGainDB()
@@ -593,6 +646,10 @@ void BMDCamera::onSensorGainISOValueReceived(int32_t inSensorGainISOValue)
         sensorGainISOValue = std::make_shared<int32_t>(inSensorGainISOValue);
     
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>ISO:%i", *sensorGainISOValue);
+    #endif
 }
 
 bool BMDCamera::hasSensorGainISOValue()
@@ -686,6 +743,10 @@ void BMDCamera::onModelNameReceived(std::string inModelName)
         modelName = std::make_shared<std::string>(inModelName);
 
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>ModelName:%s", modelName->c_str());
+    #endif
 }
 bool BMDCamera::hasModelName()
 {
@@ -707,6 +768,10 @@ void BMDCamera::onIsPocketReceived(bool inIsPocket)
         isPocketCamera = std::make_shared<bool>(inIsPocket);
     
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>IsPocketCamera:%s", isPocketCamera ? "Yes" : "No");
+    #endif
 }
 bool BMDCamera::hasIsPocket()
 {
@@ -820,6 +885,10 @@ void BMDCamera::onCodecReceived(CodecInfo inCodec)
     }
 
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>Codec:%s", inCodec.to_string().c_str());
+    #endif
 }
 bool BMDCamera::hasCodec()
 {
@@ -863,10 +932,18 @@ void BMDCamera::onTransportModeReceived(TransportInfo inTransportMode)
             activeMediaSlotIndex = i;
     }
 
+    bool changedRecordingState = isRecording != (transportMode->mode == CCUPacketTypes::MediaTransportMode::Record);
     isRecording = transportMode->mode == CCUPacketTypes::MediaTransportMode::Record;
-    DEBUG_VERBOSE("isRecording: %s", (isRecording ? "Yes" : "No"));
+    if(changedRecordingState) DEBUG_VERBOSE("isRecording: %s", (isRecording ? "Yes" : "No"));
 
     modified();
+
+    if(changedRecordingState)
+    {
+        #if OUTPUT_CAMERA_SETTINGS == 1
+            DEBUG_INFO(">>Recording:%s", isRecording ? "Yes" : "No");
+        #endif
+    }
 }
 bool BMDCamera::hasTransportMode()
 {
@@ -1212,6 +1289,10 @@ void BMDCamera::onLensFocalLengthReceived(std::string inLensFocalLength)
         lensFocalLength = std::make_shared<std::string>(inLensFocalLength);
     
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>FocalLengthMM:%s", lensFocalLength->c_str());
+    #endif
 }
 bool BMDCamera::hasLensFocalLength()
 {
@@ -1234,6 +1315,10 @@ void BMDCamera::onLensDistanceReceived(std::string inLensDistance)
         lensDistance = std::make_shared<std::string>(inLensDistance);
     
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>LensDistance:%s", lensDistance->c_str());
+    #endif
 }
 bool BMDCamera::hasLensDistance()
 {
@@ -1256,6 +1341,10 @@ void BMDCamera::onLensTypeReceived(std::string inLensType)
         lensType = std::make_shared<std::string>(inLensType);
     
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>LensType:%s", lensType->c_str());
+    #endif
 }
 bool BMDCamera::hasLensType()
 {
@@ -1277,6 +1366,10 @@ void BMDCamera::onLensIrisReceived(std::string inLensIris)
         lensIris = std::make_shared<std::string>(inLensIris);
     
     modified();
+
+    #if OUTPUT_CAMERA_SETTINGS == 1
+        DEBUG_INFO(">>LensIris:%s", lensIris->c_str());
+    #endif
 }
 bool BMDCamera::hasLensIris()
 {

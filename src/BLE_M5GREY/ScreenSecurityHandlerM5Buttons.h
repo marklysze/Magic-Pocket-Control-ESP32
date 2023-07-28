@@ -5,7 +5,7 @@
 #include <Arduino.h>
 #include "Arduino_DebugUtils.h"
 #include "Camera/BMDCameraConnection.h"
-#include "M5GFX.h"
+#include <ESP32-Chimera-Core.h> // Instead of M5Stack.h, plays nicer
 
 class BMDCameraConnection;
 
@@ -15,7 +15,7 @@ class BMDCameraConnection;
 class ScreenSecurityHandlerM5Buttons : public BLESecurityCallbacks
 {
   public:
-    ScreenSecurityHandlerM5Buttons(BMDCameraConnection* bmdCameraConnectionPtr, M5GFX* displayPtr, int screenWidth, int screenHeight);
+    ScreenSecurityHandlerM5Buttons(BMDCameraConnection* bmdCameraConnectionPtr, M5Display* displayPtr, int screenWidth, int screenHeight);
 
     uint32_t onPassKeyRequest();
     void onPassKeyNotify(uint32_t pass_key);
@@ -27,7 +27,7 @@ class ScreenSecurityHandlerM5Buttons : public BLESecurityCallbacks
     // uint_fast8_t getTouchRaw(lgfx::v1::touch_point_t* tp, uint_fast8_t count); // Replicating the touch function to get touches while on the security page
 
     BMDCameraConnection* _bmdCameraConnectionPtr;
-    M5GFX* _displayPtr;
+    M5Display* _displayPtr;
     int _screenWidth;
     int _screenHeight;
     const int timeAllowance = 30; // 30 seconds

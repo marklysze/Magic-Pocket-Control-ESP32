@@ -2,10 +2,9 @@
 #include "Fonts/Lato_Regular11pt7b.h" // Standard font
 #include "Fonts/Lato_Regular12pt7b.h"
 #include "Fonts/AgencyFB_Bold9pt7b.h" // Agency FB small for above buttons
-#include "M5Unified.h"
 
 // Take in all the pointers we need access to to render the screen and handle touch
-ScreenSecurityHandlerM5Buttons::ScreenSecurityHandlerM5Buttons(BMDCameraConnection* bmdCameraConnectionPtr, M5GFX* displayPtr, int screenWidth, int screenHeight)
+ScreenSecurityHandlerM5Buttons::ScreenSecurityHandlerM5Buttons(BMDCameraConnection* bmdCameraConnectionPtr, M5Display* displayPtr, int screenWidth, int screenHeight)
 {
   _bmdCameraConnectionPtr = bmdCameraConnectionPtr;
   _displayPtr = displayPtr;

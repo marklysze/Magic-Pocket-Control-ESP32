@@ -937,7 +937,7 @@ void CCUDecodingFunctions::DecodeLensFocalLength(std::vector<byte> inData)
     std::string lensFocalLength = CCUDecodingFunctions::ConvertPayloadDataToString(inData);
 
     // DecodeLensFocalLength Lens Focal Length: 65mm
-    DEBUG_DEBUG("DecodeLensFocalLength %s", lensFocalLength.c_str());
+    // DEBUG_DEBUG("DecodeLensFocalLength %s", lensFocalLength.c_str());
 
     BMDControlSystem::getInstance()->getCamera()->onLensFocalLengthReceived(lensFocalLength);
 }
@@ -948,7 +948,7 @@ void CCUDecodingFunctions::DecodeLensDistance(std::vector<byte> inData)
 
     // DecodeLensFocalDistance Lens Distance: Inf
     // DecodeLensFocalDistance Lens Distance: 26100mm to 41310mm
-    DEBUG_DEBUG("DecodeLensDistance %s", lensDistance.c_str());
+    // DEBUG_DEBUG("DecodeLensDistance %s", lensDistance.c_str());
 
     BMDControlSystem::getInstance()->getCamera()->onLensDistanceReceived(lensDistance);
 }
@@ -960,7 +960,7 @@ void CCUDecodingFunctions::DecodeLensType(std::vector<byte> inData)
     // DecodeLensType Lens Type: Canon EF-S 55-250mm f/4-5.6 IS
     // "DecodeLensType Lens Type:" <-- this shows when there's no info between camera and lens.
 
-    DEBUG_DEBUG("DecodeLensType %s", lensType.c_str());
+    // DEBUG_DEBUG("DecodeLensType %s", lensType.c_str());
 
     BMDControlSystem::getInstance()->getCamera()->onLensTypeReceived(lensType);
 }
@@ -969,7 +969,7 @@ void CCUDecodingFunctions::DecodeLensIris(std::vector<byte> inData)
 {
     std::string lensIris = ConvertPayloadDataToString(inData);
 
-    DEBUG_DEBUG("DecodeLensIris %s", lensIris.c_str());
+    // DEBUG_DEBUG("DecodeLensIris %s", lensIris.c_str());
 
     BMDControlSystem::getInstance()->getCamera()->onLensIrisReceived(lensIris);
 }
