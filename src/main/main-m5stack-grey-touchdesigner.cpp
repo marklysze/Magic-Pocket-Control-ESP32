@@ -48,6 +48,29 @@
 
 #define OUTPUT_CAMERA_SETTINGS 1  // 1 = Outputs camera settings through serial (so other applications can read them)
 
+// The output format is: >>[state]:[state value]
+// Here are some examples:
+/*
+>>LensType:Canon EF-S 18-55mm f/3.5-5.6
+>>LensIris:f3.5
+>>FocalLengthMM:18mm
+>>LensDistance:460mm to 590mm
+>>ISO:3200
+>>WhiteBalance:6500
+>>Tint:10
+>>Aperture:f3.5
+>>ApertureNormalised:0
+>>HasLens:Yes
+>>FocalLengthMM:18
+>>ModelName:Pocket Cinema Camera 6K
+>>IsPocketCamera:Yes
+>>FrameRate:25
+>>FrameDims:4096 x 2160
+>>FrameSize:4K DCI
+>>ShutterAngle:6000
+>>Codec:BRAW 12:1
+*/
+
 #include <ESP32-Chimera-Core.h>
 
 #define tft M5.Lcd
@@ -2879,7 +2902,7 @@ void RunTouchDesignerCommand(std::string commandPart, std::string valuePart)
 
 void setup() {
 
-  M5.begin(); //true, false, true, false, false);
+  M5.begin();
 
   tft.setColorDepth(16);
   tft.setSwapBytes(true);
