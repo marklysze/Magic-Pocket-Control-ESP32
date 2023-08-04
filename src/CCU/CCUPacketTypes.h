@@ -557,17 +557,24 @@ class CCUPacketTypes
 
             std::string frameRate_string()
             {
-                if(mRateEnabled && frameRate == 24 && !offSpeedEnabled)
-                    return "23.98";
-                else if(mRateEnabled && frameRate == 30 && !offSpeedEnabled)
-                    return "29.97";
-                else if(mRateEnabled && frameRate == 60 && !offSpeedEnabled)
-                    return "59.94";
-                else if(offSpeedEnabled)
-                    return std::to_string(offSpeedFrameRate);
-                else
-                    return std::to_string(frameRate);
+                String nonOffspeed = std::to_string(frameRate).c_str();
 
+                if(mRateEnabled && frameRate == 24) // && !offSpeedEnabled)
+                    nonOffspeed = "23.98";
+                else if(mRateEnabled && frameRate == 30) // && !offSpeedEnabled)
+                    nonOffspeed = "29.97";
+                else if(mRateEnabled && frameRate == 60) // && !offSpeedEnabled)
+                    nonOffspeed = "59.94";
+                
+                if(!offSpeedEnabled)
+                    return nonOffspeed.c_str();
+                else
+                {
+                    String combinedSpeed = std::to_string(offSpeedFrameRate).c_str();
+                    combinedSpeed.concat("/");
+                    combinedSpeed.concat(nonOffspeed);
+                    return combinedSpeed.c_str();
+                }
             }
 
             std::string frameWidthHeight_string()

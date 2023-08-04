@@ -234,6 +234,9 @@ void CCUDecodingFunctions::DecodeApertureFStop(std::vector<byte> inData)
     {
         data = CCUDecodingFunctions::ConvertPayloadDataWithExpectedCount<ccu_fixed_t>(inData, 2); // First two bytes are the aperture value and the last two are the aperture units (FStop = 0, TStop = 1)
         apertureUnits = static_cast<LensConfig::ApertureUnits>(data[1]);
+
+        DEBUG_DEBUG("DecodeApertureFStop Units:");
+        DEBUG_DEBUG(std::to_string(apertureUnits).c_str());
     }
     else
     {
@@ -242,6 +245,9 @@ void CCUDecodingFunctions::DecodeApertureFStop(std::vector<byte> inData)
     }
 
     ccu_fixed_t apertureNumber = data[0];
+
+    DEBUG_DEBUG("DecodeApertureFStop number:");
+    DEBUG_DEBUG(std::to_string(apertureNumber).c_str());
 
     if(apertureNumber != CCUPacketTypes::kLensAperture_NoLens)
     {
@@ -409,7 +415,6 @@ void CCUDecodingFunctions::DecodeRecordingFormat(std::vector<byte> inData)
     recordingFormatData.windowedModeEnabled = (((int)flags & (int)CCUPacketTypes::VideoRecordingFormat::WindowedMode) > 0);
     recordingFormatData.sensorMRateEnabled = (((int)flags & (int)CCUPacketTypes::VideoRecordingFormat::SensorMRate) > 0);
 
-    /*
     Serial.print("Decoded Recording Format, Frame Rate is "); Serial.print(recordingFormatData.frameRate);
     Serial.print(", Off Speed Frame Rate is "); Serial.print(recordingFormatData.offSpeedFrameRate);
     Serial.print(", Width is "); Serial.print(recordingFormatData.width);
@@ -419,11 +424,12 @@ void CCUDecodingFunctions::DecodeRecordingFormat(std::vector<byte> inData)
     Serial.print(", Interlaced Enabled is "); Serial.print(recordingFormatData.interlacedEnabled);
     Serial.print(", Windowed Mode Enabled is "); Serial.println(recordingFormatData.windowedModeEnabled);
 
-    if(recordingFormatData.mRateEnabled && recordingFormatData.frameRate == 24 && !recordingFormatData.offSpeedEnabled)
+    if(recordingFormatData.mRateEnabled && recordingFormatData.frameRate == 24) // && !recordingFormatData.offSpeedEnabled)
         Serial.println("Frame Rate will be 23.98");
-    else if(recordingFormatData.mRateEnabled && recordingFormatData.frameRate == 30 && !recordingFormatData.offSpeedEnabled)
+    else if(recordingFormatData.mRateEnabled && recordingFormatData.frameRate == 30) //  && !recordingFormatData.offSpeedEnabled)
         Serial.println("Frame Rate will be 29.97");
-    */
+    else if(recordingFormatData.mRateEnabled && recordingFormatData.frameRate == 60) //  && !recordingFormatData.offSpeedEnabled)
+        Serial.println("Frame Rate will be 59.94");
 
     /*
     DEBUG_DEBUG("Recording Format, Width x Height [Windowed] [interlaced] [mrate] [sensor mrate] [offspeed]: %i x %i [%s] [%s] [%s] [%s] [%s]", recordingFormatData.width, recordingFormatData.height, recordingFormatData.windowedModeEnabled ? "Yes" : "No", recordingFormatData.interlacedEnabled ? "Yes" : "No", recordingFormatData.mRateEnabled ? "Yes" : "No", recordingFormatData.sensorMRateEnabled ? "Yes" : "No", recordingFormatData.offSpeedEnabled ? "Yes" : "No");

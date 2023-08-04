@@ -18,7 +18,7 @@
 // (ISO:999)
 // (CODEC:BRAW)
 //
-// Available commands are:
+// Available commands are - don't forget to put them in () brackets:
 // 
 // BUTTON:A   // same as pressing the A button on the M5Stack
 // BUTTON:B
@@ -38,6 +38,11 @@
 // BRAWB:5    // 5:1
 // BRAWB:8    // 8:1
 // BRAWB:12   // 12:1
+// FPS:23.98
+// FPS:29.97
+// FPS:59.94
+// FPS:24 or 25 or 30 or 50 or 60 (note > 50 only available on the 6K if it's not in full 6K)
+// IRIS:2.8 or any aperture value that the lens can take up to 16 (can't pass a value greater than 16)
 //
 // Want to create your own commands and actions - see the function "RunTouchDesignerCommand" in this file
 
@@ -255,6 +260,7 @@ void Screen_Common(int sideBarColour)
           case Screens::ShutterAngleSpeed:
           case Screens::WhiteBalanceTintT:
           case Screens::Resolution:
+          case Screens::Framerate:
           case Screens::Media:
             sprite->fillSmoothRoundRect(30, 210, 170, 40, 3, TFT_DARKCYAN);
             sprite->fillTriangle(60, 235, 70, 215, 50, 215, TFT_WHITE); // Up Arrow
@@ -574,7 +580,7 @@ void Screen_Dashboard(bool forceRefresh = false)
 
     sprite->drawCentreString(camera->getRecordingFormat().frameRate_string().c_str(), 237, 84);
 
-    sprite->drawCentreString("fps", 285, 89, &AgencyFB_Regular7pt7b);
+    sprite->drawCentreString("fps", 300, 89, &AgencyFB_Regular7pt7b);
 
     // Resolution
     sprite->fillSmoothRoundRect(125, 120, 190, 40, 3, TFT_DARKGREY);
@@ -705,15 +711,26 @@ void Screen_ISO(bool forceRefresh = false)
 
       bool up = btnBPressed; // up = true, down = false
 
-      // If we don't have a selected value yet, set to the current one
-      if(Options_ISO_SelectingIndex == -1)
-      {
-        auto iter = std::find(Options_ISO.begin(), Options_ISO.end(), currentValue);
-        int index = (iter != Options_ISO.end()) ? std::distance(Options_ISO.begin(), iter) : -1;
+      // Find the closest ISO (particularly if it's not the standard set)
+      int closestValue = Options_ISO[0];
+      int minDifference = std::abs(currentValue - closestValue);
 
-        if(index != -1)
-          Options_ISO_SelectingIndex = index;
+      for (int i = 1; i < Options_ISO.size(); ++i) {
+          int difference = std::abs(currentValue - Options_ISO[i]);
+          if (difference < minDifference) {
+              minDifference = difference;
+              closestValue = Options_ISO[i];
+          }
       }
+
+      auto iter = std::find(Options_ISO.begin(), Options_ISO.end(), closestValue);
+      // Get the closest ISO
+      if (iter != Options_ISO.end()) {
+          Options_ISO_SelectingIndex = std::distance(Options_ISO.begin(), iter);
+      }
+
+      DEBUG_DEBUG("Options_ISO_SelectingIndex");
+      DEBUG_DEBUG(std::to_string(Options_ISO_SelectingIndex).c_str());
 
       if(Options_ISO_SelectingIndex != -1)
       {
@@ -767,50 +784,42 @@ void Screen_ISO(bool forceRefresh = false)
   // 200
   int labelISO = 200;
   sprite->fillSmoothRoundRect(20, 30, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  if(Options_ISO_SelectingIndex == 0) sprite->drawRoundRect(20, 30, 90, 40, 1, TFT_WHITE);
   sprite->drawCentreString(String(labelISO).c_str(), 65, 41);
 
   // 400
   labelISO = 400;
   sprite->fillSmoothRoundRect(115, 30, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  if(Options_ISO_SelectingIndex == 1) sprite->drawRoundRect(115, 30, 90, 40, 1, TFT_WHITE);
   sprite->drawCentreString(String(labelISO).c_str(), 160, 36);
   sprite->drawCentreString("NATIVE", 160, 59, &Lato_Regular5pt7b);
 
   // 8000
   labelISO = 8000;
   sprite->fillSmoothRoundRect(210, 30, 100, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  if(Options_ISO_SelectingIndex == 6) sprite->drawRoundRect(210, 30, 100, 40, 1, TFT_WHITE);
   sprite->drawCentreString(String(labelISO).c_str(), 260, 41);
 
   // 640
   labelISO = 640;
   sprite->fillSmoothRoundRect(20, 75, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  if(Options_ISO_SelectingIndex == 2) sprite->drawRoundRect(20, 75, 90, 40, 1, TFT_WHITE);
   sprite->drawCentreString(String(labelISO).c_str(), 65, 87);
 
   // 800
   labelISO = 800;
   sprite->fillSmoothRoundRect(115, 75, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  if(Options_ISO_SelectingIndex == 3) sprite->drawRoundRect(115, 75, 90, 40, 1, TFT_WHITE);
   sprite->drawCentreString(String(labelISO).c_str(), 160, 87);
 
   // 12800
   labelISO = 12800;
   sprite->fillSmoothRoundRect(210, 75, 100, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  if(Options_ISO_SelectingIndex == 7) sprite->drawRoundRect(210, 75, 100, 40, 1, TFT_WHITE);
   sprite->drawCentreString(String(labelISO).c_str(), 260, 87);
 
   // 1250
   labelISO = 1250;
   sprite->fillSmoothRoundRect(20, 120, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  if(Options_ISO_SelectingIndex == 4) sprite->drawRoundRect(20, 120, 90, 40, 1, TFT_WHITE);
   sprite->drawCentreString(String(labelISO).c_str(), 65, 131);
 
   // 3200
   labelISO = 3200;
   sprite->fillSmoothRoundRect(115, 120, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  if(Options_ISO_SelectingIndex == 5) sprite->drawRoundRect(115, 120, 90, 40, 1, TFT_WHITE);
   sprite->drawCentreString(String(labelISO).c_str(), 160, 126);
   sprite->drawCentreString("NATIVE", 160, 149, &Lato_Regular5pt7b);
 
@@ -1917,17 +1926,13 @@ void Screen_Resolution4K(bool forceRefresh = false)
         {
           // 4K UHD
           width = 3840; height = 2160;
-          window = false;
-
-          DEBUG_DEBUG("Trying to change to 4K UHD");
+          window = true;
         }
         else
         {
           // HD
           width = 1920; height = 1080;
           window = true;
-
-          DEBUG_DEBUG("Trying to change to HD");
         }
       }
       else if(currentRes == "4K UHD")
@@ -2272,16 +2277,12 @@ void Screen_Resolution6K(bool forceRefresh = false)
           // 4K UHD
           width = 3840; height = 2160;
           window = false;
-
-          DEBUG_DEBUG("Trying to change to 4K UHD");
         }
         else
         {
           // HD
           width = 1920; height = 1080;
           window = false;
-
-          DEBUG_DEBUG("Trying to change to HD");
         }
       }
       else if(currentRes == "4K UHD")
@@ -2450,7 +2451,7 @@ void Screen_Resolution6K(bool forceRefresh = false)
 
       // 5.7K
       sprite->fillSmoothRoundRect(115, 130, 90, 40, 3, (currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
-      sprite->drawCentreString("5.7K", 160, 141);
+      sprite->drawCentreString("5.3K", 160, 141);
     }
     else
     {
@@ -2498,7 +2499,7 @@ void Screen_ResolutionURSAMiniPro12K(bool forceRefresh = false)
   // TO DO
 }
 
-// Resolution screen - redirects to appropriate screen fro camera
+// Resolution screen - redirects to appropriate screen for camera
 void Screen_Resolution(bool forceRefresh = false)
 {
   auto camera = BMDControlSystem::getInstance()->getCamera();
@@ -2524,6 +2525,513 @@ void Screen_Resolution(bool forceRefresh = false)
   else
     Screen_Resolution4K(forceRefresh); // If we don't have any codec info, we show the 4K screen that shows no codec
 }
+
+// Frame Rate screen for Pocket 4K
+void Screen_Framerate4K(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Framerate;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // Pocket 4K Frame Rate
+
+  // Get the current Resolution and Codec
+  CCUPacketTypes::RecordingFormatData currentRecordingFormat;
+  if(camera->hasRecordingFormat())
+    currentRecordingFormat = camera->getRecordingFormat();
+
+  // Get the current Codec values
+  CodecInfo currentCodec = camera->getCodec();
+
+  std::string currentFrameRate = currentRecordingFormat.frameRate_string();
+
+  bool tappedAction = false;
+  if(btnAPressed || btnBPressed)
+  {
+    DEBUG_DEBUG("FrameRate4K: Btn A/B pressed");
+
+    short frameRate = 0;
+    bool mRateEnabled = false;
+
+    if(currentFrameRate == "23.98")
+    {
+      if(btnBPressed)
+      {
+        // 24
+        frameRate = 24;
+      }
+      else
+      {
+        // 60
+        frameRate = 60;
+      }
+    }
+    else if(currentFrameRate == "24")
+    {
+      if(btnBPressed)
+      {
+        // 25
+        frameRate = 25;
+      }
+      else
+      {
+        // 23.98
+        frameRate = 24;
+        mRateEnabled = true;
+      }
+    }
+    else if(currentFrameRate == "25")
+    {
+      if(btnBPressed)
+      {
+        // 29.97
+        frameRate = 30;
+        mRateEnabled = true;
+      }
+      else
+      {
+        // 24
+        frameRate = 24;
+      }
+    }
+    else if(currentFrameRate == "29.97")
+    {
+      if(btnBPressed)
+      {
+        // 30
+        frameRate = 30;
+      }
+      else
+      {
+        // 25
+        frameRate = 25;
+      }
+    }
+    else if(currentFrameRate == "30")
+    {
+      if(btnBPressed)
+      {
+        // 50
+        frameRate = 50;
+      }
+      else
+      {
+        // 30
+        frameRate = 30;
+        mRateEnabled = true;
+      }
+    }
+    else if(currentFrameRate == "50")
+    {
+      if(btnBPressed)
+      {
+        // 59.94
+        frameRate = 60;
+        mRateEnabled = true;
+      }
+      else
+      {
+        // 30
+        frameRate = 30;
+      }
+    }
+    else if(currentFrameRate == "59.94")
+    {
+      if(btnBPressed)
+      {
+        // 60
+        frameRate = 60;
+      }
+      else
+      {
+        // 50
+        frameRate = 50;
+      }
+    }
+    else if(currentFrameRate == "60")
+    {
+      if(btnBPressed)
+      {
+        // 23.98
+        frameRate = 24;
+        mRateEnabled = true;
+      }
+      else
+      {
+        // 59.94
+        frameRate = 60;
+        mRateEnabled = true;
+      }
+    }
+
+    if(frameRate != 0)
+    {
+      // Frame rate selected, write to camera
+      CCUPacketTypes::RecordingFormatData newRecordingFormat = currentRecordingFormat;
+      newRecordingFormat.frameRate = frameRate;
+      newRecordingFormat.mRateEnabled = mRateEnabled;
+      PacketWriter::writeRecordingFormat(newRecordingFormat, &cameraConnection);
+
+      tappedAction = true;
+    }
+  }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+  
+  DEBUG_DEBUG("Frame Rate Pocket 4K Refreshed.");
+
+  sprite->fillScreen(TFT_BLACK);
+
+  Screen_Common_Connected(); // Common elements
+
+  // Main label
+  sprite->setTextColor(TFT_WHITE);
+  sprite->drawString("FRAME RATE", 30, 9, &AgencyFB_Bold9pt7b);
+
+  // Output the current Codec and Resolution
+  String codecRes = currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW ? "BRAW | " :"ProRes | ";
+  codecRes.concat(currentRecordingFormat.frameDimensionsShort_string().c_str());
+  sprite->drawString(codecRes, 30, 167);
+
+  sprite->drawString(currentRecordingFormat.frameWidthHeight_string().c_str(), 30, 189, &Lato_Regular5pt7b);
+
+  // 23.98
+  std::string labelFR = "23.98";
+  sprite->fillSmoothRoundRect(20, 30, 90, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 65, 41);
+
+  // 24
+  labelFR = "24";
+  sprite->fillSmoothRoundRect(115, 30, 90, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 160, 41);
+
+  // 25
+  labelFR = "25";
+  sprite->fillSmoothRoundRect(210, 30, 100, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 260, 41);
+
+  // 29.97
+  labelFR = "29.97";
+  sprite->fillSmoothRoundRect(20, 75, 90, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 65, 87);
+
+  // 30
+  labelFR = "30";
+  sprite->fillSmoothRoundRect(115, 75, 90, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 160, 87);
+
+  // 50
+  labelFR = "50";
+  sprite->fillSmoothRoundRect(210, 75, 100, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 260, 87);
+
+  // 59.94
+  labelFR = "59.94";
+  sprite->fillSmoothRoundRect(20, 120, 90, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 65, 131);
+
+  // 60
+  labelFR = "60";
+  sprite->fillSmoothRoundRect(115, 120, 90, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 160, 131);
+
+  sprite->pushSprite(0, 0);
+}
+
+// Frame Rate Screen for Pocket 6K
+void Screen_Framerate6K(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Framerate;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // Pocket 6K Frame Rate
+
+  // Get the current Resolution and Codec
+  CCUPacketTypes::RecordingFormatData currentRecordingFormat;
+  if(camera->hasRecordingFormat())
+    currentRecordingFormat = camera->getRecordingFormat();
+
+  // Get the current Codec values
+  CodecInfo currentCodec = camera->getCodec();
+
+  std::string currentFrameRate = currentRecordingFormat.frameRate_string();
+
+  bool isFull6K = currentRecordingFormat.width == 6144 && currentRecordingFormat.height == 3456; // Are we in full 6K (only goes up to 50fps)
+
+  bool tappedAction = false;
+  if(btnAPressed || btnBPressed)
+  {
+    DEBUG_DEBUG("FrameRate6K: Btn A/B pressed");
+
+    short frameRate = 0;
+    bool mRateEnabled = false;
+
+    if(currentFrameRate == "23.98")
+    {
+      if(btnBPressed)
+      {
+        // 24
+        frameRate = 24;
+      }
+      else
+      {
+        if(isFull6K)
+          frameRate = 50;
+        else
+          frameRate = 60;
+      }
+    }
+    else if(currentFrameRate == "24")
+    {
+      if(btnBPressed)
+      {
+        // 25
+        frameRate = 25;
+      }
+      else
+      {
+        // 23.98
+        frameRate = 24;
+        mRateEnabled = true;
+      }
+    }
+    else if(currentFrameRate == "25")
+    {
+      if(btnBPressed)
+      {
+        // 29.97
+        frameRate = 30;
+        mRateEnabled = true;
+      }
+      else
+      {
+        // 24
+        frameRate = 24;
+      }
+    }
+    else if(currentFrameRate == "29.97")
+    {
+      if(btnBPressed)
+      {
+        // 30
+        frameRate = 30;
+      }
+      else
+      {
+        // 25
+        frameRate = 25;
+      }
+    }
+    else if(currentFrameRate == "30")
+    {
+      if(btnBPressed)
+      {
+        // 50
+        frameRate = 50;
+      }
+      else
+      {
+        // 30
+        frameRate = 30;
+        mRateEnabled = true;
+      }
+    }
+    else if(currentFrameRate == "50")
+    {
+      if(btnBPressed)
+      {
+        if(isFull6K)
+        {
+          // 23.98
+          frameRate = 24;
+          mRateEnabled = true;
+        }
+        else
+        {
+          // 59.94
+          frameRate = 60;
+          mRateEnabled = true;
+        }
+      }
+      else
+      {
+        // 30
+        frameRate = 30;
+      }
+    }
+    else if(currentFrameRate == "59.94")
+    {
+      if(btnBPressed)
+      {
+        // 60
+        frameRate = 60;
+      }
+      else
+      {
+        // 50
+        frameRate = 50;
+      }
+    }
+    else if(currentFrameRate == "60")
+    {
+      if(btnBPressed)
+      {
+        // 23.98
+        frameRate = 24;
+        mRateEnabled = true;
+      }
+      else
+      {
+        // 59.94
+        frameRate = 60;
+        mRateEnabled = true;
+      }
+    }
+
+    if(frameRate != 0)
+    {
+      // Frame rate selected, write to camera
+      CCUPacketTypes::RecordingFormatData newRecordingFormat = currentRecordingFormat;
+      newRecordingFormat.frameRate = frameRate;
+      newRecordingFormat.mRateEnabled = mRateEnabled;
+      PacketWriter::writeRecordingFormat(newRecordingFormat, &cameraConnection);
+
+      tappedAction = true;
+    }
+  }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+  
+  DEBUG_DEBUG("Frame Rate Pocket 4K Refreshed.");
+
+  sprite->fillScreen(TFT_BLACK);
+
+  Screen_Common_Connected(); // Common elements
+
+  // Main label
+  sprite->setTextColor(TFT_WHITE);
+  sprite->drawString("FRAME RATE", 30, 9, &AgencyFB_Bold9pt7b);
+
+  // Output the current Codec and Resolution
+  String codecRes = currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW ? "BRAW | " :"ProRes | ";
+  codecRes.concat(currentRecordingFormat.frameDimensionsShort_string().c_str());
+  sprite->drawString(codecRes, 30, 167);
+
+  sprite->drawString(currentRecordingFormat.frameWidthHeight_string().c_str(), 30, 189, &Lato_Regular5pt7b);
+
+  // 23.98
+  std::string labelFR = "23.98";
+  sprite->fillSmoothRoundRect(20, 30, 90, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 65, 41);
+
+  // 24
+  labelFR = "24";
+  sprite->fillSmoothRoundRect(115, 30, 90, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 160, 41);
+
+  // 25
+  labelFR = "25";
+  sprite->fillSmoothRoundRect(210, 30, 100, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 260, 41);
+
+  // 29.97
+  labelFR = "29.97";
+  sprite->fillSmoothRoundRect(20, 75, 90, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 65, 87);
+
+  // 30
+  labelFR = "30";
+  sprite->fillSmoothRoundRect(115, 75, 90, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 160, 87);
+
+  // 50
+  labelFR = "50";
+  sprite->fillSmoothRoundRect(210, 75, 100, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 260, 87);
+
+  if(!isFull6K)
+  {
+    // 59.94
+    labelFR = "59.94";
+    sprite->fillSmoothRoundRect(20, 120, 90, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(labelFR.c_str(), 65, 131);
+
+    // 60
+    labelFR = "60";
+    sprite->fillSmoothRoundRect(115, 120, 90, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(labelFR.c_str(), 160, 131);
+  }
+
+  sprite->pushSprite(0, 0);}
+
+// Frame Rate Screen for URSA Mini Pro G2
+void Screen_FramerateURSAMiniProG2(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Resolution;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+  
+  // TO DO
+}
+
+// Frame Rate Screen for URSA Mini Pro 12K
+void Screen_FramerateURSAMiniPro12K(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Resolution;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+  
+  // TO DO
+}
+
+// Frame Rate screen - redirects to appropriate screen for camera
+void Screen_Framerate(bool forceRefresh = false)
+{
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  if(camera->hasCodec())
+  {
+    if(camera->hasRecordingFormat())
+    {
+      if(camera->isPocket4K())
+        Screen_Framerate4K(forceRefresh); // Pocket 4K
+      else if(camera->isPocket6K())
+        Screen_Framerate6K(forceRefresh); // Pocket 6K
+      else if(camera->isURSAMiniProG2())
+        Screen_FramerateURSAMiniProG2(forceRefresh); // URSA Mini Pro G2
+      else if(camera->isURSAMiniPro12K())
+        Screen_FramerateURSAMiniPro12K(forceRefresh); // URSA Mini Pro 12K
+      else
+        DEBUG_DEBUG("No Codec screen for this camera.");
+    } 
+    else
+      Screen_Framerate4K(forceRefresh); // Handle no model name in 4K screen
+  }
+  else
+    Screen_Framerate4K(forceRefresh); // If we don't have any codec info, we show the 4K screen that shows no codec
+}
+
 
 // Media screen for Pocket 4K
 void Screen_Media4K6K(bool forceRefresh = false)
@@ -2804,6 +3312,8 @@ void Screen_Lens(bool forceRefresh = false)
 
   sprite->pushSprite(0, 0);
 }
+
+// Start of TouchDesigner functions
 
 // Splits the TouchDesigner string into the command and the value parts
 std::vector<std::string> splitTDCommand(const std::string& command) {
@@ -3088,6 +3598,58 @@ void RunTouchDesignerCommand(std::string commandPart, std::string valuePart)
     else
       Serial.println("Camera must be set to BRAW to change BRAW Quality setting");
   }
+  else if(commandPart == "FPS" && haveCamera)
+  {
+    auto camera = BMDControlSystem::getInstance()->getCamera();
+
+    // Get the current Resolution and Codec
+    CCUPacketTypes::RecordingFormatData currentRecordingFormat;
+    if(camera->hasRecordingFormat())
+    {
+      currentRecordingFormat = camera->getRecordingFormat();
+
+      short frameRate = 0;
+      bool mRateEnabled = false;
+
+      if(valuePart == "23.98" || valuePart == "29.97" || valuePart == "59.94") // 23.98, 59.94
+      {
+        mRateEnabled = true;
+
+        if(valuePart == "23.98")
+          frameRate = 24;
+        else if(valuePart == "29.97")
+          frameRate = 30;
+        else
+          frameRate = 60;
+      }
+      else
+      {
+        frameRate = std::stoi(valuePart); // Integer based frame rate, 24, 25, 30, 50, 60
+      }
+
+      if(frameRate != 0)
+      {
+        // Frame rate selected, write to camera
+        CCUPacketTypes::RecordingFormatData newRecordingFormat = currentRecordingFormat;
+        newRecordingFormat.frameRate = frameRate;
+        newRecordingFormat.mRateEnabled = mRateEnabled;
+        PacketWriter::writeRecordingFormat(newRecordingFormat, &cameraConnection);
+      }
+    }
+  }
+  else if(commandPart == "IRIS" && haveCamera)
+  {
+    try {
+        short irisApertureValue = CCUEncodingFunctions::ConvertFStopToCCUAperture(std::stof(valuePart));
+
+        if(irisApertureValue != 0)
+          PacketWriter::writeIris(irisApertureValue, &cameraConnection);
+        else
+          DEBUG_ERROR("<TD Not able to calculate aperture value from provided string>");
+    } catch (const std::invalid_argument& e) {
+        DEBUG_ERROR("<TD Not a valid IRIS value>");
+    }
+  }
   else
     Serial.println("[UNKNOWN TOUCHDESIGNER COMMAND");
 }
@@ -3211,6 +3773,9 @@ void loop() {
         case Screens::Resolution:
           Screen_Resolution();
           break;
+        case Screens::Framerate:
+          Screen_Framerate();
+          break;
         case Screens::Media:
           Screen_Media();
           break;
@@ -3283,41 +3848,6 @@ void loop() {
     tdCommandComplete = false;
   }
 
-  /*
-  if (Serial.available()) {
-      int ch = Serial.read();
-
-      switch(ch)
-      {
-        case 65:
-          TouchDesignerPress = 'A';
-          break;
-        case 66:
-          TouchDesignerPress = 'B';
-          break;
-        case 67:
-          TouchDesignerPress = 'C';
-          break;
-        case 77: // M
-        if(BMDControlSystem::getInstance()->hasCamera())
-            PacketWriter::writeISO(400, &cameraConnection);
-          break;
-        case 78: // N
-        if(BMDControlSystem::getInstance()->hasCamera())
-            PacketWriter::writeISO(800, &cameraConnection);
-          break;
-        case 79: // O
-        if(BMDControlSystem::getInstance()->hasCamera())
-            PacketWriter::writeISO(1600, &cameraConnection);
-          break;
-        case 80: // P
-        if(BMDControlSystem::getInstance()->hasCamera())
-            PacketWriter::writeISO(3200, &cameraConnection);
-          break;
-      }
-  }
-  */
-
   if(M5.BtnA.wasPressed() || M5.BtnB.wasPressed() || M5.BtnC.wasPressed() || TouchDesignerPress != ' ')
   {
     // Left button function changes on context
@@ -3336,6 +3866,7 @@ void loop() {
         case Screens::WhiteBalanceTintT:
         case Screens::Codec:
         case Screens::Resolution:
+        case Screens::Framerate:
         case Screens::Media:
         case Screens::Lens:
           // Indicate to the other screens the first button has been pressed
@@ -3386,6 +3917,7 @@ void loop() {
         case Screens::WhiteBalanceTintT:
         case Screens::Codec:
         case Screens::Resolution:
+        case Screens::Framerate:
         case Screens::Media:
         case Screens::Lens:
           // Indicate to the other screens the second button has been pressed
@@ -3421,6 +3953,9 @@ void loop() {
           connectedScreenIndex = Screens::Resolution;
           break;
         case Screens::Resolution:
+          connectedScreenIndex = Screens::Framerate;
+          break;
+        case Screens::Framerate:
           connectedScreenIndex = Screens::Media;
           break;
         case Screens::Media:

@@ -1,5 +1,12 @@
 ﻿#include "CCUEncodingFunctions.h"
 
+int16_t CCUEncodingFunctions::ConvertFStopToCCUAperture(float inputFStop)
+{
+    int16_t ccuAperture = static_cast<int16_t>(log2(inputFStop) * 2048 * 2);
+
+    return ccuAperture;
+}
+
 CCUPacketTypes::Command CCUEncodingFunctions::CreateVideoWhiteBalanceCommand(short whiteBalance, short tint)
 {
     short dataArray[] = { whiteBalance, tint };

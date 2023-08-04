@@ -32,6 +32,18 @@ const double kShutterAngleMin = 5.0;
 const double kShutterAngleMax = 360.0;
 const double kFileFrameRates[] = { 23.976, 24, 25, 29.97, 30, 50, 59.94, 60 };
 
+short VideoConfig::calculateIrisAV(const std::string& fnumberStr) {
+    double fnumber = std::stod(fnumberStr); // Convert the string to a double
+    double AV = std::log2(fnumber * fnumber); // Calculate the Aperture Value
+
+    // Check if the calculated AV fits within the range of a short
+    if (AV >= std::numeric_limits<short>::min() && AV <= std::numeric_limits<short>::max()) {
+        return static_cast<short>(AV);
+    } else {
+        return 0; // Out of range
+    }
+}
+
 int VideoConfig::GetWhiteBalancePresetFromValues(short whiteBalance, short tint)
 {
     int presetIndex = 0;

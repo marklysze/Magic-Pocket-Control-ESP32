@@ -43,6 +43,8 @@ void PacketWriter::writeApertureNormalised(short normalisedApertureValue, BMDCam
 
 void PacketWriter::writeIris(short apertureValue, BMDCameraConnection* connection)
 {
+    DEBUG_DEBUG("writeIris, AV:");
+    DEBUG_DEBUG(std::to_string(apertureValue).c_str());
     CCUPacketTypes::Command command = CCUEncodingFunctions::CreateFixed16Command(apertureValue, CCUPacketTypes::Category::Lens, (byte)CCUPacketTypes::LensParameter::ApertureFstop);
     validateAndSendCCUCommand(command, connection);
 }

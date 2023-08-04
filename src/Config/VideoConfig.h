@@ -2,6 +2,8 @@
 #define VIDEOCONFIG_H
 
 #include "Camera/ConstantsTypes.h"
+#include <cmath>
+#include <limits>
 
 struct WhiteBalancePreset
 {
@@ -34,6 +36,7 @@ public:
     static const double kShutterAngleMax;
     static const double kFileFrameRates[];
 
+    static short calculateIrisAV(const std::string& fnumberStr);
     static int GetWhiteBalancePresetFromValues(short whiteBalance, short tint);
 };
 
