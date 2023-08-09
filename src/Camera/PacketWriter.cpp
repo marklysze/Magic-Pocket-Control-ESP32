@@ -1,4 +1,5 @@
 #include "PacketWriter.h"
+#include "CCU/CCUPacketTypes.h"
 
 void PacketWriter::validateAndSendCCUCommand(CCUPacketTypes::Command command, BMDCameraConnection* connection, bool response = true)
 {
@@ -92,10 +93,29 @@ void PacketWriter::writeAutoFocus(BMDCameraConnection* connection)
     validateAndSendCCUCommand(command, connection);
 }
 
-// Focus Position is 0 (near) to 2048 (far)
-void PacketWriter::writeFocusPosition(short focusPosition, BMDCameraConnection* connection)
+// Focus position is 0.0 (near) to 1.0 (far)
+void PacketWriter::writeFocusNormalised(float focusPosition, BMDCameraConnection* connection)
 {
-    CCUPacketTypes::Command command = CCUEncodingFunctions::CreateFixed16Command(focusPosition, CCUPacketTypes::Category::Lens, (byte)CCUPacketTypes::LensParameter::Focus);
+    int16_t shortFocusPosition = CCUPacketTypes::toFixed16(focusPosition);
+
+    CCUPacketTypes::Command command = CCUEncodingFunctions::CreateFixed16Command(shortFocusPosition, CCUPacketTypes::Category::Lens, (byte)CCUPacketTypes::LensParameter::Focus);
+
+    validateAndSendCCUCommand(command, connection);
+}
+
+// Zoom position (can't confirm this works as I don't have the lens, let me know if it doesn't)
+void PacketWriter::writeZoomMM(short zoomPositionMM, BMDCameraConnection* connection)
+{
+    CCUPacketTypes::Command command = CCUEncodingFunctions::CreateInt16Command(zoomPositionMM, CCUPacketTypes::Category::Lens, (byte)CCUPacketTypes::LensParameter::Zoom);
+    validateAndSendCCUCommand(command, connection);
+}
+
+// Focus position is 0.0 (widest) to 1.0 (telephoto)
+void PacketWriter::writeZoomNormalised(float zoomPosition, BMDCameraConnection* connection)
+{
+    int16_t shortZoomPosition = CCUPacketTypes::toFixed16(zoomPosition);
+
+    CCUPacketTypes::Command command = CCUEncodingFunctions::CreateFixed16Command(shortZoomPosition, CCUPacketTypes::Category::Lens, (byte)CCUPacketTypes::LensParameter::ZoomNormalised);
 
     validateAndSendCCUCommand(command, connection);
 }

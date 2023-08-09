@@ -25,7 +25,9 @@ class PacketWriter
         static void writeTransportInfo(TransportInfo transportInfo, BMDCameraConnection* connection);
         static void writeCodec(CodecInfo codecInfo, BMDCameraConnection* connection);
         static void writeAutoFocus(BMDCameraConnection* connection);
-        static void writeFocusPosition(short focusPosition, BMDCameraConnection* connection);
+        static void writeFocusNormalised(float focusPosition, BMDCameraConnection* connection);
+        static void writeZoomMM(short zoomPositionMM, BMDCameraConnection* connection);
+        static void writeZoomNormalised(float zoomPosition, BMDCameraConnection* connection);
 };
 
 #endif

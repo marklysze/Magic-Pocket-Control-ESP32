@@ -23,6 +23,7 @@ class CCUEncodingFunctions
         static CCUPacketTypes::Command CreateShutterAngleCommand(int value);
         static CCUPacketTypes::Command CreateTransportInfoCommand(TransportInfo transportInfo);
         static CCUPacketTypes::Command CreateCodecCommand(CodecInfo codecInfo);
+        static CCUPacketTypes::Command CreateInt16Command(short value, CCUPacketTypes::Category category, byte parameter);
 
 };
 

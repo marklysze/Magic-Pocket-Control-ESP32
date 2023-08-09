@@ -34,10 +34,11 @@ class CCUPacketTypes
 
         static const int16_t kLensAperture_NoLens = -32768;
 
-        ccu_fixed_t CCUFixedFromFloat(double f);
+        static ccu_fixed_t CCUFixedFromFloat(double f);
         double CCUFloatFromFixed(ccu_fixed_t f);
         double CCUFloatFromFixed(uint16_t f);
         int32_t CCUPercentFromFixed(ccu_fixed_t f);
+        static int16_t toFixed16(float value);
 
         enum class DataTypes : byte {
             kVoid = 0,

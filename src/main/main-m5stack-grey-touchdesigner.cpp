@@ -43,6 +43,9 @@
 // FPS:59.94
 // FPS:24 or 25 or 30 or 50 or 60 (note > 50 only available on the 6K if it's not in full 6K)
 // IRIS:2.8 or any aperture value that the lens can take up to 16 (can't pass a value greater than 16)
+// FOCUSNORM:0.0 to 1.0 a normalised focus from 0.0 (nearest) to 1.0 (furthest) - may or may not work with your lens.
+// ZOOMNORM:0.0 to 1.0 a normalised zoom position 0.0 (widest) to 1.0 (telephoto) - may or may not work with your lens.
+// ZOOMMM:0 to 1000 a zoom position 0MM to 1000MM - may or may not work with your lens.
 //
 // Want to create your own commands and actions - see the function "RunTouchDesignerCommand" in this file
 
@@ -3648,6 +3651,54 @@ void RunTouchDesignerCommand(std::string commandPart, std::string valuePart)
           DEBUG_ERROR("<TD Not able to calculate aperture value from provided string>");
     } catch (const std::invalid_argument& e) {
         DEBUG_ERROR("<TD Not a valid IRIS value>");
+    }
+  }
+  else if(commandPart == "FOCUSNORM" && haveCamera)
+  {
+    try {
+      float focusFloat = std::stof(valuePart);
+
+      if(focusFloat > 1)
+        focusFloat = 1;
+      else if(focusFloat < 0)
+        focusFloat = 0;
+
+      PacketWriter::writeFocusNormalised(focusFloat, &cameraConnection);
+
+    } catch (const std::invalid_argument& e) {
+        DEBUG_ERROR("<TD Not a valid FOCUSNORM value, 0.0 to 1.0 valid>");
+    }
+  }
+  else if(commandPart == "ZOOMNORM" && haveCamera)
+  {
+    try {
+      float zoomFloat = std::stof(valuePart);
+
+      if(zoomFloat > 1)
+        zoomFloat = 1;
+      else if(zoomFloat < 0)
+        zoomFloat = 0;
+
+      PacketWriter::writeZoomNormalised(zoomFloat, &cameraConnection);
+
+    } catch (const std::invalid_argument& e) {
+        DEBUG_ERROR("<TD Not a valid ZOOMNORM value, 0.0 to 1.0 valid>");
+    }
+  }
+  else if(commandPart == "ZOOMMM" && haveCamera)
+  {
+    try {
+      short zoomMM = std::stoi(valuePart);
+
+      if(zoomMM > 1000)
+        zoomMM = 1000;
+      else if(zoomMM < 0)
+        zoomMM = 0;
+
+      PacketWriter::writeZoomMM(zoomMM, &cameraConnection);
+
+    } catch (const std::invalid_argument& e) {
+        DEBUG_ERROR("<TD Not a valid ZOOMMM value, 0 to 1000 valid>");
     }
   }
   else

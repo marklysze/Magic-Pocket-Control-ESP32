@@ -16,6 +16,19 @@ int32_t CCUPacketTypes::CCUPercentFromFixed(ccu_fixed_t f) {
     return (static_cast<int32_t>(f) * 100) / 2048;
 }
 
+// From: https://github.com/kasperskaarhoj/SKAARHOJ-Open-Engineering/blob/master/ArduinoLibs/BMDSDIControl/include/BMDSDICameraControl.h#L289
+int16_t CCUPacketTypes::toFixed16(float value)
+{
+    value *= (1 << 11);
+
+    if (value > 32767)
+        value = 32767;
+    else if (value < -32768)
+        value = -32768;
+
+    return value;
+}
+
 const std::array<int, 4> CCUPacketTypes::slotActiveMasks =
 {
     0x20, //static_cast<int>(MediaTransportFlag::Disk1Active),

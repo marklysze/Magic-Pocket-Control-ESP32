@@ -189,6 +189,24 @@ CCUPacketTypes::Command CCUEncodingFunctions::CreateCodecCommand(CodecInfo codec
     return command;
 }
 
+CCUPacketTypes::Command CCUEncodingFunctions::CreateInt16Command(short value, CCUPacketTypes::Category category, byte parameter) {
+
+    short dataArray[] = { 0, value };
+    std::vector<byte> payloadData = CCUUtility::ToByteArrayFromArray(dataArray, sizeof(dataArray));
+
+    // std::vector<byte> data = CCUUtility::ToByteArray(value);
+    CCUPacketTypes::Command command(
+        CCUPacketTypes::kBroadcastTarget,
+        CCUPacketTypes::CommandID::ChangeConfiguration,
+        category,
+        parameter,
+        CCUPacketTypes::OperationType::AssignValue,
+        static_cast<byte>(CCUPacketTypes::DataTypes::kInt16),
+        payloadData);
+
+    return command;
+}
+
 /* FUNCTIONS NOT USED AND CONVERTED FROM C# VERSON.
 
 CCUPacketTypes::Command CCUEncodingFunctions::CreateRecordingFormatStatusCommand()

@@ -372,6 +372,8 @@ void Screen_NoConnection()
   sprite->pushSprite(0, 0);
 }
 
+short testFocusPosition = 18;
+
 // Default screen for connected state
 void Screen_Dashboard(bool forceRefresh = false)
 {
@@ -384,6 +386,20 @@ void Screen_Dashboard(bool forceRefresh = false)
   int xshift = 0;
 
   bool tappedAction = false;
+
+  if(btnAPressed)
+  {
+    // TESTING TESTING TESTING
+    for(float x = 0.0; x < 1.0; x += 0.01)
+    {
+      // PacketWriter::writeFocusPosition(x, &cameraConnection);
+      PacketWriter::writeZoomAbsolute(x, &cameraConnection);
+
+      DEBUG_DEBUG(std::to_string(x).c_str());
+
+      delay(1000);
+    }
+  }
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
   if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh)
