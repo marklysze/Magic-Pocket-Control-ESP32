@@ -40,6 +40,8 @@ I hope you find the functionality useful and it would be great if you could cont
 # Do you use TouchDesigner?
 If you're a TouchDesigner user, check out nelsoniso's [repository here](https://github.com/nelsoniso/BlackMagicCamera-Touchdesigner-ESP32) which utilises the serial output of this project to update TouchDesigner in real-time and allow you to control the settings of the camera from TouchDesigner, it's very cool.
 
+The main-m5stack-grey-touchdesigner.cpp file has the serial in and out functionality.
+
 # Has it been tested?
 It needs to be thoroughly tested and even though they do contain fairly basic functionality, there's still unknowns around connection longevity, camera firmware changes, known issues in camera firmware, and the position of the sun in the sky.
 
