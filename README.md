@@ -29,12 +29,16 @@ The key features are:
     - Recording: Start and Stop recording, shows timecode and the remaining time left on the active media
     - ISO: Change ISO
 - Read and write the many settings of the camera (Record Start & Stop, ISO, Shutter Speed / Angle, White Balance, Tint, Codec, Resolution, FPS, Off-speed Recording, Media available and time remaining, Slate, Project Name, Lens Data)
+- Accept setting changes through serial text (e.g. "(ISO:4000)" sent over serial will update the ISO to 4000). Similarly, it can output settings through serial so your applications can synchronise settings with the camera(s)
 
 # Some visuals
 [I'm working on them! :running: :camera: ]
 
 # What can you do?
 I hope you find the functionality useful and it would be great if you could contribute your improvements, suggestions, or general feedback to the project!
+
+# Do you use TouchDesigner?
+If you're a TouchDesigner user, check out nelsoniso's [repository here](https://github.com/nelsoniso/BlackMagicCamera-Touchdesigner-ESP32) which utilises the serial output of this project to update TouchDesigner in real-time and allow you to control the settings of the camera from TouchDesigner, it's very cool.
 
 # Has it been tested?
 It needs to be thoroughly tested and even though they do contain fairly basic functionality, there's still unknowns around connection longevity, camera firmware changes, known issues in camera firmware, and the position of the sun in the sky.
