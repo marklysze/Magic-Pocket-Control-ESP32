@@ -61,7 +61,8 @@
 			"chrono": "cpp",
 			"list": "cpp",
 			"ratio": "cpp",
-			"thread": "cpp"
+			"thread": "cpp",
+			"lv_log.h": "c"
 		}
 	}
 }

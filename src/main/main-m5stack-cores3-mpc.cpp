@@ -22,9 +22,10 @@
 
 // Based on M5CoreS3 Demo - M5 libraries
 #include <nvs_flash.h>
-#include "config.h"
+// #include "config.h"
+#include "Boards/M5CoreS3/config.h"
 #include "M5GFX.h"
-#include "M5Unified.h"
+#include "Boards/M5CoreS3/M5Unified.h"
 #include "lgfx/v1/Touch.hpp"
 static M5GFX display;
 static M5Canvas window(&M5.Display);
