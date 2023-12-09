@@ -622,7 +622,9 @@ class CCUPacketTypes
                     return "3K Ana";
                 else if(width == 4096 && height == 2304)
                     return "4K 16:9";
-                else if(width == 4608 && (height == 2592 || height == 1920))
+                else if(width == 4608 && height == 2592)
+                    return "4.6K";
+                else if(width == 4608 && height == 1920)
                     return "4.6K 2.4:1";
 
                 // Ursa 12K

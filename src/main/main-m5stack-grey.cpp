@@ -393,7 +393,7 @@ void Screen_Dashboard(bool forceRefresh = false)
     for(float x = 0.0; x < 1.0; x += 0.01)
     {
       // PacketWriter::writeFocusPosition(x, &cameraConnection);
-      PacketWriter::writeZoomAbsolute(x, &cameraConnection);
+      PacketWriter::writeZoomNormalised(x, &cameraConnection);
 
       DEBUG_DEBUG(std::to_string(x).c_str());
 
@@ -1683,8 +1683,222 @@ void Screen_CodecURSAMiniProG2(bool forceRefresh = false)
   connectedScreenIndex = Screens::Codec;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // Get the current Codec values
+  CodecInfo currentCodec = camera->getCodec();
+
+  // Codec: BRAW and ProRes
+
+  // If we have an up/down button press
+  bool tappedAction = false;
+  if(btnAPressed || btnBPressed)
+  {
+    DEBUG_DEBUG("Codec URSA Mini Pro G2: Btn A/B pressed");
+
+    // Switching between BRAW and ProRes
+    if(btnAPressed)
+    {
+      if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
+      {
+        // Switch to ProRes
+        PacketWriter::writeCodec(camera->lastKnownProRes, &cameraConnection);
+      }
+      else
+      {
+        // Switch to BRAW
+        PacketWriter::writeCodec(camera->lastKnownBRAWIsBitrate ? camera->lastKnownBRAWBitrate : camera->lastKnownBRAWQuality, &cameraConnection);
+      }
+
+      tappedAction = true;
+    }
+    else if(btnBPressed)
+    {
+        // Current setting
+        std::string currentCodecString = currentCodec.to_string();
+
+      // Change the setting on the current Codec
+      if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
+      {
+          if(currentCodecString == "BRAW 3:1")
+          {
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAW5_1), &cameraConnection);
+          }
+          else if(currentCodecString == "BRAW 5:1")
+          {
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAW8_1), &cameraConnection);
+          }
+          else if(currentCodecString == "BRAW 8:1")
+          {
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAW12_1), &cameraConnection);
+          }
+          else if(currentCodecString == "BRAW 12:1")
+          {
+            // Switch across to Constant Quality
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAWQ0), &cameraConnection);
+          }
+          else if(currentCodecString == "BRAW Q0")
+          {
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAWQ5), &cameraConnection);
+          }
+          else if(currentCodecString == "BRAW Q5")
+          {
+            // Switch across to Constant Bitrate
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::BRAW, CCUPacketTypes::CodecVariants::kBRAW3_1), &cameraConnection);
+          }
+      }
+      else
+      {
+          if(currentCodecString == "ProRes 444XQ")
+          {
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProRes444), &cameraConnection);
+          }
+          else if(currentCodecString == "ProRes 444")
+          {
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProResHQ), &cameraConnection);
+          }
+          else if(currentCodecString == "ProRes HQ")
+          {
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProRes422), &cameraConnection);
+          }
+          else if(currentCodecString == "ProRes 422")
+          {
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProResLT), &cameraConnection);
+          }
+          else if(currentCodecString == "ProRes LT")
+          {
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProResProxy), &cameraConnection);
+          }
+          else if(currentCodecString == "ProRes PXY")
+          {
+            PacketWriter::writeCodec(CodecInfo(CCUPacketTypes::BasicCodec::ProRes, CCUPacketTypes::CodecVariants::kProRes444XQ), &cameraConnection);
+          }
+      }
+
+      tappedAction = true;
+    }
+  }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
   
-  // TO DO
+  DEBUG_DEBUG("Screen Codec URSA Mini Pro G2 Refreshed.");
+
+  sprite->fillScreen(TFT_BLACK);
+
+  Screen_Common_Connected(); // Common elements
+
+  // We need to have the Codec information to show the screen
+  if(!camera->hasCodec())
+  {
+    sprite->setTextColor(TFT_WHITE);
+    sprite->drawString("NO CODEC INFO.", 30, 9);
+
+    return;
+  }
+
+  // Codec label
+  sprite->setTextColor(TFT_WHITE);
+  sprite->drawString("CODEC", 30, 9, &AgencyFB_Bold9pt7b);
+
+  // BRAW and ProRes selector buttons
+
+  // BRAW
+  sprite->fillSmoothRoundRect(20, 30, 145, 40, 5, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawRoundRect(20, 30, 145, 40, 3, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString("BRAW", 93, 41);
+
+  // ProRes
+  sprite->fillSmoothRoundRect(170, 30, 145, 40, 5, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawRoundRect(170, 30, 145, 40, 3, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString("ProRes", 242, 41);
+
+  if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
+  {
+    // BRAW
+
+    // Are we Constant Bitrate or Constant Quality
+    std::string currentCodecString = currentCodec.to_string();
+    auto pos = std::find(currentCodecString.begin(), currentCodecString.end(), ':');
+    bool isConstantBitrate = pos != currentCodecString.end(); // Is there a colon, :, in the string? If so, it's Constant Bitrate
+
+    // Get the bitrate or quality setting
+    std::size_t spaceIndex = currentCodecString.find(" ");
+    std::string qualityBitrateSetting = currentCodecString.substr(spaceIndex + 1); // e.g. 3:1, Q3, etc.
+
+    // Constant Bitrate
+    sprite->fillSmoothRoundRect(20, 75, 145, 40, 3, (isConstantBitrate ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("BITRATE", 93, 80);
+    sprite->drawCentreString("CONSTANT", 93, 102, &Lato_Regular5pt7b);
+
+    // Constant Quality
+    sprite->fillSmoothRoundRect(170, 75, 145, 40, 3, (!isConstantBitrate ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("QUALITY", 242, 80);
+    sprite->drawCentreString("CONSTANT", 242, 102, &Lato_Regular5pt7b);
+
+    // Setting 1 of 4
+    std::string optionString = (isConstantBitrate ? "3:1" : "Q0");
+    sprite->fillSmoothRoundRect(20, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(optionString.c_str(), 55, 131);
+
+    // Setting 2 of 4
+    optionString = (isConstantBitrate ? "5:1" : "Q1");
+    sprite->fillSmoothRoundRect(95, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(optionString.c_str(), 130, 131);
+
+  //   Setting 3 of 4
+    optionString = (isConstantBitrate ? "8:1" : "Q3");
+    sprite->fillSmoothRoundRect(170, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(optionString.c_str(), 205, 131);
+
+    // Setting 4 of 4
+    optionString = (isConstantBitrate ? "12:1" : "Q5");
+    sprite->fillSmoothRoundRect(245, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(optionString.c_str(), 280, 131);
+  }
+  else
+  {
+    // ProRes
+
+    // Get the ProRes Setting
+    std::string currentCodecString = currentCodec.to_string();
+    std::size_t spaceIndex = currentCodecString.find(" ");
+    std::string currentProResSetting = currentCodecString.substr(spaceIndex + 1); // e.g. 444XQ, 444, HQ, 422, LT, PXY
+
+    // 444 XQ
+    std::string proResLabel = "444XQ";
+    sprite->fillSmoothRoundRect(20, 75, 95, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("XQ", 67, 87);
+
+    // 444
+    proResLabel = "444";
+    sprite->fillSmoothRoundRect(120, 75, 95, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(proResLabel.c_str(), 167, 87);
+
+    // HQ
+    proResLabel = "HQ";
+    sprite->fillSmoothRoundRect(220, 75, 95, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(proResLabel.c_str(), 267, 87);
+
+    // 422
+    proResLabel = "422";
+    sprite->fillSmoothRoundRect(20, 120, 95, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(proResLabel.c_str(), 67, 131);
+
+    // LT
+    proResLabel = "LT";
+    sprite->fillSmoothRoundRect(120, 120, 95, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(proResLabel.c_str(), 167, 131);
+
+    // PXY
+    proResLabel = "PXY";
+    sprite->fillSmoothRoundRect(220, 120, 95, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(proResLabel.c_str(), 267, 131);
+  }
+
+  sprite->pushSprite(0, 0);
 }
 
 // Codec Screen for URSA Mini Pro 12K
@@ -2443,8 +2657,243 @@ void Screen_ResolutionURSAMiniProG2(bool forceRefresh = false)
   connectedScreenIndex = Screens::Resolution;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // URSA Mini Pro G2 (no window settings, just resolution)
+
+  // Get the current Resolution and Codec
+  CCUPacketTypes::RecordingFormatData currentRecordingFormat;
+  if(camera->hasRecordingFormat())
+    currentRecordingFormat = camera->getRecordingFormat();
+
+  // Get the current Codec values
+  CodecInfo currentCodec = camera->getCodec();
+
+  bool tappedAction = false;
+  if(btnAPressed || btnBPressed)
+  {
+    DEBUG_DEBUG("ResolutionURSAMiniProG2: Btn A/B pressed");
+
+    String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str();
+    int currentWidth = currentRecordingFormat.width;
+    int currentHeight = currentRecordingFormat.height;
+
+    // URSA Mini Pro G2 has the same resolutions for BRAW and ProRes
+    if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW || currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes)
+    {
+      int width = 0;
+      int height = 0;
+      bool window = currentRecordingFormat.windowedModeEnabled;
+
+      if(currentRes == "4.6K")
+      {
+        if(btnAPressed)
+        {
+          // 4.6K 2.4:1
+          width = 4608; height = 1920;
+        }
+        else
+        {
+          // HD
+          width = 1920; height = 1080;
+        }
+      }
+      else if(currentRes == "4.6K 2.4:1")
+      {
+        if(btnAPressed)
+        {
+          // 4K 16:9
+          width = 4096; height = 2304;
+        }
+        else
+        {
+          // 4.6K
+          width = 4608; height = 2592;
+        }
+      }
+      else if(currentRes == "4K 16:9")
+      {
+        if(btnAPressed)
+        {
+          // 4K DCI
+          width = 4096; height = 2160;
+        }
+        else
+        {
+          // 4.6K 2.4:1
+          width = 4608; height = 1920;
+        }
+      }
+      else if(currentRes == "4K DCI")
+      {
+        if(btnAPressed)
+        {
+          // 4K UHD
+          width = 3840; height = 2160;
+        }
+        else
+        {
+          // 4K 16:9
+          width = 4096; height = 2304;
+        }
+      }
+      else if(currentRes == "4K UHD")
+      {
+        if(btnAPressed)
+        {
+          // 3K Ana
+          width = 3072; height = 2560;
+        }
+        else
+        {
+          // 4K DCI
+          width = 4096; height = 2160;
+        }
+      }
+      else if(currentRes == "3K Ana")
+      {
+        if(btnAPressed)
+        {
+          // 2K 16:9
+          width = 2048; height = 1152;
+        }
+        else
+        {
+          // 4K UHD
+          width = 3840; height = 2160;
+        }
+      }
+      else if(currentRes == "2K 16:9")
+      {
+        if(btnAPressed)
+        {
+          // 2K DCI
+          width = 2048; height = 1080;
+        }
+        else
+        {
+          // 3K Ana
+          width = 3072; height = 2560;
+        }
+      }
+      else if(currentRes == "2K DCI")
+      {
+        if(btnAPressed)
+        {
+          // HD
+          width = 1920; height = 1080;
+        }
+        else
+        {
+          // 2K 16:9
+          width = 2048; height = 1152;
+        }
+      }
+      else // HD
+      {
+        if(btnAPressed)
+        {
+          // 4.6K
+          width = 4608; height = 2592;
+        }
+        else
+        {
+          // 2K DCI
+          width = 2048; height = 1080;
+        }
+      }
+
+      if(width != 0)
+      {
+        // Resolution selected, write to camera
+        CCUPacketTypes::RecordingFormatData newRecordingFormat = currentRecordingFormat;
+        newRecordingFormat.width = width;
+        newRecordingFormat.height = height;
+        newRecordingFormat.windowedModeEnabled = window;
+        PacketWriter::writeRecordingFormat(newRecordingFormat, &cameraConnection);
+
+        tappedAction = true;
+      }
+    }
+  }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
   
-  // TO DO
+  DEBUG_DEBUG("Screen Resolution URSA Mini Pro G2 Refreshed.");
+
+  sprite->fillScreen(TFT_BLACK);
+
+  Screen_Common_Connected(); // Common elements
+
+  if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW || currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes)
+  {
+    // Main label
+    sprite->setTextColor(TFT_WHITE);
+    if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
+      sprite->drawString("BRAW RESOLUTION", 30, 9, &AgencyFB_Bold9pt7b);
+    else
+      sprite->drawString("PRORES RESOLUTION", 30, 9, &AgencyFB_Bold9pt7b);
+
+    String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "4.6K", "4.6K 2.4:1", "4K 16:9", "4K DCI", "4K UHD", "3K Ana", "2K 16:9", "2K DCI", "HD"
+
+    // 4.6K
+    String labelRes = "4.6K";
+    sprite->fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(String(labelRes).c_str(), 65, 41);
+
+    // 4.6K 2.4:1
+    labelRes = "4.6K 2.4:1";
+    sprite->fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("4.6K", 160, 36);
+    sprite->drawCentreString("2.4:1", 160, 58, &Lato_Regular5pt7b);
+  
+    // 4K 16:9
+    labelRes = "4K 16:9";
+    sprite->fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("4.6K", 260, 36);
+    sprite->drawCentreString("16:9", 260, 58, &Lato_Regular5pt7b);
+
+    // 4K DCI
+    labelRes = "4K DCI";
+    sprite->fillSmoothRoundRect(20, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("4K", 65, 82);
+    sprite->drawCentreString("DCI", 65, 104, &Lato_Regular5pt7b);
+
+    // 4K UHD
+    labelRes = "4K UHD";
+    sprite->fillSmoothRoundRect(115, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("UHD", 160, 86);
+
+    // 3K Ana
+    labelRes = "3K Ana";
+    sprite->fillSmoothRoundRect(210, 75, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("3K", 260, 82);
+    sprite->drawCentreString("ANA", 260, 104, &Lato_Regular5pt7b);
+
+    // 2K 16:9
+    labelRes = "2K 16:9";
+    sprite->fillSmoothRoundRect(20, 120, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("2K", 65, 128);
+    sprite->drawCentreString("16:9", 65, 149, &Lato_Regular5pt7b);
+
+    // 2K DCI
+    labelRes = "2K DCI";
+    sprite->fillSmoothRoundRect(115, 120, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("2K", 160, 128);
+    sprite->drawCentreString("DCI", 160, 149, &Lato_Regular5pt7b);
+
+    // HD
+    labelRes = "HD";
+    sprite->fillSmoothRoundRect(210, 120, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("HD", 260, 132);
+  }
+  else
+    DEBUG_ERROR("Resolution URSA Mini Pro G2 - Codec not catered for.");
+
+  sprite->pushSprite(0, 0);
 }
 
 // Resolution Screen for URSA Mini Pro 12K

@@ -15,6 +15,11 @@ Despite unplugging power and deploying a thousand times, I'm yet to actually bri
 
 Here are some tips if you can't deploy a build to your device.
 
+#### M5Stack CoreS3
+If you are having trouble deploying/flashing your M5Stack CoreS3 you can try M5Stack's M5Burner software and flash one of their images to the device (e.g. UIFlow2.0). [M5Burner is available here](https://docs.m5stack.com/en/download).
+
+If it successfully deploys their image, and it's running on the device, then try again to deploy your code to it through Visual Studio Code.
+
 #### LILYGO T-Display-S3, Freenove ESP32-S3-WROOM, and probably most ESP32 devices
 If I've been developing for a while on these devices, regularly deploying builds to it, they can start to become less welcoming for a new build. (Once I left the T-Display-S3 on overnight and had to follow the below steps a number of times to revive it - useful to get these screenshots!)
 

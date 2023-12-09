@@ -98,7 +98,7 @@ bool BMDCamera::isPocket6K()
 {
     if(hasModelName())
     {
-        // Loop up the map, passing in the model name
+        // Look up the map, passing in the model name
         auto cameraModel = CameraModels::nameToModel.find(getModelName());
 
         if (cameraModel != CameraModels::nameToModel.end()) {
