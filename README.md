@@ -53,7 +53,7 @@ Here's the state of cameras and firmware.
 | Pocket 4K | 8.1 | $\color{green}{\textsf{OK}}$ $\color{orange}{\textsf{ (See Known Bugs below)}}$ |
 | Pocket 6K | 7.9.1 | $\color{green}{\textsf{OK}}$ $\color{orange}{\textsf{ (BRAW <-> ProRes change firmware bug)}}$ |
 | Pocket 6K | 8.1 | $\color{green}{\textsf{OK}}$ $\color{orange}{\textsf{ (See Known Bugs below)}}$ |
-| Pocket 6K G2 | ... | Not Tested |
+| Pocket 6K G2 | ... | PeterP27 confirmed |
 | Pocket 6K Pro | ... | Not Tested |
 | URSA Mini Pro 4.6K G2 | ... | Not Tested |
 | URSA Mini Pro 12K | ... | Not Tested |
