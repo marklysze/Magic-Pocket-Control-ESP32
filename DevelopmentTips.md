@@ -50,7 +50,7 @@ Then here are the steps I take to get it responsive to another deployment:
 1. Unplug the USB-C cable and then plug it back in, try and deploy a build. If it doesn't work, continue to next step
 2. Open Arduino IDE and follow the next steps
 
-   ![Arduino IDE](Documents/DevTips_TDS3_ArduinoIDE.jpg)
+![Arduino IDE](Documents/DevTips_TDS3_ArduinoIDE.jpg)
 
 4. Re-select the board (Note: It may have identified it's a different device):
    - Click on the device drop-down at the top
@@ -76,7 +76,7 @@ Then here are the steps I take to get it responsive to another deployment:
     - The above tries to deploy a simple program that prints a serial arrow every 1 second.
     - If it doesn't upload correctly, try a few more times. Unplug and replug the device if necessary.
    
-      ![Can't Upload in Arduino IDE](Documents/DevTips_TDS3_CantUpload.jpg)
+![Can't Upload in Arduino IDE](Documents/DevTips_TDS3_CantUpload.jpg)
    
     - If you still can't upload, unplug the USB-C, hold down the boot button and, while doing so, plug the USB-C cable back in, release the boot button after a few seconds.
     - If you've come this far and it's still not working, you may need to resort to using Espressif's Python scripts to flash the device, see the next section.
@@ -84,7 +84,7 @@ Then here are the steps I take to get it responsive to another deployment:
     - Once you've successfully uploaded it, go back to Visual Studio Code and start the Serial Monitor
 
       $\color{green}{\textsf{Success}}$
-      ![Can't Upload in Arduino IDE](Documents/DevTips_TDS3_UploadSuccess.jpg)
+[Can't Upload in Arduino IDE](Documents/DevTips_TDS3_UploadSuccess.jpg)
     
     - If you see the serial messages "->->->"... coming through then you should be right to deploy a build to it (Note: Don't run Arduino IDE's Serial Monitor as it will block Visual Studio's one)
 
