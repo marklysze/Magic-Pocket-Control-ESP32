@@ -101,7 +101,9 @@ void BMDCameraConnection::connectCallback(BLEScanResults scanResults) {
     }
 
     if(!instance->cameraAddresses.empty())
+    {
         instance->status = ConnectionStatus::ScanningFound;
+    }
     else
         instance->status = ConnectionStatus::ScanningNoneFound;
 }

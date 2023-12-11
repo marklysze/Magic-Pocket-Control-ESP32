@@ -20,6 +20,12 @@
 // Include the watchdog library so we can stop it timing out while pass key entry.
 #include "esp_task_wdt.h"
 
+// Sprite width and height (S3 can do 16BPP)
+#define IWIDTH_SPRITE 320
+#define IHEIGHT_SPRITE 240
+#define BPP_SPRITE 16
+
+
 // Based on M5CoreS3 Demo - M5 libraries
 #include <nvs_flash.h>
 // #include "config.h"
@@ -29,7 +35,9 @@
 #include "lgfx/v1/Touch.hpp"
 static M5GFX display;
 static M5Canvas window(&M5.Display);
-static M5Canvas spritePassKey(&M5.Display);
+// static M5Canvas spritePassKey(&M5.Display);
+
+static LGFX_Sprite *sprite;
 
 // Lato font from Google Fonts
 // Agency FB font is free for commercial use, copied from Windows fonts
@@ -123,29 +131,29 @@ int tapped_y = -1;
 void Screen_Common(int sideBarColour)
 {
     // Sidebar colour
-    window.fillRect(0, 0, 13, IHEIGHT, sideBarColour);
-    window.fillRect(13, 0, 2, IHEIGHT, TFT_DARKGREY);
+    sprite->fillRect(0, 0, 13, IHEIGHT, sideBarColour);
+    sprite->fillRect(13, 0, 2, IHEIGHT, TFT_DARKGREY);
 
     if(BMDControlSystem::getInstance()->hasCamera())
     {
       auto camera = BMDControlSystem::getInstance()->getCamera();
 
       // Bottom Buttons
-      window.fillSmoothRoundRect(30, 210, 80, 40, 3, TFT_DARKCYAN);
-      window.setTextColor(TFT_WHITE);
-      window.drawCenterString("DASH", 70, 217, &AgencyFB_Bold9pt7b);
+      sprite->fillSmoothRoundRect(30, 210, 80, 40, 3, TFT_DARKCYAN);
+      sprite->setTextColor(TFT_WHITE);
+      sprite->drawCenterString("DASH", 70, 217, &AgencyFB_Bold9pt7b);
 
       if(camera->isRecording)
-        window.fillSmoothCircle(IWIDTH / 2, 240, 30, TFT_RED);
+        sprite->fillSmoothCircle(IWIDTH / 2, 240, 30, TFT_RED);
       else
       {
         // Two outlines to make it a bit thicker
-        window.drawCircle(IWIDTH / 2, 240, 30, TFT_RED);
-        window.drawCircle(IWIDTH / 2, 240, 29, TFT_RED);
+        sprite->drawCircle(IWIDTH / 2, 240, 30, TFT_RED);
+        sprite->drawCircle(IWIDTH / 2, 240, 29, TFT_RED);
       }
 
-      window.fillSmoothRoundRect(210, 210, 80, 40, 3, TFT_DARKCYAN);
-      window.drawCenterString("CODEC", 250, 217, &AgencyFB_Bold9pt7b); //fonts::FreeMono9pt7b);
+      sprite->fillSmoothRoundRect(210, 210, 80, 40, 3, TFT_DARKCYAN);
+      sprite->drawCenterString("CODEC", 250, 217, &AgencyFB_Bold9pt7b); //fonts::FreeMono9pt7b);
 
     }
 }
@@ -159,8 +167,8 @@ void Screen_Common_Connected()
     // Show the recording outline
     if(BMDControlSystem::getInstance()->getCamera()->isRecording)
     {
-      window.drawRect(15, 0, IWIDTH - 15, IHEIGHT, TFT_RED);
-      window.drawRect(16, 1, IWIDTH - 13, IHEIGHT - 2, TFT_RED);
+      sprite->drawRect(15, 0, IWIDTH - 15, IHEIGHT, TFT_RED);
+      sprite->drawRect(16, 1, IWIDTH - 13, IHEIGHT - 2, TFT_RED);
     }
   }
 }
@@ -174,54 +182,60 @@ void Screen_NoConnection()
 
   connectedScreenIndex = Screens::NoConnection;
 
-  spriteMPCSplash.pushSprite(&window, 0, 0);
+  if(!sprite->createSprite(IWIDTH_SPRITE, IHEIGHT_SPRITE)) return;
+
+  // spriteMPCSplash.pushSprite(&window, 0, 0);
+  sprite->pushImage(0, 0, IWIDTH, IHEIGHT, MPCSplash_M5Stack_CoreS3);
 
   // Black background for text and Bluetooth Logo
-  window.fillRect(0, 3, IWIDTH, 51, TFT_BLACK);
+  sprite->fillRect(0, 3, IWIDTH, 51, TFT_BLACK);
 
   // Bluetooth Image
-  spriteBluetooth.pushSprite(&window, 26, 6);
+//   spriteBluetooth.pushSprite(&window, 26, 6);
+  sprite->pushImage(26, 6, 30, 46, Wikipedia_Bluetooth_30x46);
 
   switch(cameraConnection.status)
   {
     case BMDCameraConnection::Scanning:
       Screen_Common(TFT_BLUE); // Common elements
-      window.drawString("Scanning...", 70, 20);
+      sprite->drawString("Scanning...", 70, 20);
       break;
     case BMDCameraConnection::ScanningFound:
       Screen_Common(TFT_BLUE); // Common elements
       if(cameraConnection.cameraAddresses.size() == 1)
       {
-        window.drawString("Found, connecting...", 70, 20);
+        DEBUG_VERBOSE("Screen_NoConnection - writing found... #1");
+        sprite->drawString("Found, connecting...", 70, 20);
+        DEBUG_VERBOSE("Screen_NoConnection - writing found... #2");
         connectToCameraIndex = 0;
       }
       else
-        window.drawString("Found cameras", 70, 20); // Multiple camera selection is below
+        sprite->drawString("Found cameras", 70, 20); // Multiple camera selection is below
       break;
     case BMDCameraConnection::ScanningNoneFound:
       Screen_Common(TFT_RED); // Common elements
-      window.drawString("No camera found", 70, 20);
+      sprite->drawString("No camera found", 70, 20);
       break;
     case BMDCameraConnection::Connecting:
       Screen_Common(TFT_YELLOW); // Common elements
-      window.drawString("Connecting...", 70, 20);
+      sprite->drawString("Connecting...", 70, 20);
       break;
     case BMDCameraConnection::NeedPassKey:
       Screen_Common(TFT_PURPLE); // Common elements
-      window.drawString("Need Pass Key", 70, 20);
+      sprite->drawString("Need Pass Key", 70, 20);
       break;
     case BMDCameraConnection::FailedPassKey:
       Screen_Common(TFT_ORANGE); // Common elements
-      window.drawString("Wrong Pass Key", 70, 20);
+      sprite->drawString("Wrong Pass Key", 70, 20);
       break;
     case BMDCameraConnection::Disconnected:
       Screen_Common(TFT_RED); // Common elements
-      window.drawString("Disconnected (wait)", 70, 20);
+      sprite->drawString("Disconnected (wait)", 70, 20);
       break;
     case BMDCameraConnection::IncompatibleProtocol:
       // Note: This needs to be worked on as there's no incompatible protocol connections yet.
       Screen_Common(TFT_RED); // Common elements
-      window.drawString("Incompatible Protocol", 70, 20);
+      sprite->drawString("Incompatible Protocol", 70, 20);
       break;
     default:
       break;
@@ -232,17 +246,17 @@ void Screen_NoConnection()
   for(int count = 0; count < cameras && count < 2; count++)
   {
     // Cameras
-    window.fillRoundRect(25 + (count * 125) + (count * 10), 60, 125, 100, 5, TFT_DARKGREY);
+    sprite->fillRoundRect(25 + (count * 125) + (count * 10), 60, 125, 100, 5, TFT_DARKGREY);
 
     // Highlight the camera to connect to
     if(connectToCameraIndex != -1 && connectToCameraIndex == count)
     {
-      window.drawRoundRect(25 + (count * 125) + (count * 10), 60, 5, 2, TFT_GREEN);
+      sprite->drawRoundRect(25 + (count * 125) + (count * 10), 60, 5, 2, TFT_GREEN);
     }
 
     spritePocket4k.pushSprite(&window, 33 + (count * 125) + (count * 10), 69);
 
-    window.drawString(cameraConnection.cameraAddresses[count].toString().c_str(), 33 + (count * 125) + (count * 10), 144, &Lato_Regular6pt7b);
+    sprite->drawString(cameraConnection.cameraAddresses[count].toString().c_str(), 33 + (count * 125) + (count * 10), 144, &Lato_Regular6pt7b);
   }
 
   // If there's more than one camera, check for a tap to see if they have nominated one to connect to
@@ -260,13 +274,18 @@ void Screen_NoConnection()
       }
   }
 
-  window.pushSprite(0, 0);
-
   if(connectToCameraIndex != -1)
   {
     cameraConnection.connect(cameraConnection.cameraAddresses[connectToCameraIndex]);
     connectToCameraIndex = -1;
+
+  if(cameraConnection.status == BMDCameraConnection::ConnectionStatus::FailedPassKey)
+    {
+      DEBUG_DEBUG("NoConnection - Failed Pass Key");
+    }
   }
+
+  sprite->pushSprite(0, 0);
 }
 
 // Default screen for connected state
@@ -351,30 +370,33 @@ void Screen_Dashboard(bool forceRefresh = false)
   
   DEBUG_DEBUG("Screen Dashboard Refreshing.");
 
-  window.fillSprite(TFT_BLACK);
+  if(!sprite->createSprite(IWIDTH_SPRITE, IHEIGHT_SPRITE)) return;
+
+  if(cameraConnection.getInitialPayloadTime() != ULONG_MAX)
+    sprite->fillSprite(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
   // M5GFX, set font here rather than on each drawString line
-  window.setFont(&Lato_Regular11pt7b);
+  sprite->setFont(&Lato_Regular11pt7b);
 
   // ISO
   if(camera->hasSensorGainISOValue())
   {
-    window.fillSmoothRoundRect(20, 5, 75, 65, 3, TFT_DARKGREY);
-    window.setTextColor(TFT_WHITE);
+    sprite->fillSmoothRoundRect(20, 5, 75, 65, 3, TFT_DARKGREY);
+    sprite->setTextColor(TFT_WHITE);
 
-    window.drawCentreString(String(camera->getSensorGainISOValue()), 58, 23);
+    sprite->drawCentreString(String(camera->getSensorGainISOValue()), 58, 23);
 
-    window.drawCentreString("ISO", 58, 50, &AgencyFB_Regular7pt7b);
+    sprite->drawCentreString("ISO", 58, 50, &AgencyFB_Regular7pt7b);
   }
 
   // Shutter
   xshift = 80;
   if(camera->hasShutterAngle())
   {
-    window.fillSmoothRoundRect(20 + xshift, 5, 75, 65, 3, TFT_DARKGREY);
-    window.setTextColor(TFT_WHITE);
+    sprite->fillSmoothRoundRect(20 + xshift, 5, 75, 65, 3, TFT_DARKGREY);
+    sprite->setTextColor(TFT_WHITE);
 
     if(camera->shutterValueIsAngle)
     {
@@ -382,45 +404,45 @@ void Screen_Dashboard(bool forceRefresh = false)
       int currentShutterAngle = camera->getShutterAngle();
       float ShutterAngleFloat = currentShutterAngle / 100.0;
 
-      window.drawCentreString(String(ShutterAngleFloat, (currentShutterAngle % 100 == 0 ? 0 : 1)), 58 + xshift, 23);
+      sprite->drawCentreString(String(ShutterAngleFloat, (currentShutterAngle % 100 == 0 ? 0 : 1)), 58 + xshift, 23);
     }
     else
     {
       // Shutter Speed
       int currentShutterSpeed = camera->getShutterSpeed();
 
-      window.drawCentreString("1/" + String(currentShutterSpeed), 58 + xshift, 23);
+      sprite->drawCentreString("1/" + String(currentShutterSpeed), 58 + xshift, 23);
     }
 
-    window.drawCentreString(camera->shutterValueIsAngle ? "DEGREES" : "SPEED", 58 + xshift, 50, &AgencyFB_Regular7pt7b); //  "SHUTTER"
+    sprite->drawCentreString(camera->shutterValueIsAngle ? "DEGREES" : "SPEED", 58 + xshift, 50, &AgencyFB_Regular7pt7b); //  "SHUTTER"
   }
 
   // WhiteBalance and Tint
   xshift += 80;
   if(camera->hasWhiteBalance() || camera->hasTint())
   {
-    window.fillSmoothRoundRect(20 + xshift, 5, 135, 65, 3, TFT_DARKGREY);
-    window.setTextColor(TFT_WHITE);
+    sprite->fillSmoothRoundRect(20 + xshift, 5, 135, 65, 3, TFT_DARKGREY);
+    sprite->setTextColor(TFT_WHITE);
 
     if(camera->hasWhiteBalance())
-      window.drawCentreString(String(camera->getWhiteBalance()), 58 + xshift, 23);
+      sprite->drawCentreString(String(camera->getWhiteBalance()), 58 + xshift, 23);
 
-    window.drawCentreString("WB", 58 + xshift, 50, &AgencyFB_Regular7pt7b);
+    sprite->drawCentreString("WB", 58 + xshift, 50, &AgencyFB_Regular7pt7b);
 
     xshift += 66;
 
     if(camera->hasTint())
-      window.drawCentreString(String(camera->getTint()), 58 + xshift, 23);
+      sprite->drawCentreString(String(camera->getTint()), 58 + xshift, 23);
 
-    window.drawCentreString("TINT", 58 + xshift, 50, &AgencyFB_Regular7pt7b);
+    sprite->drawCentreString("TINT", 58 + xshift, 50, &AgencyFB_Regular7pt7b);
   }
 
   // Codec
   if(camera->hasCodec())
   {
-    window.fillSmoothRoundRect(20, 75, 155, 40, 3, TFT_DARKGREY);
+    sprite->fillSmoothRoundRect(20, 75, 155, 40, 3, TFT_DARKGREY);
 
-    window.drawCentreString(camera->getCodec().to_string().c_str(), 97, 84);
+    sprite->drawCentreString(camera->getCodec().to_string().c_str(), 97, 84);
   }
 
   // Media
@@ -455,19 +477,19 @@ void Screen_Dashboard(bool forceRefresh = false)
 
     if(!slotString.empty())
     {
-      window.fillSmoothRoundRect(20, 120, 100, 40, 3, TFT_DARKGREY);
+      sprite->fillSmoothRoundRect(20, 120, 100, 40, 3, TFT_DARKGREY);
 
-      window.drawCentreString(slotString.c_str(), 70, 130);
+      sprite->drawCentreString(slotString.c_str(), 70, 130);
 
       // Show recording error
       if(camera->hasRecordError())
-        window.drawRoundRect(20, 120, 100, 40, 3, TFT_RED);
+        sprite->drawRoundRect(20, 120, 100, 40, 3, TFT_RED);
     }
     else
     {
       // Show no Media
-      window.fillSmoothRoundRect(20, 120, 100, 40, 3, TFT_DARKGREY);
-      window.drawCentreString("NO MEDIA", 70, 135, &AgencyFB_Regular7pt7b);
+      sprite->fillSmoothRoundRect(20, 120, 100, 40, 3, TFT_DARKGREY);
+      sprite->drawCentreString("NO MEDIA", 70, 135, &AgencyFB_Regular7pt7b);
     }
   }
 
@@ -475,24 +497,24 @@ void Screen_Dashboard(bool forceRefresh = false)
   if(camera->hasRecordingFormat())
   {
     // Frame Rate
-    window.fillSmoothRoundRect(180, 75, 135, 40, 3, TFT_DARKGREY);
+    sprite->fillSmoothRoundRect(180, 75, 135, 40, 3, TFT_DARKGREY);
 
-    window.drawCentreString(camera->getRecordingFormat().frameRate_string().c_str(), 237, 84);
+    sprite->drawCentreString(camera->getRecordingFormat().frameRate_string().c_str(), 237, 84);
 
-    window.drawCentreString("fps", 285, 89, &AgencyFB_Regular7pt7b);
+    sprite->drawCentreString("fps", 285, 89, &AgencyFB_Regular7pt7b);
 
     // Resolution
-    window.fillSmoothRoundRect(125, 120, 190, 40, 3, TFT_DARKGREY);
+    sprite->fillSmoothRoundRect(125, 120, 190, 40, 3, TFT_DARKGREY);
 
     std::string resolution = camera->getRecordingFormat().frameDimensionsShort_string();
-    window.drawCentreString(resolution.c_str(), 220, 130);
+    sprite->drawCentreString(resolution.c_str(), 220, 130);
   }
 
   // Lens
   if(camera->hasHasLens())
   {
     // Lens
-    window.fillSmoothRoundRect(20, 165, 295, 40, 3, TFT_DARKGREY);
+    sprite->fillSmoothRoundRect(20, 165, 295, 40, 3, TFT_DARKGREY);
 
     if(camera->hasFocalLengthMM() && camera->hasApertureFStopString())
     {
@@ -500,12 +522,12 @@ void Screen_Dashboard(bool forceRefresh = false)
       std::string focalLengthMM = std::to_string(focalLength);
       std::string combined = focalLengthMM + "mm";
 
-      window.drawString(combined.c_str(), 30, 174);
-      window.drawString(camera->getApertureFStopString().c_str(), 100, 174);
+      sprite->drawString(combined.c_str(), 30, 174);
+      sprite->drawString(camera->getApertureFStopString().c_str(), 100, 174);
     }
   }
 
-  window.pushSprite(0, 0);
+  sprite->pushSprite(0, 0);
 }
 
 
@@ -552,39 +574,39 @@ void Screen_Recording(bool forceRefresh = false)
 
   DEBUG_DEBUG("Screen Recording Refreshed.");
 
-  window.fillSprite(TFT_BLACK);
+  sprite->fillSprite(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
   // M5GFX, set font here rather than on each drawString line
-  window.setFont(&Lato_Regular11pt7b);
+  sprite->setFont(&Lato_Regular11pt7b);
 
   // Record button
-  if(camera->isRecording) window.fillSmoothCircle(257, 63, 58, Constants::DARK_RED); // Recording solid
-  window.drawCircle(257, 63, 57, (camera->isRecording ? TFT_RED : TFT_LIGHTGREY)); // Outer
-  window.fillSmoothCircle(257, 63, 38, camera->isRecording ? TFT_RED : TFT_LIGHTGREY); // Inner
+  if(camera->isRecording) sprite->fillSmoothCircle(257, 63, 58, Constants::DARK_RED); // Recording solid
+  sprite->drawCircle(257, 63, 57, (camera->isRecording ? TFT_RED : TFT_LIGHTGREY)); // Outer
+  sprite->fillSmoothCircle(257, 63, 38, camera->isRecording ? TFT_RED : TFT_LIGHTGREY); // Inner
 
   // Timecode
-  window.setTextColor(camera->isRecording ? TFT_RED : TFT_WHITE);
-  window.drawString(camera->getTimecodeString().c_str(), 30, 57);
+  sprite->setTextColor(camera->isRecording ? TFT_RED : TFT_WHITE);
+  sprite->drawString(camera->getTimecodeString().c_str(), 30, 57);
 
   // Remaining time and any errors
   if(camera->getMediaSlots().size() != 0 && camera->hasActiveMediaSlot())
   {
-    window.setTextColor(TFT_LIGHTGREY);
-    window.drawString((camera->getActiveMediaSlot().GetMediumString() + " " + camera->getActiveMediaSlot().remainingRecordTimeString).c_str(), 30, 130);
+    sprite->setTextColor(TFT_LIGHTGREY);
+    sprite->drawString((camera->getActiveMediaSlot().GetMediumString() + " " + camera->getActiveMediaSlot().remainingRecordTimeString).c_str(), 30, 130);
 
-    window.drawString("REMAINING TIME", 30, 153, &Lato_Regular5pt7b);
+    sprite->drawString("REMAINING TIME", 30, 153, &Lato_Regular5pt7b);
 
     // Show any media record errors
     if(camera->hasRecordError())
     {
-      window.setTextColor(TFT_RED);
-      window.drawString("RECORD ERROR", 30, 20);
+      sprite->setTextColor(TFT_RED);
+      sprite->drawString("RECORD ERROR", 30, 20);
     }
   }
 
-  window.pushSprite(0, 0);
+  sprite->pushSprite(0, 0);
 }
 
 void Screen_ISO(bool forceRefresh = false)
@@ -645,12 +667,12 @@ void Screen_ISO(bool forceRefresh = false)
   
   DEBUG_DEBUG("Screen ISO Refreshed.");
 
-  window.fillSprite(TFT_BLACK);
+  sprite->fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
   // M5GFX, set font here rather than on each drawString line
-  window.setFont(&Lato_Regular11pt7b);
+  sprite->setFont(&Lato_Regular11pt7b);
 
   // Get the current ISO value
   int currentISO = 0;
@@ -658,52 +680,52 @@ void Screen_ISO(bool forceRefresh = false)
     currentISO = camera->getSensorGainISOValue();
 
   // ISO label
-  window.setTextColor(TFT_WHITE);
-  window.drawString("ISO", 30, 9, &AgencyFB_Bold9pt7b);
+  sprite->setTextColor(TFT_WHITE);
+  sprite->drawString("ISO", 30, 9, &AgencyFB_Bold9pt7b);
 
-  // window.textbgcolor = TFT_DARKGREY;
+  // sprite->textbgcolor = TFT_DARKGREY;
 
   // 200
   int labelISO = 200;
-  window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString(String(labelISO).c_str(), 65, 41);
+  sprite->fillSmoothRoundRect(20, 30, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(String(labelISO).c_str(), 65, 41);
 
   // 400
   labelISO = 400;
-  window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString(String(labelISO).c_str(), 160, 36);
-  window.drawCentreString("NATIVE", 160, 59, &Lato_Regular5pt7b);
+  sprite->fillSmoothRoundRect(115, 30, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(String(labelISO).c_str(), 160, 36);
+  sprite->drawCentreString("NATIVE", 160, 59, &Lato_Regular5pt7b);
 
   // 8000
   labelISO = 8000;
-  window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString(String(labelISO).c_str(), 260, 41);
+  sprite->fillSmoothRoundRect(210, 30, 100, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(String(labelISO).c_str(), 260, 41);
 
   // 640
   labelISO = 640;
-  window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString(String(labelISO).c_str(), 65, 87);
+  sprite->fillSmoothRoundRect(20, 75, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(String(labelISO).c_str(), 65, 87);
 
   // 800
   labelISO = 800;
-  window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString(String(labelISO).c_str(), 160, 87);
+  sprite->fillSmoothRoundRect(115, 75, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(String(labelISO).c_str(), 160, 87);
 
   // 12800
   labelISO = 12800;
-  window.fillSmoothRoundRect(210, 75, 100, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString(String(labelISO).c_str(), 260, 87);
+  sprite->fillSmoothRoundRect(210, 75, 100, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(String(labelISO).c_str(), 260, 87);
 
   // 1250
   labelISO = 1250;
-  window.fillSmoothRoundRect(20, 120, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString(String(labelISO).c_str(), 65, 131);
+  sprite->fillSmoothRoundRect(20, 120, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(String(labelISO).c_str(), 65, 131);
 
   // 3200
   labelISO = 3200;
-  window.fillSmoothRoundRect(115, 120, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString(String(labelISO).c_str(), 160, 126);
-  window.drawCentreString("NATIVE", 160, 149, &Lato_Regular5pt7b);
+  sprite->fillSmoothRoundRect(115, 120, 90, 40, 3, (currentISO == labelISO ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(String(labelISO).c_str(), 160, 126);
+  sprite->drawCentreString("NATIVE", 160, 149, &Lato_Regular5pt7b);
 
   // Custom ISO - show if ISO is not one of the above values
   if(currentISO != 0)
@@ -711,14 +733,14 @@ void Screen_ISO(bool forceRefresh = false)
     // Only show the ISO value if it's not a standard one
     if(currentISO != 200 && currentISO != 400 && currentISO != 640 && currentISO != 800 && currentISO != 1250 && currentISO != 3200 && currentISO != 8000 && currentISO != 12800)
     {
-      window.fillSmoothRoundRect(210, 120, 100, 40, 3, TFT_DARKGREEN);
-      // window.textbgcolor = TFT_DARKGREEN;
-      window.drawCentreString(String(currentISO).c_str(), 260, 126);
-      window.drawCentreString("CUSTOM", 260, 149, &Lato_Regular5pt7b);
+      sprite->fillSmoothRoundRect(210, 120, 100, 40, 3, TFT_DARKGREEN);
+      // sprite->textbgcolor = TFT_DARKGREEN;
+      sprite->drawCentreString(String(currentISO).c_str(), 260, 126);
+      sprite->drawCentreString("CUSTOM", 260, 149, &Lato_Regular5pt7b);
     }
   }
 
-  window.pushSprite(0, 0);
+  sprite->pushSprite(0, 0);
 }
 
 
@@ -780,7 +802,7 @@ void Screen_ShutterAngle(bool forceRefresh = false)
   
   DEBUG_DEBUG("Screen Shutter Angle Refreshed.");
 
-  window.fillSprite(TFT_BLACK);
+  sprite->fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
@@ -790,50 +812,50 @@ void Screen_ShutterAngle(bool forceRefresh = false)
     currentShutterAngle = camera->getShutterAngle();
 
   // Shutter Angle label
-  window.setTextColor(TFT_WHITE);
-  window.drawString("DEGREES", 265, 9, &AgencyFB_Regular7pt7b);
-  window.drawString("SHUTTER ANGLE", 30, 9, &AgencyFB_Bold9pt7b);
+  sprite->setTextColor(TFT_WHITE);
+  sprite->drawString("DEGREES", 265, 9, &AgencyFB_Regular7pt7b);
+  sprite->drawString("SHUTTER ANGLE", 30, 9, &AgencyFB_Bold9pt7b);
 
   // 15
   int labelShutterAngle = 1500;
-  window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 65, 41);
+  sprite->fillSmoothRoundRect(20, 30, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(String(labelShutterAngle / 100).c_str(), 65, 41);
 
   // 60
   labelShutterAngle = 6000;
-  window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 160, 41);
+  sprite->fillSmoothRoundRect(115, 30, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(String(labelShutterAngle / 100).c_str(), 160, 41);
 
   // 90
   labelShutterAngle = 9000;
-  window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 260, 41);
+  sprite->fillSmoothRoundRect(210, 30, 100, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(String(labelShutterAngle / 100).c_str(), 260, 41);
 
   // 120
   labelShutterAngle = 12000;
-  window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 65, 87);
+  sprite->fillSmoothRoundRect(20, 75, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(String(labelShutterAngle / 100).c_str(), 65, 87);
 
   // 150
   labelShutterAngle = 15000;
-  window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 160, 87);
+  sprite->fillSmoothRoundRect(115, 75, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(String(labelShutterAngle / 100).c_str(), 160, 87);
 
   // 180 (with a border around it)
   labelShutterAngle = 18000;
-  window.fillSmoothRoundRect(210, 75, 100, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawRoundRect(210, 75, 100, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 260, 87);
+  sprite->fillSmoothRoundRect(210, 75, 100, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawRoundRect(210, 75, 100, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(String(labelShutterAngle / 100).c_str(), 260, 87);
 
   // 270
   labelShutterAngle = 27000;
-  window.fillSmoothRoundRect(20, 120, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 65, 131);
+  sprite->fillSmoothRoundRect(20, 120, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(String(labelShutterAngle / 100).c_str(), 65, 131);
 
   // 360
   labelShutterAngle = 36000;
-  window.fillSmoothRoundRect(115, 120, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString(String(labelShutterAngle / 100).c_str(), 160, 131);
+  sprite->fillSmoothRoundRect(115, 120, 90, 40, 3, (currentShutterAngle == labelShutterAngle ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(String(labelShutterAngle / 100).c_str(), 160, 131);
 
   // Custom Shutter Angle - show if not one of the above values
   if(currentShutterAngle != 0)
@@ -843,13 +865,13 @@ void Screen_ShutterAngle(bool forceRefresh = false)
     {
       float customShutterAngle = currentShutterAngle / 100.0;
 
-      window.fillSmoothRoundRect(210, 120, 100, 40, 3, TFT_DARKGREEN);
-      window.drawCentreString(String(customShutterAngle, (currentShutterAngle % 100 == 0 ? 0 : 1)).c_str(), 260, 126);
-      window.drawCentreString("CUSTOM", 260, 149, &Lato_Regular5pt7b);
+      sprite->fillSmoothRoundRect(210, 120, 100, 40, 3, TFT_DARKGREEN);
+      sprite->drawCentreString(String(customShutterAngle, (currentShutterAngle % 100 == 0 ? 0 : 1)).c_str(), 260, 126);
+      sprite->drawCentreString("CUSTOM", 260, 149, &Lato_Regular5pt7b);
     }
   }
 
-  window.pushSprite(0, 0);
+  sprite->pushSprite(0, 0);
 }
 
 void Screen_ShutterSpeed(bool forceRefresh = false)
@@ -911,7 +933,7 @@ void Screen_ShutterSpeed(bool forceRefresh = false)
   DEBUG_DEBUG("Screen Shutter Speed Refreshed.");
 
 
-  window.fillSprite(TFT_BLACK);
+  sprite->fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
@@ -923,54 +945,54 @@ void Screen_ShutterSpeed(bool forceRefresh = false)
     DEBUG_DEBUG("DO NOT HAVE SHUTTER SPEED!");
 
   // Shutter Speed label
-  window.setTextColor(TFT_WHITE);
+  sprite->setTextColor(TFT_WHITE);
 
   if(camera->hasRecordingFormat())
   {
-    window.drawRightString(camera->getRecordingFormat().frameRate_string().c_str() + String(" fps"), 310, 9, &Lato_Regular5pt7b);
+    sprite->drawRightString(camera->getRecordingFormat().frameRate_string().c_str() + String(" fps"), 310, 9, &Lato_Regular5pt7b);
   }
 
-  window.drawString("SHUTTER SPEED", 30, 9);
+  sprite->drawString("SHUTTER SPEED", 30, 9);
 
   // 1/30
   int labelShutterSpeed = 30;
-  window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString("1/" + String(labelShutterSpeed), 65, 41);
+  sprite->fillSmoothRoundRect(20, 30, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString("1/" + String(labelShutterSpeed), 65, 41);
 
   // 1/50
   labelShutterSpeed = 50;
-  window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString("1/" + String(labelShutterSpeed), 160, 41);
+  sprite->fillSmoothRoundRect(115, 30, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString("1/" + String(labelShutterSpeed), 160, 41);
 
   // 1/60
   labelShutterSpeed = 60;
-  window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString("1/" + String(labelShutterSpeed), 260, 41);
+  sprite->fillSmoothRoundRect(210, 30, 100, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString("1/" + String(labelShutterSpeed), 260, 41);
 
   // 1/125
   labelShutterSpeed = 125;
-  window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString("1/" + String(labelShutterSpeed), 65, 87);
+  sprite->fillSmoothRoundRect(20, 75, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString("1/" + String(labelShutterSpeed), 65, 87);
 
   // 1/200
   labelShutterSpeed = 200;
-  window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString("1/" + String(labelShutterSpeed), 160, 87);
+  sprite->fillSmoothRoundRect(115, 75, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString("1/" + String(labelShutterSpeed), 160, 87);
 
   // 1/250
   labelShutterSpeed = 250;
-  window.fillSmoothRoundRect(210, 75, 100, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString("1/" + String(labelShutterSpeed), 260, 87);
+  sprite->fillSmoothRoundRect(210, 75, 100, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString("1/" + String(labelShutterSpeed), 260, 87);
 
   // 1/500
   labelShutterSpeed = 500;
-  window.fillSmoothRoundRect(20, 120, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString("1/" + String(labelShutterSpeed), 65, 131);
+  sprite->fillSmoothRoundRect(20, 120, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString("1/" + String(labelShutterSpeed), 65, 131);
 
   // 1/2000
   labelShutterSpeed = 2000;
-  window.fillSmoothRoundRect(115, 120, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString("1/" + String(labelShutterSpeed), 160, 131);
+  sprite->fillSmoothRoundRect(115, 120, 90, 40, 3, (currentShutterSpeed == labelShutterSpeed ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString("1/" + String(labelShutterSpeed), 160, 131);
 
   // Custom Shutter Speed - show if not one of the above values
   if(currentShutterSpeed != 0)
@@ -978,13 +1000,13 @@ void Screen_ShutterSpeed(bool forceRefresh = false)
     // Only show the Shutter Speed value if it's not a standard one
     if(currentShutterSpeed != 30 && currentShutterSpeed != 50 && currentShutterSpeed != 60 && currentShutterSpeed != 125 && currentShutterSpeed != 200 && currentShutterSpeed != 250 && currentShutterSpeed != 500 && currentShutterSpeed != 2000)
     {
-      window.fillSmoothRoundRect(210, 120, 100, 40, 3, TFT_DARKGREEN);
-      window.drawCentreString("1/" + String(currentShutterSpeed), 260, 126);
-      window.drawCentreString("CUSTOM", 260, 149, &Lato_Regular5pt7b);
+      sprite->fillSmoothRoundRect(210, 120, 100, 40, 3, TFT_DARKGREEN);
+      sprite->drawCentreString("1/" + String(currentShutterSpeed), 260, 126);
+      sprite->drawCentreString("CUSTOM", 260, 149, &Lato_Regular5pt7b);
     }
   }
 
-  window.pushSprite(0, 0);
+  sprite->pushSprite(0, 0);
 }
 
 void Screen_WBTint(bool forceRefresh = false)
@@ -1105,19 +1127,19 @@ void Screen_WBTint(bool forceRefresh = false)
   
   DEBUG_DEBUG("Screen WB Tint Refreshed.");
 
-  window.fillSprite(TFT_BLACK);
+  sprite->fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
   // ISO label
-  window.setTextColor(TFT_WHITE);
-  window.drawString("WHITE BALANCE", 30, 9, &AgencyFB_Bold9pt7b);
-  window.drawCentreString("TINT", 54, 132, &AgencyFB_Bold9pt7b);
+  sprite->setTextColor(TFT_WHITE);
+  sprite->drawString("WHITE BALANCE", 30, 9, &AgencyFB_Bold9pt7b);
+  sprite->drawCentreString("TINT", 54, 132, &AgencyFB_Bold9pt7b);
 
   // Bright, 5600K
   int lblWBKelvin = 5600;
   int lblTint = 10;
-  window.fillSmoothRoundRect(20, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->fillSmoothRoundRect(20, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
   if(currentWB == lblWBKelvin && currentTint == lblTint)
     spriteWBBrightBG.pushSprite(&window, 40, 35);
   else
@@ -1126,7 +1148,7 @@ void Screen_WBTint(bool forceRefresh = false)
   // Incandescent, 3200K
   lblWBKelvin = 3200;
   lblTint = 0;
-  window.fillSmoothRoundRect(95, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->fillSmoothRoundRect(95, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
   if(currentWB == lblWBKelvin && currentTint == lblTint)
     spriteWBIncandescentBG.pushSprite(&window, 115, 35);
   else
@@ -1135,7 +1157,7 @@ void Screen_WBTint(bool forceRefresh = false)
   // Fluorescent, 4000K
   lblWBKelvin = 4000;
   lblTint = 15;
-  window.fillSmoothRoundRect(170, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->fillSmoothRoundRect(170, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
   if(currentWB == lblWBKelvin && currentTint == lblTint)
     spriteWBFlourescentBG.pushSprite(&window, 190, 35);
   else
@@ -1144,7 +1166,7 @@ void Screen_WBTint(bool forceRefresh = false)
   // Mixed Light, 4500K
   lblWBKelvin = 4500;
   lblTint = 15;
-  window.fillSmoothRoundRect(245, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->fillSmoothRoundRect(245, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
   if(currentWB == lblWBKelvin && currentTint == lblTint)
     spriteWBMixedLightBG.pushSprite(&window, 265, 35);
   else
@@ -1153,38 +1175,38 @@ void Screen_WBTint(bool forceRefresh = false)
   // Cloud, 6500K
   lblWBKelvin = 6500;
   lblTint = 10;
-  window.fillSmoothRoundRect(20, 75, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->fillSmoothRoundRect(20, 75, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
   if(currentWB == lblWBKelvin && currentTint == lblTint)
     spriteWBCloudBG.pushSprite(&window, 40, 80);
   else
     spriteWBCloud.pushSprite(&window, 40, 80);
 
   // WB Adjust Left <
-  window.fillSmoothRoundRect(95, 75, 60, 40, 3, TFT_DARKGREY);
-  window.drawCentreString("<", 125, 87);
+  sprite->fillSmoothRoundRect(95, 75, 60, 40, 3, TFT_DARKGREY);
+  sprite->drawCentreString("<", 125, 87);
 
   // Current White Balance Kelvin
-  window.fillSmoothRoundRect(160, 75, 90, 40, 3, TFT_DARKGREEN);
-  window.drawCentreString(String(currentWB), 205, 80);
-  window.drawCentreString("KELVIN", 205, 103, &Lato_Regular5pt7b);
+  sprite->fillSmoothRoundRect(160, 75, 90, 40, 3, TFT_DARKGREEN);
+  sprite->drawCentreString(String(currentWB), 205, 80);
+  sprite->drawCentreString("KELVIN", 205, 103, &Lato_Regular5pt7b);
 
   // WB Adjust Right >
-  window.fillSmoothRoundRect(255, 75, 60, 40, 3, TFT_DARKGREY);
-  window.drawCentreString(">", 284, 87);
+  sprite->fillSmoothRoundRect(255, 75, 60, 40, 3, TFT_DARKGREY);
+  sprite->drawCentreString(">", 284, 87);
 
   // Tint Adjust Left <
-  window.fillSmoothRoundRect(95, 120, 60, 40, 3, TFT_DARKGREY);
-  window.drawCentreString("<", 125, 132);
+  sprite->fillSmoothRoundRect(95, 120, 60, 40, 3, TFT_DARKGREY);
+  sprite->drawCentreString("<", 125, 132);
 
   // Current Tint
-  window.fillSmoothRoundRect(160, 120, 90, 40, 3, TFT_DARKGREEN);
-  window.drawCentreString(String(currentTint), 205, 132);
+  sprite->fillSmoothRoundRect(160, 120, 90, 40, 3, TFT_DARKGREEN);
+  sprite->drawCentreString(String(currentTint), 205, 132);
 
   // Tint Adjust Right >
-  window.fillSmoothRoundRect(255, 120, 60, 40, 3, TFT_DARKGREY);
-  window.drawCentreString(">", 284, 132);
+  sprite->fillSmoothRoundRect(255, 120, 60, 40, 3, TFT_DARKGREY);
+  sprite->drawCentreString(">", 284, 132);
 
-  window.pushSprite(0, 0);
+  sprite->pushSprite(0, 0);
 }
 
 // Codec Screen for Pocket 4K and 6K + Variants
@@ -1338,36 +1360,34 @@ void Screen_Codec4K6K(bool forceRefresh = false)
   
   DEBUG_DEBUG("Screen Codec 4K/6K Refreshed.");
 
-  window.fillSprite(TFT_BLACK);
+  sprite->fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
   // We need to have the Codec information to show the screen
   if(!camera->hasCodec())
   {
-    window.setTextColor(TFT_WHITE);
-    window.drawString("NO CODEC INFO.", 30, 9);
-
-    window.pushSprite(0, 0);
+    sprite->setTextColor(TFT_WHITE);
+    sprite->drawString("NO CODEC INFO.", 30, 9);
 
     return;
   }
 
   // Codec label
-  window.setTextColor(TFT_WHITE);
-  window.drawString("CODEC", 30, 9, &AgencyFB_Bold9pt7b);
+  sprite->setTextColor(TFT_WHITE);
+  sprite->drawString("CODEC", 30, 9, &AgencyFB_Bold9pt7b);
 
   // BRAW and ProRes selector buttons
 
   // BRAW
-  window.fillSmoothRoundRect(20, 30, 145, 40, 5, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawRoundRect(20, 30, 145, 40, 3, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString("BRAW", 93, 41);
+  sprite->fillSmoothRoundRect(20, 30, 145, 40, 5, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawRoundRect(20, 30, 145, 40, 3, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString("BRAW", 93, 41);
 
   // ProRes
-  window.fillSmoothRoundRect(170, 30, 145, 40, 5, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawRoundRect(170, 30, 145, 40, 3, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawCentreString("ProRes", 242, 41);
+  sprite->fillSmoothRoundRect(170, 30, 145, 40, 5, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawRoundRect(170, 30, 145, 40, 3, (currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString("ProRes", 242, 41);
 
   if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
   {
@@ -1383,34 +1403,34 @@ void Screen_Codec4K6K(bool forceRefresh = false)
     std::string qualityBitrateSetting = currentCodecString.substr(spaceIndex + 1); // e.g. 3:1, Q3, etc.
 
     // Constant Bitrate
-    window.fillSmoothRoundRect(20, 75, 145, 40, 3, (isConstantBitrate ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("BITRATE", 93, 80);
-    window.drawCentreString("CONSTANT", 93, 102, &Lato_Regular5pt7b);
+    sprite->fillSmoothRoundRect(20, 75, 145, 40, 3, (isConstantBitrate ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("BITRATE", 93, 80);
+    sprite->drawCentreString("CONSTANT", 93, 102, &Lato_Regular5pt7b);
 
     // Constant Quality
-    window.fillSmoothRoundRect(170, 75, 145, 40, 3, (!isConstantBitrate ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("QUALITY", 242, 80);
-    window.drawCentreString("CONSTANT", 242, 102, &Lato_Regular5pt7b);
+    sprite->fillSmoothRoundRect(170, 75, 145, 40, 3, (!isConstantBitrate ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("QUALITY", 242, 80);
+    sprite->drawCentreString("CONSTANT", 242, 102, &Lato_Regular5pt7b);
 
     // Setting 1 of 4
     std::string optionString = (isConstantBitrate ? "3:1" : "Q0");
-    window.fillSmoothRoundRect(20, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString(optionString.c_str(), 55, 131);
+    sprite->fillSmoothRoundRect(20, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(optionString.c_str(), 55, 131);
 
     // Setting 2 of 4
     optionString = (isConstantBitrate ? "5:1" : "Q1");
-    window.fillSmoothRoundRect(95, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString(optionString.c_str(), 130, 131);
+    sprite->fillSmoothRoundRect(95, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(optionString.c_str(), 130, 131);
 
   //   Setting 3 of 4
     optionString = (isConstantBitrate ? "8:1" : "Q3");
-    window.fillSmoothRoundRect(170, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString(optionString.c_str(), 205, 131);
+    sprite->fillSmoothRoundRect(170, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(optionString.c_str(), 205, 131);
 
     // Setting 4 of 4
     optionString = (isConstantBitrate ? "12:1" : "Q5");
-    window.fillSmoothRoundRect(245, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString(optionString.c_str(), 280, 131);
+    sprite->fillSmoothRoundRect(245, 120, 70, 40, 3, (optionString == qualityBitrateSetting ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(optionString.c_str(), 280, 131);
   }
   else
   {
@@ -1423,26 +1443,26 @@ void Screen_Codec4K6K(bool forceRefresh = false)
 
     // HQ
     std::string proResLabel = "HQ";
-    window.fillSmoothRoundRect(20, 75, 145, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString(proResLabel.c_str(), 93, 87);
+    sprite->fillSmoothRoundRect(20, 75, 145, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(proResLabel.c_str(), 93, 87);
 
     // 422
     proResLabel = "422";
-    window.fillSmoothRoundRect(170, 75, 145, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString(proResLabel.c_str(), 242, 87);
+    sprite->fillSmoothRoundRect(170, 75, 145, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(proResLabel.c_str(), 242, 87);
 
     // LT
     proResLabel = "LT";
-    window.fillSmoothRoundRect(20, 120, 145, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString(proResLabel.c_str(), 93, 131);
+    sprite->fillSmoothRoundRect(20, 120, 145, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(proResLabel.c_str(), 93, 131);
 
     // PXY
     proResLabel = "PXY";
-    window.fillSmoothRoundRect(170, 120, 145, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString(proResLabel.c_str(), 242, 131);
+    sprite->fillSmoothRoundRect(170, 120, 145, 40, 3, (currentProResSetting == proResLabel ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(proResLabel.c_str(), 242, 131);
   }
 
-  window.pushSprite(0, 0);
+  sprite->pushSprite(0, 0);
 }
 
 // Codec Screen for URSA Mini Pro G2
@@ -1638,117 +1658,117 @@ void Screen_Resolution4K(bool forceRefresh = false)
   
   DEBUG_DEBUG("Screen Resolution Pocket 4K Refreshed.");
 
-  window.fillSprite(TFT_BLACK);
+  sprite->fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
   if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
   {
     // Main label
-    window.setTextColor(TFT_WHITE);
-    window.drawString("BRAW RESOLUTION", 30, 9, &AgencyFB_Bold9pt7b);
+    sprite->setTextColor(TFT_WHITE);
+    sprite->drawString("BRAW RESOLUTION", 30, 9, &AgencyFB_Bold9pt7b);
 
     String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "4K DCI", "4K 2.4:1", "4K UHD", "2.8K Ana", "2.6K 16:9", "HD"
 
     // 4K DCI
     String labelRes = "4K DCI";
-    window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("4K", 65, 35);
-    window.drawCentreString("DCI", 65, 58, &Lato_Regular5pt7b);
+    sprite->fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("4K", 65, 35);
+    sprite->drawCentreString("DCI", 65, 58, &Lato_Regular5pt7b);
 
     // 4K 2.4:1
     labelRes = "4K 2.4:1";
-    window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("4K", 160, 35);
-    window.drawCentreString("2.4:1", 160, 58, &Lato_Regular5pt7b);
+    sprite->fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("4K", 160, 35);
+    sprite->drawCentreString("2.4:1", 160, 58, &Lato_Regular5pt7b);
 
     // 4K UHD
     labelRes = "4K UHD";
-    window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("4K", 260, 35);
-    window.drawCentreString("UHD", 260, 58, &Lato_Regular5pt7b);
+    sprite->fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("4K", 260, 35);
+    sprite->drawCentreString("UHD", 260, 58, &Lato_Regular5pt7b);
 
     // 2.8K Ana
     labelRes = "2.8K Ana";
-    window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("2.8K", 65, 81);
-    window.drawCentreString("ANAMORPHIC", 65, 104, &Lato_Regular5pt7b);
+    sprite->fillSmoothRoundRect(20, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("2.8K", 65, 81);
+    sprite->drawCentreString("ANAMORPHIC", 65, 104, &Lato_Regular5pt7b);
 
     // 2.6K 16:9
     labelRes = "2.6K 16:9";
-    window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("2.6K", 160, 81);
-    window.drawCentreString("16:9", 160, 104, &Lato_Regular5pt7b);
+    sprite->fillSmoothRoundRect(115, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("2.6K", 160, 81);
+    sprite->drawCentreString("16:9", 160, 104, &Lato_Regular5pt7b);
 
     // HD
     labelRes = "HD";
-    window.fillSmoothRoundRect(210, 75, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("HD", 260, 87);
+    sprite->fillSmoothRoundRect(210, 75, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("HD", 260, 87);
 
     // Sensor Area
 
     // Pocket 4K all are Windowed except 4K
-    // window.drawSmoothRoundRect(20, 120, 5, 3, 290, 40, TFT_DARKGREY); // Optionally draw a rectangle around this info.
-    window.drawCentreString(currentRes == "4K" ? "FULL SENSOR" :"SENSOR WINDOWED", 165, 129);
-    window.drawCentreString(currentRecordingFormat.frameWidthHeight_string().c_str(), 165, 150, &Lato_Regular5pt7b);
+    // sprite->drawSmoothRoundRect(20, 120, 5, 3, 290, 40, TFT_DARKGREY); // Optionally draw a rectangle around this info.
+    sprite->drawCentreString(currentRes == "4K" ? "FULL SENSOR" :"SENSOR WINDOWED", 165, 129);
+    sprite->drawCentreString(currentRecordingFormat.frameWidthHeight_string().c_str(), 165, 150, &Lato_Regular5pt7b);
   }
   else if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes)
   {
     // Main label
-    window.setTextColor(TFT_WHITE);
-    window.drawString("ProRes RESOLUTION", 30, 9, &AgencyFB_Bold9pt7b);
+    sprite->setTextColor(TFT_WHITE);
+    sprite->drawString("ProRes RESOLUTION", 30, 9, &AgencyFB_Bold9pt7b);
 
     String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "4K DCI", "4K UHD", "HD"
 
     // 4K
     String labelRes = "4K DCI";
-    window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("4K", 65, 36);
-    window.drawCentreString("DCI", 65, 58, &Lato_Regular5pt7b);
+    sprite->fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("4K", 65, 36);
+    sprite->drawCentreString("DCI", 65, 58, &Lato_Regular5pt7b);
 
     // 4K UHD
     labelRes = "4K UHD";
-    window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("UHD", 160, 41);
+    sprite->fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("UHD", 160, 41);
 
     // HD
     labelRes = "HD";
-    window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("HD", 260, 41);
+    sprite->fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("HD", 260, 41);
 
     // Sensor Area
 
     // 4K DCI is Scaled from 5.7K, Ultra HD is Scaled from Full or 5.7K, HD is Scaled from Full, 5.7K, or 2.8K (however we can't change the 5.7K or 2.8K)
 
-    window.drawString(currentRecordingFormat.frameWidthHeight_string().c_str(), 30, 90, &Lato_Regular5pt7b);
-    window.drawString("SCALED / SENSOR AREA", 30, 105);
+    sprite->drawString(currentRecordingFormat.frameWidthHeight_string().c_str(), 30, 90, &Lato_Regular5pt7b);
+    sprite->drawString("SCALED / SENSOR AREA", 30, 105);
 
     if(currentRes == "4K DCI")
     {
       // Full sensor area only]
-      window.fillSmoothRoundRect(20, 135, 90, 40, 3, TFT_DARKGREEN);
-      window.drawCentreString("FULL", 65, 145);
+      sprite->fillSmoothRoundRect(20, 135, 90, 40, 3, TFT_DARKGREEN);
+      sprite->drawCentreString("FULL", 65, 145);
     }
     else if(currentRes == "4K UHD")
     {
       // Full sensor area only]
-      window.fillSmoothRoundRect(20, 135, 120, 40, 3, TFT_DARKGREEN);
-      window.drawCentreString("WINDOW", 80, 145);
+      sprite->fillSmoothRoundRect(20, 135, 120, 40, 3, TFT_DARKGREEN);
+      sprite->drawCentreString("WINDOW", 80, 145);
     }
     else
     {
       // HD
 
       // Scaled from Full, 2.6K or Windowed (however we can't tell which)
-      window.fillSmoothRoundRect(20, 135, 290, 40, 3, TFT_DARKGREEN);
-      window.drawCentreString("FULL / 2.6K / WINDOW", 165, 140);
-      window.drawCentreString("CHECK/SET ON CAMERA", 165, 161, &Lato_Regular5pt7b);
+      sprite->fillSmoothRoundRect(20, 135, 290, 40, 3, TFT_DARKGREEN);
+      sprite->drawCentreString("FULL / 2.6K / WINDOW", 165, 140);
+      sprite->drawCentreString("CHECK/SET ON CAMERA", 165, 161, &Lato_Regular5pt7b);
     }
   }
   else
     DEBUG_ERROR("Resolution Pocket 4K - Codec not catered for.");
 
-  window.pushSprite(0, 0);
+  sprite->pushSprite(0, 0);
 }
 
 // Resolution screen for Pocket 6K
@@ -1907,125 +1927,125 @@ void Screen_Resolution6K(bool forceRefresh = false)
   
   DEBUG_DEBUG("Screen Resolution Pocket 6K Refreshed.");
 
-  window.fillSprite(TFT_BLACK);
+  sprite->fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
   if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
   {
     // Main label
-    window.setTextColor(TFT_WHITE);
-    window.drawString("BRAW RESOLUTION", 30, 9);
+    sprite->setTextColor(TFT_WHITE);
+    sprite->drawString("BRAW RESOLUTION", 30, 9);
 
     String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "6K", "6K 2.4:1", "5.7K 17:9", "4K DCI", "3.7K 6:5A", "2.8K 17:9"
 
     // 6K
     String labelRes = "6K";
-    window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString(String(labelRes).c_str(), 65, 41);
+    sprite->fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(String(labelRes).c_str(), 65, 41);
 
     // 6K, 2.4:1
     labelRes = "6K 2.4:1";
-    window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("6K", 160, 36);
-    window.drawCentreString("2.4:1", 160, 58, &Lato_Regular5pt7b);
+    sprite->fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("6K", 160, 36);
+    sprite->drawCentreString("2.4:1", 160, 58, &Lato_Regular5pt7b);
   
     // 5.7K, 17:9
     labelRes = "5.7K 17:9";
-    window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("5.7K", 260, 36);
-    window.drawCentreString("17:9", 260, 58, &Lato_Regular5pt7b);
+    sprite->fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("5.7K", 260, 36);
+    sprite->drawCentreString("17:9", 260, 58, &Lato_Regular5pt7b);
 
     // 4K DCI
     labelRes = "4K DCI";
-    window.fillSmoothRoundRect(20, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("4K", 65, 82);
-    window.drawCentreString("DCI", 65, 104, &Lato_Regular5pt7b);
+    sprite->fillSmoothRoundRect(20, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("4K", 65, 82);
+    sprite->drawCentreString("DCI", 65, 104, &Lato_Regular5pt7b);
 
     // 3.7K 6:5A
     labelRes = "3.7K 6:5A";
-    window.fillSmoothRoundRect(115, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("3.7K", 160, 82);
-    window.drawCentreString("6:5 ANA", 160, 104, &Lato_Regular5pt7b);
+    sprite->fillSmoothRoundRect(115, 75, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("3.7K", 160, 82);
+    sprite->drawCentreString("6:5 ANA", 160, 104, &Lato_Regular5pt7b);
 
     // 2.8K 17:9
     labelRes = "2.8K 17:9";
-    window.fillSmoothRoundRect(210, 75, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("2.8K", 260, 82);
-    window.drawCentreString("17:9", 260, 104, &Lato_Regular5pt7b);
+    sprite->fillSmoothRoundRect(210, 75, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("2.8K", 260, 82);
+    sprite->drawCentreString("17:9", 260, 104, &Lato_Regular5pt7b);
 
     // Sensor Area
 
     // Pocket 6K all are Windowed except 6K
-    // window.drawSmoothRoundRect(20, 120, 5, 3, 290, 40, TFT_DARKGREY); // Optionally draw a rectangle around this info.
-    window.drawCentreString(currentRes == "6K" ? "FULL SENSOR" :"SENSOR WINDOWED", 165, 129);
-    window.drawCentreString(currentRecordingFormat.frameWidthHeight_string().c_str(), 165, 148, &Lato_Regular5pt7b);
+    // sprite->drawSmoothRoundRect(20, 120, 5, 3, 290, 40, TFT_DARKGREY); // Optionally draw a rectangle around this info.
+    sprite->drawCentreString(currentRes == "6K" ? "FULL SENSOR" :"SENSOR WINDOWED", 165, 129);
+    sprite->drawCentreString(currentRecordingFormat.frameWidthHeight_string().c_str(), 165, 148, &Lato_Regular5pt7b);
   }
   else if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes)
   {
     // Main label
-    window.setTextColor(TFT_WHITE);
-    window.drawString("ProRes RESOLUTION", 30, 9);
+    sprite->setTextColor(TFT_WHITE);
+    sprite->drawString("ProRes RESOLUTION", 30, 9);
 
     String currentRes = currentRecordingFormat.frameDimensionsShort_string().c_str(); // "4K DCI", "4K UHD", "HD"
 
     // 4K
     String labelRes = "4K DCI";
-    window.fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("4K", 65, 36);
-    window.drawCentreString("DCI", 65, 58, &Lato_Regular5pt7b);
+    sprite->fillSmoothRoundRect(20, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("4K", 65, 36);
+    sprite->drawCentreString("DCI", 65, 58, &Lato_Regular5pt7b);
 
     // 4K UHD
     labelRes = "4K UHD";
-    window.fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("UHD", 160, 41);
+    sprite->fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("UHD", 160, 41);
 
     // HD
     labelRes = "HD";
-    window.fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
-    window.drawCentreString("HD", 260, 41);
+    sprite->fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString("HD", 260, 41);
 
     // Sensor Area
 
     // 4K DCI is Scaled from 5.7K, Ultra HD is Scaled from Full or 5.7K, HD is Scaled from Full, 5.7K, or 2.8K (however we can't change the 5.7K or 2.8K)
 
-    window.drawString(currentRecordingFormat.frameWidthHeight_string().c_str(), 30, 90, &Lato_Regular5pt7b);
-    window.drawString("SCALED FROM SENSOR AREA", 30, 105);
+    sprite->drawString(currentRecordingFormat.frameWidthHeight_string().c_str(), 30, 90, &Lato_Regular5pt7b);
+    sprite->drawString("SCALED FROM SENSOR AREA", 30, 105);
 
     if(currentRes == "4K DCI")
     {
       // Full sensor area only]
-      window.fillSmoothRoundRect(20, 120, 90, 40, 3, TFT_DARKGREEN);
-      window.drawCentreString("FULL", 65, 131);
+      sprite->fillSmoothRoundRect(20, 120, 90, 40, 3, TFT_DARKGREEN);
+      sprite->drawCentreString("FULL", 65, 131);
     }
     else if(currentRes == "4K UHD")
     {
       // Scaled from Full or 5.7K
-      window.fillSmoothRoundRect(20, 120, 90, 40, 3, (!currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
-      window.drawCentreString("FULL", 65, 131);
+      sprite->fillSmoothRoundRect(20, 120, 90, 40, 3, (!currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
+      sprite->drawCentreString("FULL", 65, 131);
 
       // 5.7K
-      window.fillSmoothRoundRect(115, 120, 90, 40, 3, (currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
-      window.drawCentreString("5.7K", 160, 131);
+      sprite->fillSmoothRoundRect(115, 120, 90, 40, 3, (currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
+      sprite->drawCentreString("5.7K", 160, 131);
     }
     else
     {
       // HD
 
       // Scaled from Full, 2.8K or 5.7K (however we can't tell if it's 2.8K or 5.7K)
-      window.fillSmoothRoundRect(20, 120, 90, 40, 3, (!currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
-      window.drawCentreString("FULL", 65, 131);
+      sprite->fillSmoothRoundRect(20, 120, 90, 40, 3, (!currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
+      sprite->drawCentreString("FULL", 65, 131);
 
       // 2.8K 5.7K
-      window.fillSmoothRoundRect(115, 120, 195, 40, 3, (currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
-      window.drawCentreString("5.7K / 2.8K", 212, 126);
-      window.drawCentreString("CHECK/SET ON CAMERA", 212, 146, &Lato_Regular5pt7b);
+      sprite->fillSmoothRoundRect(115, 120, 195, 40, 3, (currentRecordingFormat.windowedModeEnabled ? TFT_DARKGREEN : TFT_DARKGREY));
+      sprite->drawCentreString("5.7K / 2.8K", 212, 126);
+      sprite->drawCentreString("CHECK/SET ON CAMERA", 212, 146, &Lato_Regular5pt7b);
     }
   }
   else
     DEBUG_ERROR("Resolution Pocket 6K - Codec not catered for.");
 
-  window.pushSprite(0, 0);
+  sprite->pushSprite(0, 0);
 }
 
 // Resolution Screen for URSA Mini Pro G2
@@ -2153,50 +2173,50 @@ void Screen_Media4K6K(bool forceRefresh = false)
   
   DEBUG_DEBUG("Screen Media Pocket 4K/6K Refreshed.");
 
-  window.fillSprite(TFT_BLACK);
+  sprite->fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
     // Media label
-  window.setTextColor(TFT_WHITE);
-  window.drawString("MEDIA", 30, 9, &AgencyFB_Bold9pt7b);
+  sprite->setTextColor(TFT_WHITE);
+  sprite->drawString("MEDIA", 30, 9, &AgencyFB_Bold9pt7b);
 
   // CFAST
   BMDCamera::MediaSlot cfast = camera->getMediaSlots()[0];
-  window.fillSmoothRoundRect(20, 30, 295, 40, 3, (cfast.active ? TFT_DARKGREEN : TFT_DARKGREY));
-  if(cfast.StatusIsError()) window.drawRoundRect(20, 30, 295, 40, 3, (cfast.active ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawString("CFAST", 28, 47);
-  if(cfast.status != CCUPacketTypes::MediaStatus::None) window.drawString(cfast.remainingRecordTimeString.c_str(), 155, 47);
+  sprite->fillSmoothRoundRect(20, 30, 295, 40, 3, (cfast.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(cfast.StatusIsError()) sprite->drawRoundRect(20, 30, 295, 40, 3, (cfast.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawString("CFAST", 28, 47);
+  if(cfast.status != CCUPacketTypes::MediaStatus::None) sprite->drawString(cfast.remainingRecordTimeString.c_str(), 155, 47);
 
-  if(cfast.status != CCUPacketTypes::MediaStatus::None) window.drawString("REMAINING TIME", 155, 35, &Lato_Regular5pt7b);
-  window.drawString("1", 300, 35, &Lato_Regular5pt7b);
-  window.drawString(cfast.GetStatusString().c_str(), 28, 35, &Lato_Regular5pt7b);
+  if(cfast.status != CCUPacketTypes::MediaStatus::None) sprite->drawString("REMAINING TIME", 155, 35, &Lato_Regular5pt7b);
+  sprite->drawString("1", 300, 35, &Lato_Regular5pt7b);
+  sprite->drawString(cfast.GetStatusString().c_str(), 28, 35, &Lato_Regular5pt7b);
 
   // SD
   BMDCamera::MediaSlot sd = camera->getMediaSlots()[1];
-  window.fillSmoothRoundRect(20, 75, 295, 40, 3, (sd.active ? TFT_DARKGREEN : TFT_DARKGREY));
-  if(sd.StatusIsError()) window.drawRoundRect(20, 75, 295, 40, 3, (sd.active ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawString("SD", 28, 92);
-  if(sd.status != CCUPacketTypes::MediaStatus::None) window.drawString(sd.remainingRecordTimeString.c_str(), 155, 92);
+  sprite->fillSmoothRoundRect(20, 75, 295, 40, 3, (sd.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(sd.StatusIsError()) sprite->drawRoundRect(20, 75, 295, 40, 3, (sd.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawString("SD", 28, 92);
+  if(sd.status != CCUPacketTypes::MediaStatus::None) sprite->drawString(sd.remainingRecordTimeString.c_str(), 155, 92);
 
-  if(sd.status != CCUPacketTypes::MediaStatus::None) window.drawString("REMAINING TIME", 155, 80, &Lato_Regular5pt7b);
-  window.drawString("2", 300, 80, &Lato_Regular5pt7b);
-  window.drawString(sd.GetStatusString().c_str(), 28, 80, &Lato_Regular5pt7b);
-  if(sd.StatusIsError()) window.setTextColor(TFT_WHITE);
+  if(sd.status != CCUPacketTypes::MediaStatus::None) sprite->drawString("REMAINING TIME", 155, 80, &Lato_Regular5pt7b);
+  sprite->drawString("2", 300, 80, &Lato_Regular5pt7b);
+  sprite->drawString(sd.GetStatusString().c_str(), 28, 80, &Lato_Regular5pt7b);
+  if(sd.StatusIsError()) sprite->setTextColor(TFT_WHITE);
 
   // USB
   BMDCamera::MediaSlot usb = camera->getMediaSlots()[2];
-  window.fillSmoothRoundRect(20, 120, 295, 40, 3, (usb.active ? TFT_DARKGREEN : TFT_DARKGREY));
-  if(usb.StatusIsError()) window.drawRoundRect(20, 120, 295, 40, 3, (usb.active ? TFT_DARKGREEN : TFT_DARKGREY));
-  window.drawString("USB", 28, 137);
-  if(usb.status != CCUPacketTypes::MediaStatus::None) window.drawString(usb.remainingRecordTimeString.c_str(), 155, 137);
+  sprite->fillSmoothRoundRect(20, 120, 295, 40, 3, (usb.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(usb.StatusIsError()) sprite->drawRoundRect(20, 120, 295, 40, 3, (usb.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawString("USB", 28, 137);
+  if(usb.status != CCUPacketTypes::MediaStatus::None) sprite->drawString(usb.remainingRecordTimeString.c_str(), 155, 137);
   
-  if(usb.status != CCUPacketTypes::MediaStatus::None) window.drawString("REMAINING TIME", 155, 125, &Lato_Regular5pt7b);
-  window.drawString("3", 300, 125, &Lato_Regular5pt7b);
-  window.drawString(usb.GetStatusString().c_str(), 28, 125, &Lato_Regular5pt7b);
-  if(usb.StatusIsError()) window.setTextColor(TFT_WHITE);
+  if(usb.status != CCUPacketTypes::MediaStatus::None) sprite->drawString("REMAINING TIME", 155, 125, &Lato_Regular5pt7b);
+  sprite->drawString("3", 300, 125, &Lato_Regular5pt7b);
+  sprite->drawString(usb.GetStatusString().c_str(), 28, 125, &Lato_Regular5pt7b);
+  if(usb.StatusIsError()) sprite->setTextColor(TFT_WHITE);
 
-  window.pushSprite(0, 0);
+  sprite->pushSprite(0, 0);
 }
 
 // Media Screen for URSA Mini Pro G2
@@ -2284,18 +2304,18 @@ void Screen_Lens(bool forceRefresh = false)
 
   DEBUG_DEBUG("Screen Lens Refreshed.");
 
-  window.fillSprite(TFT_BLACK);
+  sprite->fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
 
   // M5GFX, set font here rather than on each drawString line
-  window.setFont(&Lato_Regular11pt7b);
+  sprite->setFont(&Lato_Regular11pt7b);
 
   // Focus button
-  window.drawCircle(257, 63, 57, TFT_BLUE); // Outer
-  window.fillSmoothCircle(257, 63, 54, TFT_SKYBLUE); // Inner
-  window.setTextColor(TFT_WHITE);
-  window.drawCentreString("FOCUS", 257, 50);
+  sprite->drawCircle(257, 63, 57, TFT_BLUE); // Outer
+  sprite->fillSmoothCircle(257, 63, 54, TFT_SKYBLUE); // Inner
+  sprite->setTextColor(TFT_WHITE);
+  sprite->drawCentreString("FOCUS", 257, 50);
 
   if(camera->hasFocalLengthMM())
   {
@@ -2303,15 +2323,15 @@ void Screen_Lens(bool forceRefresh = false)
     std::string focalLengthMM = std::to_string(focalLength);
     std::string combined = focalLengthMM + "mm";
 
-    window.drawString(combined.c_str(), 30, 25, &Lato_Regular12pt7b);
+    sprite->drawString(combined.c_str(), 30, 25, &Lato_Regular12pt7b);
   }
 
   if(camera->hasApertureFStopString())
   {
-      window.drawString(camera->getApertureFStopString().c_str(), 30, 50, &Lato_Regular12pt7b);
+      sprite->drawString(camera->getApertureFStopString().c_str(), 30, 50, &Lato_Regular12pt7b);
   }
 
-  window.pushSprite(0, 0);
+  sprite->pushSprite(0, 0);
 }
 
 
@@ -2343,6 +2363,14 @@ void setup() {
 
   // MS
   M5.Display.setSwapBytes(true);
+
+  sprite = new LGFX_Sprite(&M5.Display);
+  sprite->setPsram(true);
+  sprite->setColorDepth(BPP_SPRITE);
+  sprite->setSwapBytes(true);
+  sprite->setTextSize(1);
+  sprite->setFont(&Lato_Regular11pt7b);
+
 
   // SET DEBUG LEVEL
   Debug.setDebugOutputStream(&USBSerial); // M5CoreS3 uses this serial output
@@ -2406,8 +2434,6 @@ void setup() {
   spriteWBMixedLightBG.setSwapBytes(true);
   spriteWBMixedLightBG.pushImage(0, 0, 30, 30, WBMixedLightBG);
 
-  spritePassKey.createSprite(IWIDTH, IHEIGHT);
-
   // Splash screen
   M5.Display.pushImage(0,0,320,240,MPCSplash_M5Stack_CoreS3);
 
@@ -2418,7 +2444,7 @@ void setup() {
   lgfx::v1::ITouch* touch = M5.Display.panel()->getTouch();
 
   // Prepare for Bluetooth connections and start scanning for cameras
-  cameraConnection.initialise(touch, &window, &spritePassKey, IWIDTH, IHEIGHT); // Screen Pass Key entry
+  cameraConnection.initialise(touch, &M5.Display, IWIDTH, IHEIGHT); // Screen Pass Key entry
 }
 
 int memoryLoopCounter;

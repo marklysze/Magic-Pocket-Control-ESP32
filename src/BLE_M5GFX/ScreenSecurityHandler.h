@@ -17,8 +17,7 @@ class BMDCameraConnection;
 class ScreenSecurityHandler : public BLESecurityCallbacks
 {
   public:
-    ScreenSecurityHandler(BMDCameraConnection* bmdCameraConnectionPtr, lgfx::v1::ITouch* touchPtr, LGFX_Sprite* windowPtr, LGFX_Sprite* spritePassKeyPtr, int screenWidth, int screenHeight);
-    // ScreenSecurityHandler(BMDCameraConnection* bmdCameraConnectionPtr, M5GFX* windowPtr, LGFX_Sprite* spritePassKeyPtr, CST816S* touchPtr, int screenWidth, int screenHeight);
+    ScreenSecurityHandler(BMDCameraConnection* bmdCameraConnectionPtr, lgfx::v1::ITouch* touchPtr, M5GFX* windowPtr, int screenWidth, int screenHeight);
 
     uint32_t onPassKeyRequest();
     void onPassKeyNotify(uint32_t pass_key);
@@ -31,10 +30,8 @@ class ScreenSecurityHandler : public BLESecurityCallbacks
     uint_fast8_t getTouchRaw(lgfx::v1::touch_point_t* tp, uint_fast8_t count); // Replicating the touch function to get touches while on the security page
 
     BMDCameraConnection* _bmdCameraConnectionPtr;
-    LGFX_Sprite* _windowPtr;
-    LGFX_Sprite* _spritePassKeyPtr;
+    M5GFX* _windowPtr;
     lgfx::v1::ITouch* _touchPtr;
-    // CST816S* _touchPtr;
     int _screenWidth;
     int _screenHeight;
 };

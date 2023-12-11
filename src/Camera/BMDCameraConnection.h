@@ -125,7 +125,7 @@ class BMDCameraConnection
         #elif USING_M5GFX == 1
 
             // Defined in here as wouldn't link when in the cpp file and using the preprocessor directive
-            void initialise(lgfx::v1::ITouch* touchPtr, LGFX_Sprite* windowPtr, LGFX_Sprite* spritePassKeyPtr, int screenWidth, int screenHeight) // Screen security pass key
+            void initialise(lgfx::v1::ITouch* touchPtr, M5GFX* windowPtr, int screenWidth, int screenHeight) // Screen security pass key
             {
                 if(initialised)
                     return;
@@ -136,7 +136,7 @@ class BMDCameraConnection
                 bleDevice.setPower(ESP_PWR_LVL_P9);
                 bleDevice.setEncryptionLevel(ESP_BLE_SEC_ENCRYPT);
 
-                ScreenSecurityHandler* securityHandler = new ScreenSecurityHandler(this, touchPtr, windowPtr, spritePassKeyPtr, screenWidth, screenHeight);
+                ScreenSecurityHandler* securityHandler = new ScreenSecurityHandler(this, touchPtr, windowPtr, screenWidth, screenHeight);
                 bleDevice.setSecurityCallbacks(securityHandler);
 
                 bleSecurity = new BLESecurity();
