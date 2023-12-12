@@ -28,14 +28,12 @@
 
 // Based on M5CoreS3 Demo - M5 libraries
 #include <nvs_flash.h>
-// #include "config.h"
 #include "Boards/M5CoreS3/config.h"
 #include "M5GFX.h"
 #include "Boards/M5CoreS3/M5Unified.h"
 #include "lgfx/v1/Touch.hpp"
 static M5GFX display;
 static M5Canvas window(&M5.Display);
-// static M5Canvas spritePassKey(&M5.Display);
 
 static LGFX_Sprite *sprite;
 
@@ -54,21 +52,6 @@ static LGFX_Sprite *sprite;
 // Screen width and height
 #define IWIDTH 320
 #define IHEIGHT 240
-
-// Sprites for Images
-LGFX_Sprite spriteMPCSplash;
-LGFX_Sprite spriteBluetooth;
-LGFX_Sprite spritePocket4k;
-LGFX_Sprite spriteWBBright;
-LGFX_Sprite spriteWBCloud;
-LGFX_Sprite spriteWBFlourescent;
-LGFX_Sprite spriteWBIncandescent;
-LGFX_Sprite spriteWBMixedLight;
-LGFX_Sprite spriteWBBrightBG;
-LGFX_Sprite spriteWBCloudBG;
-LGFX_Sprite spriteWBFlourescentBG;
-LGFX_Sprite spriteWBIncandescentBG;
-LGFX_Sprite spriteWBMixedLightBG;
 
 // Images
 #include "Images/MPCSplash-M5Stack-CoreS3.h"
@@ -254,7 +237,8 @@ void Screen_NoConnection()
       sprite->drawRoundRect(25 + (count * 125) + (count * 10), 60, 5, 2, TFT_GREEN);
     }
 
-    spritePocket4k.pushSprite(&window, 33 + (count * 125) + (count * 10), 69);
+    // spritePocket4k.pushSprite(&window, 33 + (count * 125) + (count * 10), 69);
+    sprite->pushImage(33 + (count * 125) + (count * 10), 69, 110, 61, blackmagic_pocket_4k_110x61);
 
     sprite->drawString(cameraConnection.cameraAddresses[count].toString().c_str(), 33 + (count * 125) + (count * 10), 144, &Lato_Regular6pt7b);
   }
@@ -1141,45 +1125,45 @@ void Screen_WBTint(bool forceRefresh = false)
   int lblTint = 10;
   sprite->fillSmoothRoundRect(20, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
   if(currentWB == lblWBKelvin && currentTint == lblTint)
-    spriteWBBrightBG.pushSprite(&window, 40, 35);
+    sprite->pushImage(40, 35, 30, 30, WBBrightBG);
   else
-    spriteWBBright.pushSprite(&window, 40, 35);
+    sprite->pushImage(40, 35, 30, 30, WBBright);
 
   // Incandescent, 3200K
   lblWBKelvin = 3200;
   lblTint = 0;
   sprite->fillSmoothRoundRect(95, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
   if(currentWB == lblWBKelvin && currentTint == lblTint)
-    spriteWBIncandescentBG.pushSprite(&window, 115, 35);
+    sprite->pushImage(115, 35, 30, 30, WBIncandescentBG);
   else
-    spriteWBIncandescent.pushSprite(&window, 115, 35);
+    sprite->pushImage(115, 35, 30, 30, WBIncandescent);
 
   // Fluorescent, 4000K
   lblWBKelvin = 4000;
   lblTint = 15;
   sprite->fillSmoothRoundRect(170, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
   if(currentWB == lblWBKelvin && currentTint == lblTint)
-    spriteWBFlourescentBG.pushSprite(&window, 190, 35);
+    sprite->pushImage(190, 35, 30, 30, WBFlourescentBG);
   else
-    spriteWBFlourescent.pushSprite(&window, 190, 35);
+    sprite->pushImage(190, 35, 30, 30, WBFlourescent);
 
   // Mixed Light, 4500K
   lblWBKelvin = 4500;
   lblTint = 15;
   sprite->fillSmoothRoundRect(245, 30, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
   if(currentWB == lblWBKelvin && currentTint == lblTint)
-    spriteWBMixedLightBG.pushSprite(&window, 265, 35);
+    sprite->pushImage(265, 35, 30, 30, WBMixedLightBG);
   else
-    spriteWBMixedLight.pushSprite(&window, 265, 35);
+    sprite->pushImage(265, 35, 30, 30, WBMixedLight);
 
   // Cloud, 6500K
   lblWBKelvin = 6500;
   lblTint = 10;
   sprite->fillSmoothRoundRect(20, 75, 70, 40, 3, (currentWB == lblWBKelvin && currentTint == lblTint ? TFT_DARKGREEN : TFT_DARKGREY));
   if(currentWB == lblWBKelvin && currentTint == lblTint)
-    spriteWBCloudBG.pushSprite(&window, 40, 80);
+    sprite->pushImage(40, 80, 30, 30, WBCloudBG);
   else
-    spriteWBCloud.pushSprite(&window, 40, 80);
+    sprite->pushImage(40, 80, 30, 30, WBCloud);
 
   // WB Adjust Left <
   sprite->fillSmoothRoundRect(95, 75, 60, 40, 3, TFT_DARKGREY);
@@ -2308,6 +2292,10 @@ void Screen_Lens(bool forceRefresh = false)
 
   Screen_Common_Connected(); // Common elements
 
+  // Label
+  sprite->setTextColor(TFT_WHITE);
+  sprite->drawString("LENS", 30, 9, &AgencyFB_Bold9pt7b);
+
   // M5GFX, set font here rather than on each drawString line
   sprite->setFont(&Lato_Regular11pt7b);
 
@@ -2317,18 +2305,39 @@ void Screen_Lens(bool forceRefresh = false)
   sprite->setTextColor(TFT_WHITE);
   sprite->drawCentreString("FOCUS", 257, 50);
 
-  if(camera->hasFocalLengthMM())
+  sprite->drawString("LENS TYPE", 30, 53, &Lato_Regular5pt7b);
+  if(camera->hasLensType())
   {
-    auto focalLength = camera->getFocalLengthMM();
-    std::string focalLengthMM = std::to_string(focalLength);
-    std::string combined = focalLengthMM + "mm";
+    sprite->setTextColor(TFT_LIGHTGREY);
+    sprite->drawString(camera->getLensType().c_str(), 30, 35, &Lato_Regular6pt7b);
 
-    sprite->drawString(combined.c_str(), 30, 25, &Lato_Regular12pt7b);
+  }
+  
+  sprite->drawString("FOCAL LENGTH", 30, 98, &Lato_Regular5pt7b);
+  if(camera->hasFocalLengthMM() || camera->hasLensFocalLength())
+  {
+    if(camera->hasFocalLengthMM())
+    {
+      auto focalLength = camera->getFocalLengthMM();
+      std::string focalLengthMM = std::to_string(focalLength);
+      std::string combined = focalLengthMM + "mm";
+
+      sprite->drawString(combined.c_str(), 30, 75, &Lato_Regular12pt7b);
+    }
+    else
+      sprite->drawString(camera->getLensFocalLength().c_str(), 30, 80, &Lato_Regular12pt7b);
   }
 
+  sprite->drawString("LENS DISTANCE", 30, 143, &Lato_Regular5pt7b);
+  if(camera->hasLensDistance())
+  {
+    sprite->drawString(camera->getLensDistance().c_str(), 30, 120, &Lato_Regular12pt7b);
+  }
+
+  sprite->drawString("APERTURE", 30, 188, &Lato_Regular5pt7b);
   if(camera->hasApertureFStopString())
   {
-      sprite->drawString(camera->getApertureFStopString().c_str(), 30, 50, &Lato_Regular12pt7b);
+    sprite->drawString(camera->getApertureFStopString().c_str(), 30, 165, &Lato_Regular12pt7b);
   }
 
   sprite->pushSprite(0, 0);
@@ -2378,61 +2387,6 @@ void setup() {
   Debug.timestampOn();
 
   window.createSprite(IWIDTH, IHEIGHT);
-
-  // Load sprites
-  spriteMPCSplash.createSprite(IWIDTH, IHEIGHT);
-  spriteMPCSplash.setSwapBytes(true);
-  spriteMPCSplash.pushImage(0, 0, IWIDTH, IHEIGHT, MPCSplash_M5Stack_CoreS3);
-
-  // Images, store them in sprites ready to be used when we need them
-  spriteBluetooth.createSprite(30, 46);
-  spriteBluetooth.setSwapBytes(true);
-  spriteBluetooth.pushImage(0, 0, 30, 46, Wikipedia_Bluetooth_30x46);
-
-  spritePocket4k.createSprite(110, 61);
-  spritePocket4k.setSwapBytes(true);
-  spritePocket4k.pushImage(0, 0, 110, 61, blackmagic_pocket_4k_110x61);
-
-  // White Balance images
-  spriteWBBright.createSprite(30, 30);
-  spriteWBBright.setSwapBytes(true);
-  spriteWBBright.pushImage(0, 0, 30, 30, WBBright);
-
-  spriteWBCloud.createSprite(30, 30);
-  spriteWBCloud.setSwapBytes(true);
-  spriteWBCloud.pushImage(0, 0, 30, 30, WBCloud);
-
-  spriteWBFlourescent.createSprite(30, 30);
-  spriteWBFlourescent.setSwapBytes(true);
-  spriteWBFlourescent.pushImage(0, 0, 30, 30, WBFlourescent);
-
-  spriteWBIncandescent.createSprite(30, 30);
-  spriteWBIncandescent.setSwapBytes(true);
-  spriteWBIncandescent.pushImage(0, 0, 30, 30, WBIncandescent);
-
-  spriteWBMixedLight.createSprite(30, 30);
-  spriteWBMixedLight.setSwapBytes(true);
-  spriteWBMixedLight.pushImage(0, 0, 30, 30, WBMixedLight);
-
-  spriteWBBrightBG.createSprite(30, 30);
-  spriteWBBrightBG.setSwapBytes(true);
-  spriteWBBrightBG.pushImage(0, 0, 30, 30, WBBrightBG);
-
-  spriteWBCloudBG.createSprite(30, 30);
-  spriteWBCloudBG.setSwapBytes(true);
-  spriteWBCloudBG.pushImage(0, 0, 30, 30, WBCloudBG);
-
-  spriteWBFlourescentBG.createSprite(30, 30);
-  spriteWBFlourescentBG.setSwapBytes(true);
-  spriteWBFlourescentBG.pushImage(0, 0, 30, 30, WBFlourescentBG);
-
-  spriteWBIncandescentBG.createSprite(30, 30);
-  spriteWBIncandescentBG.setSwapBytes(true);
-  spriteWBIncandescentBG.pushImage(0, 0, 30, 30, WBIncandescentBG);
-
-  spriteWBMixedLightBG.createSprite(30, 30);
-  spriteWBMixedLightBG.setSwapBytes(true);
-  spriteWBMixedLightBG.pushImage(0, 0, 30, 30, WBMixedLightBG);
 
   // Splash screen
   M5.Display.pushImage(0,0,320,240,MPCSplash_M5Stack_CoreS3);

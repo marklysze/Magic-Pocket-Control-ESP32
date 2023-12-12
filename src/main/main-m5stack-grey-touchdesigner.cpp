@@ -3271,7 +3271,7 @@ void Screen_Lens(bool forceRefresh = false)
 
   Screen_Common_Connected(); // Common elements
 
-    // Media label
+  // Label
   sprite->setTextColor(TFT_WHITE);
   sprite->drawString("LENS", 30, 9, &AgencyFB_Bold9pt7b);
 

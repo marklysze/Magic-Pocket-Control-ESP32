@@ -1,5 +1,5 @@
 # :movie_camera: Magic Pocket Control for ESP32 devices
-Blackmagic Design camera control on a LILYGO T-Display-S3, M5Stack M5CoreS3 :new:, M5Stack M5StickC Plus, Freenove ESP32-S3-WROOM, or (hopefully) any other ESP32 device.
+Blackmagic Design camera control on a LILYGO T-Display-S3, M5Stack M5CoreS3, M5Stack M5StickC Plus, Freenove ESP32-S3-WROOM, or (hopefully) any other ESP32 device.
 
 Designed for the Pocket 4K, Pocket 6K/G2/Pro, USRA G2 4.6K, URSA 12K.
 
@@ -21,10 +21,10 @@ Video with demos (opens YouTube):
 The key features are:
 - Connect to the cameras wirelessly over Bluetooth LE
 - Detect multiple cameras to allow you to select the camera to connect to, if multiple are available
-- Entry of the Bluetooth connection code (6 digit pin) through a touchscreen numpad (LILYGO T-Display-S3)
+- Entry of the Bluetooth connection code (6 digit pin) through a touchscreen numpad (LILYGO T-Display-S3, M5Stack CoreS3)
 - Entry of the Bluetooth connection code (6 digit pin) through the serial console (when you don't have touch-screen or keypad)
-- Multiple screens that can be viewed by swiping left and right (LILYGO T-Display-S3)
-- Screens and functionality (LILYGO T-Display-S3)
+- Multiple screens that can be viewed by swiping left and right (LILYGO T-Display-S3, M5Stack CoreS3)
+- Screens and functionality (LILYGO T-Display-S3, M5Stack CoreS3)
     - Dashboard: View the ISO, Shutter Speed, White Balance/Tint, Codec, FPS, active media device, and resolution
     - Recording: Start and Stop recording, shows timecode and the remaining time left on the active media
     - ISO: Change ISO
