@@ -321,7 +321,9 @@ void Screen_Dashboard(bool forceRefresh = false)
       else if(tapped_x >= 180 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
       {
         // Frame Rate
-        DEBUG_INFO("No Frame Rate Created Yet");
+        connectedScreenIndex = Screens::Framerate;
+        lastRefreshedScreen = 0; // Forces a refresh
+        return;
       }
       else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 120 && tapped_y <= 160)
       {
@@ -352,7 +354,7 @@ void Screen_Dashboard(bool forceRefresh = false)
   else
     lastRefreshedScreen = camera->getLastModified();
   
-  DEBUG_DEBUG("Screen Dashboard Refreshing.");
+  // DEBUG_DEBUG("Screen Dashboard Refreshing.");
 
   if(!sprite->createSprite(IWIDTH_SPRITE, IHEIGHT_SPRITE)) return;
 
@@ -556,7 +558,7 @@ void Screen_Recording(bool forceRefresh = false)
   else
     lastRefreshedScreen = camera->getLastModified();
 
-  DEBUG_DEBUG("Screen Recording Refreshed.");
+  // DEBUG_DEBUG("Screen Recording Refreshed.");
 
   sprite->fillSprite(TFT_BLACK);
 
@@ -649,7 +651,7 @@ void Screen_ISO(bool forceRefresh = false)
   else
     lastRefreshedScreen = camera->getLastModified();
   
-  DEBUG_DEBUG("Screen ISO Refreshed.");
+  // DEBUG_DEBUG("Screen ISO Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
 
@@ -784,7 +786,7 @@ void Screen_ShutterAngle(bool forceRefresh = false)
   else
     lastRefreshedScreen = camera->getLastModified();
   
-  DEBUG_DEBUG("Screen Shutter Angle Refreshed.");
+  // DEBUG_DEBUG("Screen Shutter Angle Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
 
@@ -914,7 +916,7 @@ void Screen_ShutterSpeed(bool forceRefresh = false)
   else
     lastRefreshedScreen = camera->getLastModified();
   
-  DEBUG_DEBUG("Screen Shutter Speed Refreshed.");
+  // DEBUG_DEBUG("Screen Shutter Speed Refreshed.");
 
 
   sprite->fillScreen(TFT_BLACK);
@@ -1109,7 +1111,7 @@ void Screen_WBTint(bool forceRefresh = false)
   else
     lastRefreshedScreen = camera->getLastModified();
   
-  DEBUG_DEBUG("Screen WB Tint Refreshed.");
+  // DEBUG_DEBUG("Screen WB Tint Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
 
@@ -1341,7 +1343,7 @@ void Screen_Codec4K6K(bool forceRefresh = false)
   else
     lastRefreshedScreen = camera->getLastModified();
   
-  DEBUG_DEBUG("Screen Codec 4K/6K Refreshed.");
+  // DEBUG_DEBUG("Screen Codec 4K/6K Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
 
@@ -1608,7 +1610,7 @@ void Screen_CodecURSAMiniProG2(bool forceRefresh = false)
   else
     lastRefreshedScreen = camera->getLastModified();
   
-  DEBUG_DEBUG("Screen Codec URSA Mini Pro G2 Refreshed.");
+  // DEBUG_DEBUG("Screen Codec URSA Mini Pro G2 Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
 
@@ -1903,7 +1905,7 @@ void Screen_Resolution4K(bool forceRefresh = false)
   else
     lastRefreshedScreen = camera->getLastModified();
   
-  DEBUG_DEBUG("Screen Resolution Pocket 4K Refreshed.");
+  // DEBUG_DEBUG("Screen Resolution Pocket 4K Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
 
@@ -2172,7 +2174,7 @@ void Screen_Resolution6K(bool forceRefresh = false)
   else
     lastRefreshedScreen = camera->getLastModified();
   
-  DEBUG_DEBUG("Screen Resolution Pocket 6K Refreshed.");
+  // DEBUG_DEBUG("Screen Resolution Pocket 6K Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
 
@@ -2324,62 +2326,55 @@ void Screen_ResolutionURSAMiniProG2(bool forceRefresh = false)
     {
       int width = 0;
       int height = 0;
-      bool window = false;
+      bool window = true;
 
       if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
       {
         // 4.6K
         width = 4608; height = 2592;
+        window = false;
       }
       else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
       {
         // 4.6K 2.4:1
         width = 4608; height = 1920;
-        window = true;
       }
       else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
       {
         // 4K 16:9
         width = 4096; height = 2304;
-        window = true;
       }
 
       else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 110 && tapped_y <= 115)
       {
         // 4K DCI
         width = 4096; height = 2160;
-        window = true;
       }
       else if(tapped_x >= 115 && tapped_y >= 75 && tapped_x <= 205 && tapped_y <= 115)
       {
         // 4K UHD
         width = 3840; height = 2160;
-        window = true;
       }
       else if(tapped_x >= 210 && tapped_y >= 75 && tapped_x <= 310 && tapped_y <= 115)
       {
         // 3K Ana
         width = 3072; height = 2560;
-        window = true;
       }
 
       else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 110 && tapped_y <= 160)
       {
         // 2K 16:9
         width = 2048; height = 1152;
-        window = true;
       }
       else if(tapped_x >= 115 && tapped_y >= 120 && tapped_x <= 205 && tapped_y <= 160)
       {
         // 2K DCI
         width = 2048; height = 1080;
-        window = true;
       }
       else if(tapped_x >= 210 && tapped_y >= 120 && tapped_x <= 310 && tapped_y <= 160)
       {
         // HD
         width = 1920; height = 1080;
-        window = true;
       }
 
       if(width != 0)
@@ -2402,7 +2397,7 @@ void Screen_ResolutionURSAMiniProG2(bool forceRefresh = false)
   else
     lastRefreshedScreen = camera->getLastModified();
   
-  DEBUG_DEBUG("Screen Resolution URSA Mini Pro G2 Refreshed.");
+  // DEBUG_DEBUG("Screen Resolution URSA Mini Pro G2 Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
 
@@ -2516,6 +2511,416 @@ void Screen_Resolution(bool forceRefresh = false)
     Screen_Resolution4K(forceRefresh); // If we don't have any codec info, we show the 4K screen that shows no codec
 }
 
+// Frame Rate screen for Pocket 4K
+void Screen_Framerate4K(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Resolution;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+  
+  // TO DO
+  DEBUG_DEBUG("TO DO - CARRY OVER FROM GREY.");
+}
+
+// Frame Rate Screen for Pocket 6K
+void Screen_Framerate6K(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Resolution;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+  
+  // TO DO
+  DEBUG_DEBUG("TO DO - CARRY OVER FROM GREY.");
+}
+
+// Frame Rate Screen for URSA Mini Pro G2
+void Screen_FramerateURSAMiniProG2(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Framerate;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // Pocket 6K Frame Rate
+
+  // Get the current Resolution and Codec
+  CCUPacketTypes::RecordingFormatData currentRecordingFormat;
+  if(camera->hasRecordingFormat())
+    currentRecordingFormat = camera->getRecordingFormat();
+
+  // Get the current Codec values
+  CodecInfo currentCodec = camera->getCodec();
+
+  std::string currentFrameRate = currentRecordingFormat.frameRate_string();
+
+  // DEBUG_VERBOSE("Current Frame Rate: %s", currentFrameRate.c_str());
+
+  bool isFull46K = currentRecordingFormat.width == 4608 && currentRecordingFormat.height == 2592; // Are we in full 4.6K resolution
+
+  // ProRes 444 or 444XQ have different frame rates
+  bool is444 = currentCodec.codecVariant == CCUPacketTypes::CodecVariants::kProRes444XQ || currentCodec.codecVariant == CCUPacketTypes::CodecVariants::kProRes444;
+  
+  std::string dimensions = currentRecordingFormat.frameDimensionsShort_string();
+
+  bool tappedAction = false;
+  if(tapped_x != -1 && lastRefreshedScreen != 0)
+  {
+    // BRAW / ProRes standard frame rates - 23.98, 24, 25, 29.97, 30, 50, 59.95
+    if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW || currentCodec.basicCodec == CCUPacketTypes::BasicCodec::ProRes)
+    {
+      short frameRate = 0;
+      bool mRateEnabled = false;
+
+      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 110 && tapped_y <= 70)
+      {
+        // 23.98
+        frameRate = 24;
+        mRateEnabled = true;
+      }
+      else if(tapped_x >= 115 && tapped_y >= 30 && tapped_x <= 205 && tapped_y <= 70)
+      {
+        // 24
+        frameRate = 24;
+      }
+      else if(tapped_x >= 210 && tapped_y >= 30 && tapped_x <= 310 && tapped_y <= 70)
+      {
+        // 25
+        frameRate = 25;
+      }
+
+      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 110 && tapped_y <= 115)
+      {
+        // 29.97
+        frameRate = 30;
+        mRateEnabled = true;
+      }
+      else if(tapped_x >= 115 && tapped_y >= 75 && tapped_x <= 205 && tapped_y <= 115)
+      {
+        // 30
+        frameRate = 30;
+      }
+
+      if(!(isFull46K && is444))
+      {
+        if(tapped_x >= 210 && tapped_y >= 75 && tapped_x <= 310 && tapped_y <= 115)
+        {
+          // 50
+          frameRate = 50;
+        }
+        else if(tapped_x >= 20 && tapped_y >= 120 && tapped_x <= 110 && tapped_y <= 160)
+        {
+          // 59.94
+          frameRate = 60;
+          mRateEnabled = true;
+        }
+        else if(tapped_x >= 115 && tapped_y >= 120 && tapped_x <= 205 && tapped_y <= 160)
+        {
+          // 60
+          frameRate = 60;
+        }
+      }
+
+      // Standard frame rates  
+      if(frameRate != 0)
+      {
+        // Frame rate selected, write to camera
+        CCUPacketTypes::RecordingFormatData newRecordingFormat = currentRecordingFormat;
+        newRecordingFormat.frameRate = frameRate;
+        newRecordingFormat.mRateEnabled = mRateEnabled;
+        newRecordingFormat.offSpeedEnabled = false;
+        PacketWriter::writeRecordingFormat(newRecordingFormat, &cameraConnection);
+
+        tappedAction = true;
+      }
+      else
+      {
+        // High Frame Rate options
+        short offSpeedFrameRate = 0;
+
+        if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
+        {
+          if(tapped_x >= 210 && tapped_y >= 120 && tapped_x <= 310 && tapped_y <= 160)
+          {
+            if(dimensions == "4.6K" || dimensions == "4K 16:9" || dimensions == "3K Ana")
+            {
+              // 120
+              offSpeedFrameRate = 120;
+            }
+            else if(dimensions == "4.6K 2.4:1" || dimensions == "4K DCI" || dimensions == "4K UHD")
+            {
+              // 150
+              offSpeedFrameRate = 150;
+            }
+            else if(dimensions == "2K 16:9")
+            {
+              // 240
+              offSpeedFrameRate = 240;
+            }
+            else if(dimensions == "2K DCI" || dimensions == "HD")
+            {
+              // 300
+              offSpeedFrameRate = 300;
+            }
+          }
+        }
+        else
+        {
+          if(isFull46K && is444)
+          {
+              // 40
+              offSpeedFrameRate = 40;
+          }
+          else if(is444)
+          {
+            // 444/XQ
+            if(dimensions == "3K Ana")
+            {
+              // 70
+              offSpeedFrameRate = 70;
+            }
+            else if(dimensions == "2K 16:9" || dimensions == "2K DCI" || dimensions == "HD")
+            {
+              // 120
+              offSpeedFrameRate = 120;
+            }
+          }
+          else
+          {
+            // Non-444/XQ
+            if(dimensions == "4.6K")
+            {
+              // 80
+              offSpeedFrameRate = 80;
+            }
+            else if(dimensions == "4.6K 2.4:1" || dimensions == "4K DCI" || dimensions == "4K UHD" || dimensions == "3K Ana" || dimensions == "2K 16:9" || dimensions == "2K DCI" || dimensions == "HD")
+            {
+              // 120
+              offSpeedFrameRate = 120;
+            }
+            else if(dimensions == "4K 16:9")
+            {
+              // 100
+              offSpeedFrameRate = 100;
+            }
+          }
+        }
+
+        // Apply High frame rate / Off Speed Framerate
+        if(offSpeedFrameRate != 0)
+        {
+          // Frame rate selected, write to camera
+          CCUPacketTypes::RecordingFormatData newRecordingFormat = currentRecordingFormat;
+          newRecordingFormat.offSpeedEnabled = true;
+          newRecordingFormat.offSpeedFrameRate = offSpeedFrameRate;
+          PacketWriter::writeRecordingFormat(newRecordingFormat, &cameraConnection);
+
+          tappedAction = true;
+        }
+      }
+    }
+  }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
+  
+  DEBUG_DEBUG("Frame Rate Pocket URSA Mini Pro G2 Refreshed.");
+
+  sprite->fillScreen(TFT_BLACK);
+
+  Screen_Common_Connected(); // Common elements
+
+  // Main label
+  sprite->setTextColor(TFT_WHITE);
+  String frameRateText = "FRAME RATE - ";
+  frameRateText.concat(camera->getRecordingFormat().frameRate_string().c_str());
+  sprite->drawString(frameRateText, 30, 9, &AgencyFB_Bold9pt7b);
+
+  // Output the current Codec and Resolution
+  String codecRes = currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW ? "BRAW | " :"ProRes | ";
+  codecRes.concat(currentRecordingFormat.frameDimensionsShort_string().c_str());
+  sprite->drawString(codecRes, 30, 167);
+
+  sprite->drawString(currentRecordingFormat.frameWidthHeight_string().c_str(), 30, 189, &Lato_Regular5pt7b);
+
+  // 23.98
+  std::string labelFR = "23.98";
+  sprite->fillSmoothRoundRect(20, 30, 90, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 65, 41);
+
+  // 24
+  labelFR = "24";
+  sprite->fillSmoothRoundRect(115, 30, 90, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 160, 41);
+
+  // 25
+  labelFR = "25";
+  sprite->fillSmoothRoundRect(210, 30, 100, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 260, 41);
+
+  // 29.97
+  labelFR = "29.97";
+  sprite->fillSmoothRoundRect(20, 75, 90, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 65, 87);
+
+  // 30
+  labelFR = "30";
+  sprite->fillSmoothRoundRect(115, 75, 90, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawCentreString(labelFR.c_str(), 160, 87);
+
+  // 50
+  if(!(isFull46K && is444))
+  {
+    labelFR = "50";
+    sprite->fillSmoothRoundRect(210, 75, 100, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(labelFR.c_str(), 260, 87);
+
+    // 59.94
+    labelFR = "59.94";
+    sprite->fillSmoothRoundRect(20, 120, 90, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(labelFR.c_str(), 65, 131);
+
+    // 60
+    labelFR = "60";
+    sprite->fillSmoothRoundRect(115, 120, 90, 40, 3, (currentFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(labelFR.c_str(), 160, 131);
+  }
+
+
+  // High Frame Rate option - Maximum
+  labelFR = "";
+  std::string currentOffSpeedFrameRate = currentRecordingFormat.offSpeedEnabled ? std::to_string(currentRecordingFormat.offSpeedFrameRate).c_str() : "";
+  if(currentCodec.basicCodec == CCUPacketTypes::BasicCodec::BRAW)
+  {
+    if(dimensions == "4.6K" || dimensions == "4K 16:9" || dimensions == "3K Ana")
+    {
+      // 120
+      labelFR = "120";
+    }
+    else if(dimensions == "4.6K 2.4:1" || dimensions == "4K DCI" || dimensions == "4K UHD")
+    {
+      // 150
+      labelFR = "150";
+    }
+    else if(dimensions == "2K 16:9")
+    {
+      // 240
+      labelFR = "240";
+    }
+    else if(dimensions == "2K DCI" || dimensions == "HD")
+    {
+      // 300
+      labelFR = "300";
+    }
+
+    sprite->fillSmoothRoundRect(210, 120, 100, 40, 3, (currentOffSpeedFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+    sprite->drawCentreString(labelFR.c_str(), 260, 122);
+  }
+  else
+  {
+    if(isFull46K && is444)
+    {
+        // 40
+        labelFR = "40";
+    }
+    else if(is444)
+    {
+      // 444/XQ
+      if(dimensions == "3K Ana")
+      {
+        // 70
+        labelFR = "70";
+      }
+      else if(dimensions == "2K 16:9" || dimensions == "2K DCI" || dimensions == "HD")
+      {
+        // 120
+        labelFR = "120";
+      }
+    }
+    else
+    {
+      // Non-444/XQ
+      if(dimensions == "4.6K")
+      {
+        // 80
+        labelFR = "80";
+      }
+      else if(dimensions == "4.6K 2.4:1" || dimensions == "4K DCI" || dimensions == "4K UHD" || dimensions == "3K Ana" || dimensions == "2K 16:9" || dimensions == "2K DCI" || dimensions == "HD")
+      {
+        // 120
+        labelFR = "120";
+      }
+      else if(dimensions == "4K 16:9")
+      {
+        // 100
+        labelFR = "100";
+      }
+    }
+
+    if(labelFR != "")
+    {
+      sprite->fillSmoothRoundRect(210, 120, 100, 40, 3, (currentOffSpeedFrameRate == labelFR ? TFT_DARKGREEN : TFT_DARKGREY));
+      sprite->drawCentreString(labelFR.c_str(), 260, 122);
+    }
+  }
+
+  // Add the Off Speed label if we have an off speed option
+  if(labelFR != "")
+    sprite->drawCentreString("OFF SPEED", 260, 143, &AgencyFB_Regular7pt7b);
+
+  sprite->pushSprite(0, 0);
+}
+
+// Frame Rate Screen for URSA Mini Pro 12K
+void Screen_FramerateURSAMiniPro12K(bool forceRefresh = false)
+{
+  if(!BMDControlSystem::getInstance()->hasCamera())
+    return;
+
+  connectedScreenIndex = Screens::Resolution;
+
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+  
+  // TO DO
+}
+
+// Frame Rate screen - redirects to appropriate screen for camera
+void Screen_Framerate(bool forceRefresh = false)
+{
+  auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  if(camera->hasCodec())
+  {
+    if(camera->hasRecordingFormat())
+    {
+      if(camera->isPocket4K())
+        Screen_Framerate4K(forceRefresh); // Pocket 4K
+      else if(camera->isPocket6K())
+        Screen_Framerate6K(forceRefresh); // Pocket 6K
+      else if(camera->isURSAMiniProG2())
+        Screen_FramerateURSAMiniProG2(forceRefresh); // URSA Mini Pro G2
+      else if(camera->isURSAMiniPro12K())
+        Screen_FramerateURSAMiniPro12K(forceRefresh); // URSA Mini Pro 12K
+      else
+        DEBUG_DEBUG("No Codec screen for this camera.");
+    } 
+    else
+      Screen_Framerate4K(forceRefresh); // Handle no model name in 4K screen
+  }
+  else
+    Screen_Framerate4K(forceRefresh); // If we don't have any codec info, we show the 4K screen that shows no codec
+}
+
 // Media screen for Pocket 4K
 void Screen_Media4K6K(bool forceRefresh = false)
 {
@@ -2586,7 +2991,7 @@ void Screen_Media4K6K(bool forceRefresh = false)
   else
     lastRefreshedScreen = camera->getLastModified();
   
-  DEBUG_DEBUG("Screen Media Pocket 4K/6K Refreshed.");
+  // DEBUG_DEBUG("Screen Media Pocket 4K/6K Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
 
@@ -2643,8 +3048,84 @@ void Screen_MediaURSAMiniProG2(bool forceRefresh = false)
   connectedScreenIndex = Screens::Media;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
+
+  // 2 Media Slots - CFAST/CFAST, CFAST/USB, SD/SD, SD/USB
+  // URSA Mini Pro G2 - Can only choose between two cards
+
+  // If we have a tap, we should determine if it is on anything
+  bool tappedAction = false;
+  if(tapped_x != -1 && camera->getMediaSlots().size() != 0 && lastRefreshedScreen != 0)
+  {
+    if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 160)
+    {
+      // Tapped within the area
+      if(tapped_x >= 20 && tapped_y >= 30 && tapped_x <= 315 && tapped_y <= 70)
+      {
+        // SLOT 1 CFAST or SD
+        if(camera->getMediaSlots()[0].status != CCUPacketTypes::MediaStatus::None && !camera->getMediaSlots()[0].active)
+        {
+          TransportInfo transportInfo = camera->getTransportMode();
+          transportInfo.slots[0].active = true;
+          transportInfo.slots[1].active = false;
+          PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
+
+          tappedAction = true;
+        }
+      }
+      else if(tapped_x >= 20 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
+      {
+          // SLOT 2 CFAST/SD/USB
+        if(camera->getMediaSlots()[1].status != CCUPacketTypes::MediaStatus::None && !camera->getMediaSlots()[1].active)
+        {
+          TransportInfo transportInfo = camera->getTransportMode();
+          transportInfo.slots[0].active = false;
+          transportInfo.slots[1].active = true;
+          PacketWriter::writeTransportInfo(transportInfo, &cameraConnection);
+
+          tappedAction = true;
+        }
+      }
+    }
+  }
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
+    return;
+  else
+    lastRefreshedScreen = camera->getLastModified();
   
-  // TO DO
+  sprite->fillScreen(TFT_BLACK);
+
+  Screen_Common_Connected(); // Common elements
+
+    // Media label
+  sprite->setTextColor(TFT_WHITE);
+  sprite->drawString("MEDIA", 30, 9, &AgencyFB_Bold9pt7b);
+
+  // CFAST/SD
+  BMDCamera::MediaSlot slotFirst = camera->getMediaSlots()[0];
+  sprite->fillSmoothRoundRect(20, 30, 295, 40, 3, (slotFirst.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(slotFirst.StatusIsError()) sprite->drawRoundRect(20, 30, 295, 40, 3, (slotFirst.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawString(slotFirst.GetMediumString().c_str(), 28, 47);
+  if(slotFirst.status != CCUPacketTypes::MediaStatus::None) sprite->drawString(slotFirst.remainingRecordTimeString.c_str(), 155, 47);
+
+  if(slotFirst.status != CCUPacketTypes::MediaStatus::None) sprite->drawString("REMAINING TIME", 155, 35, &Lato_Regular5pt7b);
+  sprite->drawString("1", 300, 35, &Lato_Regular5pt7b);
+  sprite->drawString(slotFirst.GetStatusString().c_str(), 28, 35, &Lato_Regular5pt7b);
+
+  // CFAST/SD/USB
+  BMDCamera::MediaSlot slotSecond = camera->getMediaSlots()[1];
+  sprite->fillSmoothRoundRect(20, 75, 295, 40, 3, (slotSecond.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  if(slotSecond.StatusIsError()) sprite->drawRoundRect(20, 75, 295, 40, 3, (slotSecond.active ? TFT_DARKGREEN : TFT_DARKGREY));
+  sprite->drawString(slotSecond.GetMediumString().c_str(), 28, 92);
+  if(slotSecond.status != CCUPacketTypes::MediaStatus::None) sprite->drawString(slotSecond.remainingRecordTimeString.c_str(), 155, 92);
+
+  if(slotSecond.status != CCUPacketTypes::MediaStatus::None) sprite->drawString("REMAINING TIME", 155, 80, &Lato_Regular5pt7b);
+  sprite->drawString("2", 300, 80, &Lato_Regular5pt7b);
+  sprite->drawString(slotSecond.GetStatusString().c_str(), 28, 80, &Lato_Regular5pt7b);
+  if(slotSecond.StatusIsError()) sprite->setTextColor(TFT_WHITE);
+
+  sprite->pushSprite(0, 0);
 }
 
 // Media Screen for URSA Mini Pro 12K
@@ -2717,7 +3198,7 @@ void Screen_Lens(bool forceRefresh = false)
   else
     lastRefreshedScreen = camera->getLastModified();
 
-  DEBUG_DEBUG("Screen Lens Refreshed.");
+  // DEBUG_DEBUG("Screen Lens Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
 
@@ -2890,6 +3371,9 @@ void loop() {
           break;
         case Screens::Resolution:
           Screen_Resolution();
+          break;
+        case Screens::Framerate:
+          Screen_Framerate();
           break;
         case Screens::Media:
           Screen_Media();

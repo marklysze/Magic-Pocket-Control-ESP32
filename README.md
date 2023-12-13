@@ -55,7 +55,7 @@ Here's the state of cameras and firmware.
 | Pocket 6K | 8.1 | $\color{green}{\textsf{OK}}$ $\color{orange}{\textsf{ (See Known Bugs below)}}$ |
 | Pocket 6K G2 | ... | PeterP27 confirmed $\color{green}{\textsf{OK}}$ |
 | Pocket 6K Pro | ... | Not Tested |
-| URSA Mini Pro 4.6K G2 | ... | Not Tested |
+| URSA Mini Pro 4.6K G2 | ... | $\color{green}{\textsf{OK}}$ (Thanks [Paul Jones](http://www.paulrossjones.com/)!) |
 | URSA Mini Pro 12K | ... | Not Tested |
 | URSA Mini Pro 12K OLPF | ... | Not Tested |
 

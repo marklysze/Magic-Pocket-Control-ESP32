@@ -2682,7 +2682,7 @@ void Screen_ResolutionURSAMiniProG2(bool forceRefresh = false)
     {
       int width = 0;
       int height = 0;
-      bool window = currentRecordingFormat.windowedModeEnabled;
+      bool window = true;
 
       if(currentRes == "4.6K")
       {
@@ -2708,6 +2708,7 @@ void Screen_ResolutionURSAMiniProG2(bool forceRefresh = false)
         {
           // 4.6K
           width = 4608; height = 2592;
+          window = false;
         }
       }
       else if(currentRes == "4K 16:9")
@@ -2794,6 +2795,7 @@ void Screen_ResolutionURSAMiniProG2(bool forceRefresh = false)
         {
           // 4.6K
           width = 4608; height = 2592;
+          window = false;
         }
         else
         {
@@ -3387,7 +3389,8 @@ void Screen_Framerate6K(bool forceRefresh = false)
     sprite->drawCentreString(labelFR.c_str(), 160, 131);
   }
 
-  sprite->pushSprite(0, 0);}
+  sprite->pushSprite(0, 0);
+}
 
 // Frame Rate Screen for URSA Mini Pro G2
 void Screen_FramerateURSAMiniProG2(bool forceRefresh = false)
