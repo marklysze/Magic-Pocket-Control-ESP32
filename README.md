@@ -46,10 +46,10 @@ Therefore, you'll likely need to play around to see if this works for you!
 
 Added support for the URSA Mini Pro G2 for general features - see the M5Stack CoreS3 main file. 
 
+Thanks to [Paul Jones](http://www.paulrossjones.com/) for lending me his camera!
+
 # What can you do?
 I hope you find the functionality useful and it would be great if you could contribute your improvements, suggestions, or general feedback to the project!
-
-Thanks to [Paul Jones](http://www.paulrossjones.com/) for lending me his camera!
 
 # Do you use TouchDesigner?
 If you're a TouchDesigner user, check out nelsoniso's [repository here](https://github.com/nelsoniso/BlackMagicCamera-Touchdesigner-ESP32) which utilises the serial output of this project to update TouchDesigner in real-time and allow you to control the settings of the camera from TouchDesigner, it's very cool.
