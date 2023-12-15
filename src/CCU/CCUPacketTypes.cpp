@@ -1,6 +1,7 @@
 ﻿#include "CCUPacketTypes.h"
 
 ccu_fixed_t CCUPacketTypes::CCUFixedFromFloat(double f) {
+
     return static_cast<ccu_fixed_t>(f * 2048.0);
 }
 

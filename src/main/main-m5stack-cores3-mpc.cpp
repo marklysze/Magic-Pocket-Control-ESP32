@@ -25,6 +25,41 @@
 #define IHEIGHT_SPRITE 240
 #define BPP_SPRITE 16
 
+// Encoder unit for focusing
+// https://shop.m5stack.com/products/encoder-unit
+// IMPORTANT - THE ENCODER MUST BE PLUGGED INTO PORT "A" ON THE M5Stack CoreS3 - that is the port next to the USB-C port.
+#define USING_M5_ENCODER 0   // Using the M5Stack Encoder unit, 1 = Yes, 0 = No
+
+// If you have the encoder unit
+#if USING_M5_ENCODER == 1
+    #include "Boards/M5CoreS3/Unit_Encoder.h"
+    Unit_Encoder encoderSensor;
+
+    signed short int prevEncoderValue = 0; // Value of the encoder
+    unsigned long lastEncoderValueTime = millis(); // Last time we got the encoder value
+    unsigned short prevFocusPosition = 0; // Stores the last sent focus position (0-65535)
+
+    bool freeFocus = true;  // Free Focus doesn't use the range of focus, it just sends focus offsets.
+                            // This is toggled on/off from the Lens screen
+                            // URSA Mini Pro G2 doesn't work with actual values set (range), so free focus using offsets is better
+                            // Pocket 6K worked with actual lens position sets so focus range is better but can use offsets
+
+    // Free-focus variables
+    unsigned short freeFocusIncrement = 1000; // How much we move when rotating - larger moves further for each rotation step
+                                              // You may need to experiment with the lens(es) you use
+                                              // Examples of values
+                                              // 150 for URSA Mini Pro G2 with Canon 50mm f/1.2
+                                              // 1000 for Pocket 6K and Canon EF-S 18-55 f/3.5-5.6 II
+
+    // Range-based variables
+    unsigned short encoderRange = 90; // A full rotation is 60 steps on the M5Stack encoder, the higher the value the more turning to focus
+    signed short int baseEncoderValue = 0; // What the value of the encoder is to start with (so we can offset that)
+
+    // We keep track of the range of values we're working within, as we rotate passed the end or start we adjust this window
+    signed short int encoderRangeBottomValue = 0; // The bottom encoder value based on the range
+    signed short int encoderRangeTopValue = 0; // The top encoder value based on the range (the bottom value + encoderRange, e.g. 60)
+
+#endif
 
 // Based on M5CoreS3 Demo - M5 libraries
 #include <nvs_flash.h>
@@ -187,9 +222,7 @@ void Screen_NoConnection()
       Screen_Common(TFT_BLUE); // Common elements
       if(cameraConnection.cameraAddresses.size() == 1)
       {
-        DEBUG_VERBOSE("Screen_NoConnection - writing found... #1");
         sprite->drawString("Found, connecting...", 70, 20);
-        DEBUG_VERBOSE("Screen_NoConnection - writing found... #2");
         connectToCameraIndex = 0;
       }
       else
@@ -237,7 +270,6 @@ void Screen_NoConnection()
       sprite->drawRoundRect(25 + (count * 125) + (count * 10), 60, 5, 2, TFT_GREEN);
     }
 
-    // spritePocket4k.pushSprite(&window, 33 + (count * 125) + (count * 10), 69);
     sprite->pushImage(33 + (count * 125) + (count * 10), 69, 110, 61, blackmagic_pocket_4k_110x61);
 
     sprite->drawString(cameraConnection.cameraAddresses[count].toString().c_str(), 33 + (count * 125) + (count * 10), 144, &Lato_Regular6pt7b);
@@ -249,11 +281,13 @@ void Screen_NoConnection()
       if(tapped_x >= 25 && tapped_y >= 60 && tapped_x <= 150 && tapped_y <= 160)
       {
         // First camera tapped
+        DEBUG_VERBOSE("Selected Left Camera");
         connectToCameraIndex = 0;
       }
       else if(tapped_x >= 160 && tapped_y >= 60 && tapped_x <= 285 && tapped_y <= 160)
       {
         // Second camera tapped
+        DEBUG_VERBOSE("Selected Right Camera");
         connectToCameraIndex = 1;
       }
   }
@@ -353,7 +387,7 @@ void Screen_Dashboard(bool forceRefresh = false)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
-  
+
   // DEBUG_DEBUG("Screen Dashboard Refreshing.");
 
   if(!sprite->createSprite(IWIDTH_SPRITE, IHEIGHT_SPRITE)) return;
@@ -650,7 +684,7 @@ void Screen_ISO(bool forceRefresh = false)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
-  
+
   // DEBUG_DEBUG("Screen ISO Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
@@ -785,7 +819,7 @@ void Screen_ShutterAngle(bool forceRefresh = false)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
-  
+
   // DEBUG_DEBUG("Screen Shutter Angle Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
@@ -915,7 +949,7 @@ void Screen_ShutterSpeed(bool forceRefresh = false)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
-  
+
   // DEBUG_DEBUG("Screen Shutter Speed Refreshed.");
 
 
@@ -1103,14 +1137,14 @@ void Screen_WBTint(bool forceRefresh = false)
       }
     }
   }
-  
+
 
   // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
   if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
-  
+
   // DEBUG_DEBUG("Screen WB Tint Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
@@ -1256,7 +1290,7 @@ void Screen_Codec4K6K(bool forceRefresh = false)
 
             tappedAction = true;
           }
-        } 
+        }
         else if(tapped_x >= 170 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
         {
           // Change to Constant Quality if we're not already on Constant Quality. If it is we do nothing
@@ -1266,7 +1300,7 @@ void Screen_Codec4K6K(bool forceRefresh = false)
 
             tappedAction = true;
           }
-        } 
+        }
         else
         {
           // Setting
@@ -1342,7 +1376,7 @@ void Screen_Codec4K6K(bool forceRefresh = false)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
-  
+
   // DEBUG_DEBUG("Screen Codec 4K/6K Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
@@ -1509,7 +1543,7 @@ void Screen_CodecURSAMiniProG2(bool forceRefresh = false)
 
             tappedAction = true;
           }
-        } 
+        }
         else if(tapped_x >= 170 && tapped_y >= 75 && tapped_x <= 315 && tapped_y <= 115)
         {
           // Change to Constant Quality if we're not already on Constant Quality. If it is we do nothing
@@ -1519,7 +1553,7 @@ void Screen_CodecURSAMiniProG2(bool forceRefresh = false)
 
             tappedAction = true;
           }
-        } 
+        }
         else
         {
           // Setting
@@ -1609,7 +1643,7 @@ void Screen_CodecURSAMiniProG2(bool forceRefresh = false)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
-  
+
   // DEBUG_DEBUG("Screen Codec URSA Mini Pro G2 Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
@@ -1736,7 +1770,7 @@ void Screen_CodecURSAMiniPro12K(bool forceRefresh = false)
   connectedScreenIndex = Screens::Codec;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
-  
+
   // TO DO
 }
 
@@ -1757,7 +1791,7 @@ void Screen_Codec(bool forceRefresh = false)
         Screen_CodecURSAMiniPro12K(forceRefresh); // URSA Mini Pro 12K
       else
         DEBUG_DEBUG("No Codec screen for this camera.");
-    } 
+    }
     else
       Screen_Codec4K6K(forceRefresh); // Handle no model name in 4K/6K screen
   }
@@ -1904,7 +1938,7 @@ void Screen_Resolution4K(bool forceRefresh = false)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
-  
+
   // DEBUG_DEBUG("Screen Resolution Pocket 4K Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
@@ -2173,7 +2207,7 @@ void Screen_Resolution6K(bool forceRefresh = false)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
-  
+
   // DEBUG_DEBUG("Screen Resolution Pocket 6K Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
@@ -2198,7 +2232,7 @@ void Screen_Resolution6K(bool forceRefresh = false)
     sprite->fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
     sprite->drawCentreString("6K", 160, 36);
     sprite->drawCentreString("2.4:1", 160, 58, &Lato_Regular5pt7b);
-  
+
     // 5.7K, 17:9
     labelRes = "5.7K 17:9";
     sprite->fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
@@ -2396,7 +2430,7 @@ void Screen_ResolutionURSAMiniProG2(bool forceRefresh = false)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
-  
+
   // DEBUG_DEBUG("Screen Resolution URSA Mini Pro G2 Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
@@ -2424,7 +2458,7 @@ void Screen_ResolutionURSAMiniProG2(bool forceRefresh = false)
     sprite->fillSmoothRoundRect(115, 30, 90, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
     sprite->drawCentreString("4.6K", 160, 36);
     sprite->drawCentreString("2.4:1", 160, 58, &Lato_Regular5pt7b);
-  
+
     // 4K 16:9
     labelRes = "4K 16:9";
     sprite->fillSmoothRoundRect(210, 30, 100, 40, 3, (currentRes == labelRes ? TFT_DARKGREEN : TFT_DARKGREY));
@@ -2480,7 +2514,7 @@ void Screen_ResolutionURSAMiniPro12K(bool forceRefresh = false)
   connectedScreenIndex = Screens::Resolution;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
-  
+
   // TO DO
 }
 
@@ -2503,7 +2537,7 @@ void Screen_Resolution(bool forceRefresh = false)
         Screen_ResolutionURSAMiniPro12K(forceRefresh); // URSA Mini Pro 12K
       else
         DEBUG_DEBUG("No Codec screen for this camera.");
-    } 
+    }
     else
       Screen_Resolution4K(forceRefresh); // Handle no model name in 4K screen
   }
@@ -2520,7 +2554,7 @@ void Screen_Framerate4K(bool forceRefresh = false)
   connectedScreenIndex = Screens::Resolution;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
-  
+
   // TO DO
   DEBUG_DEBUG("TO DO - CARRY OVER FROM GREY.");
 }
@@ -2534,7 +2568,7 @@ void Screen_Framerate6K(bool forceRefresh = false)
   connectedScreenIndex = Screens::Resolution;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
-  
+
   // TO DO
   DEBUG_DEBUG("TO DO - CARRY OVER FROM GREY.");
 }
@@ -2567,7 +2601,7 @@ void Screen_FramerateURSAMiniProG2(bool forceRefresh = false)
 
   // ProRes 444 or 444XQ have different frame rates
   bool is444 = currentCodec.codecVariant == CCUPacketTypes::CodecVariants::kProRes444XQ || currentCodec.codecVariant == CCUPacketTypes::CodecVariants::kProRes444;
-  
+
   std::string dimensions = currentRecordingFormat.frameDimensionsShort_string();
 
   bool tappedAction = false;
@@ -2628,7 +2662,7 @@ void Screen_FramerateURSAMiniProG2(bool forceRefresh = false)
         }
       }
 
-      // Standard frame rates  
+      // Standard frame rates
       if(frameRate != 0)
       {
         // Frame rate selected, write to camera
@@ -2733,7 +2767,7 @@ void Screen_FramerateURSAMiniProG2(bool forceRefresh = false)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
-  
+
   DEBUG_DEBUG("Frame Rate Pocket URSA Mini Pro G2 Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
@@ -2890,7 +2924,7 @@ void Screen_FramerateURSAMiniPro12K(bool forceRefresh = false)
   connectedScreenIndex = Screens::Resolution;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
-  
+
   // TO DO
 }
 
@@ -2913,7 +2947,7 @@ void Screen_Framerate(bool forceRefresh = false)
         Screen_FramerateURSAMiniPro12K(forceRefresh); // URSA Mini Pro 12K
       else
         DEBUG_DEBUG("No Codec screen for this camera.");
-    } 
+    }
     else
       Screen_Framerate4K(forceRefresh); // Handle no model name in 4K screen
   }
@@ -2990,7 +3024,7 @@ void Screen_Media4K6K(bool forceRefresh = false)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
-  
+
   // DEBUG_DEBUG("Screen Media Pocket 4K/6K Refreshed.");
 
   sprite->fillScreen(TFT_BLACK);
@@ -3030,7 +3064,7 @@ void Screen_Media4K6K(bool forceRefresh = false)
   if(usb.StatusIsError()) sprite->drawRoundRect(20, 120, 295, 40, 3, (usb.active ? TFT_DARKGREEN : TFT_DARKGREY));
   sprite->drawString("USB", 28, 137);
   if(usb.status != CCUPacketTypes::MediaStatus::None) sprite->drawString(usb.remainingRecordTimeString.c_str(), 155, 137);
-  
+
   if(usb.status != CCUPacketTypes::MediaStatus::None) sprite->drawString("REMAINING TIME", 155, 125, &Lato_Regular5pt7b);
   sprite->drawString("3", 300, 125, &Lato_Regular5pt7b);
   sprite->drawString(usb.GetStatusString().c_str(), 28, 125, &Lato_Regular5pt7b);
@@ -3093,7 +3127,7 @@ void Screen_MediaURSAMiniProG2(bool forceRefresh = false)
     return;
   else
     lastRefreshedScreen = camera->getLastModified();
-  
+
   sprite->fillScreen(TFT_BLACK);
 
   Screen_Common_Connected(); // Common elements
@@ -3137,7 +3171,7 @@ void Screen_MediaURSAMiniPro12K(bool forceRefresh = false)
   connectedScreenIndex = Screens::Media;
 
   auto camera = BMDControlSystem::getInstance()->getCamera();
-  
+
   // TO DO
 }
 
@@ -3159,7 +3193,7 @@ void Screen_Media(bool forceRefresh = false)
         Screen_MediaURSAMiniPro12K(forceRefresh); // URSA Mini Pro 12K
       else
         DEBUG_DEBUG("No Media screen for this camera.");
-    } 
+    }
     else
       Screen_Media4K6K(forceRefresh); // Handle no model name in 4K/6K screen
   }
@@ -3183,16 +3217,156 @@ void Screen_Lens(bool forceRefresh = false)
   {
     if(tapped_x >= 200 && tapped_y <= 120)
     {
-      // Focus button
-      PacketWriter::writeAutoFocus(&cameraConnection);
+      // Get the current encoder value
+      #if USING_M5_ENCODER
 
-      DEBUG_DEBUG("Instantaneous Autofocus");
-      
+        // Switch modes
+        freeFocus = !freeFocus;
+
+        if(freeFocus)
+        {
+          // Free Focus will be lights just as blue
+          encoderSensor.setLEDColor(1, 0x000011);
+          encoderSensor.setLEDColor(2, 0x000011);
+        }
+
+      #else
+
+        // Focus button
+        PacketWriter::writeAutoFocus(&cameraConnection);
+
+        DEBUG_DEBUG("Instantaneous Autofocus");
+
+      #endif
+
       tappedAction = true;
     }
   }
 
-    // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
+  // Get the current encoder value
+  #if USING_M5_ENCODER
+
+
+    if(freeFocus)
+    {
+      // Free Focus - rotate dial and it sends offset to rotate the lens
+
+      unsigned long currentTime = millis();
+
+      // Only check periodically to allow time for the lens to move
+      if(currentTime > lastEncoderValueTime + 100)
+      {
+        signed short int currEncoderValue = encoderSensor.getEncoderValue();
+
+        if(currEncoderValue != prevEncoderValue)
+        {
+          if(currEncoderValue < prevEncoderValue)
+          {
+            // Turned counter-clockwise
+            PacketWriter::writeFocusPositionWithOffset(-1 * freeFocusIncrement, &cameraConnection);
+            DEBUG_DEBUG("Focus counter-clockwise");
+          }
+          else
+          {
+            // Turned clockwise
+            PacketWriter::writeFocusPositionWithOffset(freeFocusIncrement, &cameraConnection);
+            DEBUG_DEBUG("Focus clockwise");
+          }
+
+          prevEncoderValue = currEncoderValue;
+        }
+
+        lastEncoderValueTime = currentTime; // Keep track of the last time we checked this so we don't do this too often
+      }
+    }
+    else
+    {
+      // Range based (Works with Pocket 6K, didn't work with URSA Mini G2)
+
+      unsigned long currentTime = millis();
+
+      // Only check periodically to allow time for the lens to move
+      if(currentTime > lastEncoderValueTime + 100)
+      {
+        signed short int currEncoderValue = encoderSensor.getEncoderValue();
+
+        if(currEncoderValue != prevEncoderValue)
+        {
+          // DEBUG_VERBOSE("New encoder value: %i", currEncoderValue);
+
+          int32_t moveOffset = 0;
+
+          if(currEncoderValue > encoderRangeTopValue)
+          {
+            // We've moved passed the top of the window range, so adjust our range and ensure we're focused at the max value
+            encoderRangeTopValue = currEncoderValue;
+            encoderRangeBottomValue = encoderRangeTopValue - encoderRange;
+
+            prevFocusPosition = 65435;
+
+            DEBUG_DEBUG("Focus Position (0-65535): %d", prevFocusPosition);
+
+            PacketWriter::writeFocusPositionWithActual(prevFocusPosition, &cameraConnection);
+
+            // Set the right LED to red, left to green
+            encoderSensor.setLEDColor(1, 0x001100);
+            encoderSensor.setLEDColor(2, 0x110000);
+
+            DEBUG_VERBOSE("Encoder value window moving, range: %i to %i", encoderRangeBottomValue, encoderRangeTopValue);
+          }
+          else if(currEncoderValue < encoderRangeBottomValue)
+          {
+            // We've moved passed the bottom of the window range, so adjust our range and ensure we're focused at the min value
+            encoderRangeBottomValue = currEncoderValue;
+            encoderRangeTopValue = encoderRangeBottomValue + encoderRange;
+
+            prevFocusPosition = 100;
+
+            DEBUG_DEBUG("Focus Position (0-65535): %d", prevFocusPosition);
+
+            PacketWriter::writeFocusPositionWithActual(prevFocusPosition, &cameraConnection);
+
+
+            // Set the left LED to red, right to green
+            encoderSensor.setLEDColor(1, 0x110000);
+            encoderSensor.setLEDColor(2, 0x001100);
+
+            // DEBUG_VERBOSE("Encoder value window moving, range: %i to %i", encoderRangeBottomValue, encoderRangeTopValue);
+          }
+          else
+          {
+            // We've moving within our range, so we're adjusting focus, yay!
+
+            // DEBUG_VERBOSE("Position in range (0-%i): %i", encoderRange, currEncoderValue - encoderRangeBottomValue);
+
+            int32_t focusDistanceLerped = static_cast<int32_t>(static_cast<float>(currEncoderValue - encoderRangeBottomValue) / static_cast<float>(encoderRange) * 65535);
+
+            // Clamping to the range [100, 65435]
+            focusDistanceLerped = std::max(100, std::min(65435, focusDistanceLerped));
+
+            DEBUG_VERBOSE("New focus distance lerped: %i", focusDistanceLerped);
+
+            PacketWriter::writeFocusPositionWithActual(focusDistanceLerped, &cameraConnection);
+
+            prevFocusPosition = focusDistanceLerped;
+
+            // LEDs both green
+            encoderSensor.setLEDColor(1, 0x001100);
+            encoderSensor.setLEDColor(2, 0x001100);
+
+          }
+
+          prevEncoderValue = currEncoderValue;
+        }
+
+        lastEncoderValueTime = currentTime; // Keep track of the last time we checked this so we don't do this too often
+      }
+    }
+
+  #endif
+
+
+  // If the screen hasn't changed, there were no touch events and we don't have to refresh, return.
   if(lastRefreshedScreen == camera->getLastModified() && !forceRefresh && !tappedAction)
     return;
   else
@@ -3211,11 +3385,25 @@ void Screen_Lens(bool forceRefresh = false)
   // M5GFX, set font here rather than on each drawString line
   sprite->setFont(&Lato_Regular11pt7b);
 
-  // Focus button
-  sprite->drawCircle(257, 63, 57, TFT_BLUE); // Outer
-  sprite->fillSmoothCircle(257, 63, 54, TFT_SKYBLUE); // Inner
-  sprite->setTextColor(TFT_WHITE);
-  sprite->drawCentreString("FOCUS", 257, 50);
+
+  // Get the current encoder value
+  #if USING_M5_ENCODER
+
+    sprite->drawCircle(257, 63, 57, TFT_BLUE); // Outer
+    sprite->fillSmoothCircle(257, 63, 54, TFT_PURPLE); // Inner
+    sprite->setTextColor(TFT_WHITE);
+    sprite->drawCentreString(freeFocus ? "FREE" : "FOCUS", 257, 38);
+    sprite->drawCentreString(freeFocus ? "FOCUS" : "RANGE", 257, 62);
+
+  #else
+
+    // Focus button
+    sprite->drawCircle(257, 63, 57, TFT_BLUE); // Outer
+    sprite->fillSmoothCircle(257, 63, 54, TFT_SKYBLUE); // Inner
+    sprite->setTextColor(TFT_WHITE);
+    sprite->drawCentreString("FOCUS", 257, 50);
+
+  #endif
 
   sprite->drawString("LENS TYPE", 30, 53, &Lato_Regular5pt7b);
   if(camera->hasLensType())
@@ -3224,7 +3412,7 @@ void Screen_Lens(bool forceRefresh = false)
     sprite->drawString(camera->getLensType().c_str(), 30, 35, &Lato_Regular6pt7b);
 
   }
-  
+
   sprite->drawString("FOCAL LENGTH", 30, 98, &Lato_Regular5pt7b);
   if(camera->hasFocalLengthMM() || camera->hasLensFocalLength())
   {
@@ -3308,6 +3496,30 @@ void setup() {
 
   // Get and pass pointer to touch object specifically for passkey entry
   lgfx::v1::ITouch* touch = M5.Display.panel()->getTouch();
+
+  #if USING_M5_ENCODER == 1
+      encoderSensor.begin();
+      baseEncoderValue = encoderSensor.getEncoderValue();
+
+      // Set the valid range
+      encoderRangeBottomValue = baseEncoderValue;
+      encoderRangeTopValue = encoderRangeBottomValue + encoderRange;
+
+      // Set colours as the start, base value, red on left, green on right
+      if(!freeFocus)
+      {
+        encoderSensor.setLEDColor(1, 0x110000);
+        encoderSensor.setLEDColor(2, 0x001100);
+      }
+      else
+      {
+        // Free Focus will be lights just as blue
+        encoderSensor.setLEDColor(1, 0x000011);
+        encoderSensor.setLEDColor(2, 0x000011);
+      }
+
+      DEBUG_VERBOSE("Start encoder value and the range: %i, %i to %i", baseEncoderValue, encoderRangeBottomValue, encoderRangeTopValue);
+  #endif
 
   // Prepare for Bluetooth connections and start scanning for cameras
   cameraConnection.initialise(touch, &M5.Display, IWIDTH, IHEIGHT); // Screen Pass Key entry

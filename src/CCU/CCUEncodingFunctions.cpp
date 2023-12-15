@@ -109,7 +109,8 @@ CCUPacketTypes::DataTypes getCCUDataType(T value)
     throw std::runtime_error("Have not handled type in CCUEncodingFunction::getCCUDataType");
 }
 
-CCUPacketTypes::Command CCUEncodingFunctions::CreateFixed16Command(short value, CCUPacketTypes::Category category, byte parameter) {
+// Enables the OperationType to be passed in (Actual Value vs Offset Value), defaults to the original Actual Value
+CCUPacketTypes::Command CCUEncodingFunctions::CreateFixed16Command(short value, CCUPacketTypes::Category category, byte parameter, CCUPacketTypes::OperationType operationType /*= CCUPacketTypes::OperationType::AssignValue */) {
 
     std::vector<byte> data = CCUUtility::ToByteArray(value);
     CCUPacketTypes::Command command(
@@ -117,7 +118,7 @@ CCUPacketTypes::Command CCUEncodingFunctions::CreateFixed16Command(short value, 
         CCUPacketTypes::CommandID::ChangeConfiguration,
         category,
         parameter,
-        CCUPacketTypes::OperationType::AssignValue,
+        operationType,
         static_cast<byte>(CCUPacketTypes::DataTypes::kFixed16),
         data);
 

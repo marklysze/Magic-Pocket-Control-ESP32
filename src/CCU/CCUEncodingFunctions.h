@@ -15,7 +15,7 @@ class CCUEncodingFunctions
         static CCUPacketTypes::Command CreateVoidCommand(CCUPacketTypes::Category category, byte parameter);
         static CCUPacketTypes::Command CreateVideoSetAutoWBCommand();
         static CCUPacketTypes::Command CreateRecordingFormatCommand(CCUPacketTypes::RecordingFormatData recordingFormatData);
-        static CCUPacketTypes::Command CreateFixed16Command(short value, CCUPacketTypes::Category category, byte parameter);
+        static CCUPacketTypes::Command CreateFixed16Command(short value, CCUPacketTypes::Category category, byte parameter, CCUPacketTypes::OperationType operationType = CCUPacketTypes::OperationType::AssignValue);
         template <typename T>
         static CCUPacketTypes::Command CreateCommand(T value, CCUPacketTypes::Category category, byte parameter);
         static CCUPacketTypes::Command CreateVideoSensorGainCommand(byte value);

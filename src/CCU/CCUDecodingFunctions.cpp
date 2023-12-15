@@ -126,7 +126,7 @@ void CCUDecodingFunctions::DecodeLensCategory(byte parameter, std::vector<byte> 
             DEBUG_VERBOSE("DecodeLensCategory, ParameterType ContinuousZoom not catered for: %i", static_cast<byte>(parameterType));
             break;
         case CCUPacketTypes::LensParameter::Focus:
-            // Not catered for
+            // Not catered for -- does not appear to come in with the focus value
             DEBUG_VERBOSE("DecodeLensCategory, ParameterType Focus not catered for: %i", static_cast<byte>(parameterType));
             break;
         case CCUPacketTypes::LensParameter::ImageStabilisation:

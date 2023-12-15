@@ -22,14 +22,6 @@ void PacketWriter::writeAutoWhiteBalance(BMDCameraConnection* connection)
     validateAndSendCCUCommand(command, connection);
 }
 
-/*
-void PacketWriter::writeRecordingFormatStatus(BMDCameraConnection* connection)
-{
-    CCUPacketTypes::Command command = CCUEncodingFunctions::CreateRecordingFormatStatusCommand();
-    validateAndSendCCUCommand(command, connection);
-}
-*/
-
 void PacketWriter::writeRecordingFormat(CCUPacketTypes::RecordingFormatData recordingFormatData, BMDCameraConnection* connection)
 {
     CCUPacketTypes::Command command = CCUEncodingFunctions::CreateRecordingFormatCommand(recordingFormatData);
@@ -90,6 +82,32 @@ void PacketWriter::writeCodec(CodecInfo codecInfo, BMDCameraConnection* connecti
 void PacketWriter::writeAutoFocus(BMDCameraConnection* connection)
 {
     CCUPacketTypes::Command command = CCUEncodingFunctions::CreateVoidCommand(CCUPacketTypes::Category::Lens, (byte)CCUPacketTypes::LensParameter::AutoFocus);
+    validateAndSendCCUCommand(command, connection);
+}
+
+// Focus position is 0 to 65435
+// NOTE - this uses an offset of the previous value (which works on the URSA Mini G2, whereas a set value does not)
+void PacketWriter::writeFocusPositionWithOffset(int32_t focusPositionOffset, BMDCameraConnection* connection)
+{
+    float focusFloatPosition = static_cast<float>(focusPositionOffset) / static_cast<float>(65435);
+
+    ccu_fixed_t fixedFromFloat = CCUPacketTypes::CCUFixedFromFloat(static_cast<float>(focusPositionOffset) / static_cast<float>(65435));
+
+    CCUPacketTypes::Command command = CCUEncodingFunctions::CreateFixed16Command(fixedFromFloat, CCUPacketTypes::Category::Lens, (byte)CCUPacketTypes::LensParameter::Focus, CCUPacketTypes::OperationType::OffsetValue);
+
+    validateAndSendCCUCommand(command, connection);
+}
+
+// Focus position is 0 to 65435
+// NOTE - this uses the specific focus position to move to
+void PacketWriter::writeFocusPositionWithActual(int32_t focusPosition, BMDCameraConnection* connection)
+{
+    float focusFloatPosition = static_cast<float>(focusPosition) / static_cast<float>(65435);
+
+    ccu_fixed_t fixedFromFloat = CCUPacketTypes::CCUFixedFromFloat(static_cast<float>(focusPosition) / static_cast<float>(65435));
+
+    CCUPacketTypes::Command command = CCUEncodingFunctions::CreateFixed16Command(fixedFromFloat, CCUPacketTypes::Category::Lens, (byte)CCUPacketTypes::LensParameter::Focus, CCUPacketTypes::OperationType::AssignValue);
+
     validateAndSendCCUCommand(command, connection);
 }
 
