@@ -31,11 +31,25 @@ The key features are:
 - Read and write the many settings of the camera (Record Start & Stop, ISO, Shutter Speed / Angle, White Balance, Tint, Codec, Resolution, FPS, Off-speed Recording, Media available and time remaining, Slate, Project Name, Lens Data)
 - Accept setting changes through serial text (e.g. "(ISO:4000)" sent over serial will update the ISO to 4000). Similarly, it can output settings through serial so your applications can synchronise settings with the camera(s)
 
-# Some visuals
-[I'm working on them! :running: :camera: ]
+# What's new?
+December 2023 - Added lens focusing on the M5Stack CoreS3 using the M5Stack rotary encoder. Initial testing on Pocket 6K and URSA Mini Pro G2.
+
+Two modes:
+1. Free Focus - turn the rotary encoder and it will change focus position freely
+2. Range - turn the rotary encoder and it behaves more like a follow-focus with hard stops
+
+Why two modes? The BMD EF-based cameras have variations in the lenses supported and how to control them. The free-focus uses an offset for each step on the rotary encoder - this works on the URSA Mini Pro G2. The Range sends specific positions to the camera - this didn't work on the URSA Mini Pro G2 but did on the Pocket 6K (where both options worked). Additionally, for the free-focus offset different values moved the lens focus position different amounts depending on the lens.
+
+Therefore, you'll likely need to play around to see if this works for you!
+
+--
+
+Added support for the URSA Mini Pro G2 for general features - see the M5Stack CoreS3 main file. 
 
 # What can you do?
 I hope you find the functionality useful and it would be great if you could contribute your improvements, suggestions, or general feedback to the project!
+
+Thanks to [Paul Jones](http://www.paulrossjones.com/) for lending me his camera!
 
 # Do you use TouchDesigner?
 If you're a TouchDesigner user, check out nelsoniso's [repository here](https://github.com/nelsoniso/BlackMagicCamera-Touchdesigner-ESP32) which utilises the serial output of this project to update TouchDesigner in real-time and allow you to control the settings of the camera from TouchDesigner, it's very cool.
