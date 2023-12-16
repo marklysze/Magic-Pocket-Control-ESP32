@@ -32,7 +32,13 @@ The key features are:
 - Accept setting changes through serial text (e.g. "(ISO:4000)" sent over serial will update the ISO to 4000). Similarly, it can output settings through serial so your applications can synchronise settings with the camera(s)
 
 # What's new?
-December 2023 - Added lens focusing on the M5Stack CoreS3 using the M5Stack rotary encoder. Initial testing on Pocket 6K and URSA Mini Pro G2.
+**December 2023**
+
+![M5Stack Rotary Encoder](https://shop.m5stack.com/cdn/shop/products/4_a7b65e03-1b42-45cc-b561-ac2918fb5f39_1200x1200.jpg?v=1640940119)
+
+[M5Stack Rotary Encoder](https://shop.m5stack.com/products/encoder-unit) 
+
+Added lens focusing on the M5Stack CoreS3 using the M5Stack rotary encoder. Initial testing on Pocket 6K and URSA Mini Pro G2.
 
 Two modes:
 1. Free Focus - turn the rotary encoder and it will change focus position freely
